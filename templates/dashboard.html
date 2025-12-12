@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
+            <p class="text-muted">{{ empresa.nome }} - {{ empresa.cidade }}, {{ empresa.estado }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{% url 'calendario' %}" class="card text-center text-decoration-none">
+                <div class="card-body">
+                    <i class="fas fa-calendar-check fa-2x mb-3" style="color: #3b82f6;"></i>
+                    <h5 class="card-title">Agendamentos</h5>
+                    <h2>{{ total_agendamentos }}</h2>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x mb-3" style="color: #10b981;"></i>
+                    <h5 class="card-title">Clientes</h5>
+                    <h2>{{ total_clientes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-scissors fa-2x mb-3" style="color: #f59e0b;"></i>
+                    <h5 class="card-title">Servicos</h5>
+                    <h2>{{ total_servicos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-cog fa-2x mb-3" style="color: #ef4444;"></i>
+                    <h5 class="card-title">Configuracoes</h5>
+                    <a href="/admin/" class="btn btn-sm btn-primary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Proximos Agendamentos</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Acesse o calendario para ver os agendamentos</p>
+                    <a href="{% url 'calendario' %}" class="btn btn-primary btn-sm">Ir para Calendario</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Relatorio Financeiro</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Em desenvolvimento...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

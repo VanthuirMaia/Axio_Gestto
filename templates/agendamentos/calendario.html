@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Calendário - {{ empresa.nome }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.css">
+
+<style>
+:root {
+    --axio-primary: #1e3a8a;
+    --axio-secondary: #fbbf24;
+    --axio-success: #10b981;
+    --axio-danger: #ef4444;
+    --axio-info: #3b82f6;
+    --axio-muted: #6b7280;
+}
+
+/* Cursor pointer em eventos */
+.fc-daygrid-event,
+.fc-event,
+.fc-event-title {
+    cursor: pointer !important;
+}
+
+/* FullCalendar */
+.fc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+}
+.fc-toolbar-title {
+    font-size: 1.4rem !important;
+    font-weight: 600;
+}
+.fc-button-primary {
+    background-color: var(--axio-primary) !important;
+    border-color: var(--axio-primary) !important;
+}
+.fc-daygrid-event {
+    border-radius: 6px;
+    padding: 2px 4px !important;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Status */
+.fc-event-pendente { background: var(--axio-secondary) !important; color: #000 !important; }
+.fc-event-confirmado { background: var(--axio-success) !important; color: #fff !important; }
+.fc-event-cancelado { background: var(--axio-danger) !important; color: #fff !important; }
+.fc-event-concluido { background: var(--axio-info) !important; color: #fff !important; }
+.fc-event-nao_compareceu { background: var(--axio-muted) !important; color: #fff !important; }
+
+.modal-content {
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Calendário</h3>
+        <a href="{% url 'criar_agendamento' %}" class="btn btn-primary">+ Novo Agendamento</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3">
+
+            <h5 id="modal-title" class="fw-bold mb-1"></h5>
+
+            <p class="mb-1"><strong>Serviço:</strong> <span id="modal-servico"></span></p>
+            <p class="mb-1"><strong>Profissional:</strong> <span id="modal-profissional"></span></p>
+            <p class="mb-1"><strong>Início:</strong> <span id="modal-inicio"></span></p>
+            <p class="mb-1"><strong>Fim:</strong> <span id="modal-fim"></span></p>
+            <p class="mb-1"><strong>Status:</strong> <span id="modal-status" class="badge bg-info"></span></p>
+            <p class="mb-3"><strong>Valor:</strong> R$ <span id="modal-valor"></span></p>
+
+            <div class="text-end">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales-all.global.min.js"></script>
+
+<script>
+console.log("FullCalendar:", typeof FullCalendar);
+console.log("Locales loaded:", typeof FullCalendar?.globalLocales);
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'pt-br',
+        timeZone: 'local',
+        initialView: 'dayGridMonth',
+        height: 'auto',
+
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia'
+        },
+
+
+        events(info, successCallback, failureCallback) {
+
+            console.log("FULLCALENDAR CHAMOU EVENTS()", info.start);
+
+            // garante que estamos dentro do mês real visível
+            const centerDate = new Date(info.start);
+            centerDate.setDate(centerDate.getDate() + 7);
+
+            const month = centerDate.getMonth() + 1;
+            const year = centerDate.getFullYear();
+
+            console.log("MES REAL VISIVEL:", month, year);
+
+            fetch(`/agendamentos/api/?mes=${month}&ano=${year}`)
+                .then(res => res.json())
+                .then(data => {
+
+                    console.log("EVENTOS RECEBIDOS:", data);
+
+                    const eventos = data.map(ev => ({
+                        id: ev.id,
+                        title: ev.title,
+                        start: ev.start,
+                        end: ev.end,
+                        classNames: [`fc-event-${ev.status}`],
+                        extendedProps: ev
+                    }));
+
+                    console.log("EVENTOS MAPEADOS:", eventos);
+
+                    successCallback(eventos);
+                })
+                .catch(err => {
+                    console.error("ERRO AO CARREGAR EVENTOS:", err);
+                    failureCallback(err);
+                });
+        },
+
+
+        eventClick(info) {
+            const ev = info.event.extendedProps;
+
+            document.getElementById("modal-title").innerText = ev.cliente;
+            document.getElementById("modal-servico").innerText = ev.servico;
+            document.getElementById("modal-profissional").innerText = ev.profissional ?? "Não informado";
+            document.getElementById("modal-inicio").innerText = new Date(ev.start).toLocaleString("pt-BR");
+            document.getElementById("modal-fim").innerText = new Date(ev.end).toLocaleString("pt-BR");
+            document.getElementById("modal-status").innerText = ev.status;
+            document.getElementById("modal-valor").innerText = ev.valor.toFixed(2);
+
+            new bootstrap.Modal(document.getElementById('eventModal')).show();
+        }
+
+    });
+
+    calendar.render();
+});
+</script>
+
+{% endblock %}

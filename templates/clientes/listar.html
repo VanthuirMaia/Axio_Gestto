@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>Clientes</h4>
+                <a href="{% url 'criar_cliente' %}" class="btn btn-primary btn-sm">+ Novo Cliente</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% if clientes %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Email</th>
+                            <th>Cidade</th>
+                            <th>Agendamentos</th>
+                            <th>Acao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nome }}</td>
+                            <td>{{ cliente.telefone }}</td>
+                            <td>{{ cliente.email|default:'N/A' }}</td>
+                            <td>{{ cliente.cidade|default:'N/A' }}</td>
+                            <td><span class="badge bg-info">{{ cliente.total_agendamentos }}</span></td>
+                            <td>
+                                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                <a href="{% url 'deletar_cliente' cliente.id %}" class="btn btn-sm btn-danger">Deletar</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Nenhum cliente cadastrado. <a href="{% url 'criar_cliente' %}">Criar um novo cliente</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Agendamento - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Novo Agendamento</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="cliente_id" class="form-label">Cliente *</label>
+                            <select name="cliente_id" id="cliente_id" class="form-control" required>
+                                <option value="">Selecione um cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.telefone }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="servico_id" class="form-label">Servico *</label>
+                            <select name="servico_id" id="servico_id" class="form-control" required>
+                                <option value="">Selecione um servico</option>
+                                {% for servico in servicos %}
+                                <option value="{{ servico.id }}" data-duracao="{{ servico.duracao_minutos }}" data-preco="{{ servico.preco }}">
+                                    {{ servico.nome }} - R$ {{ servico.preco }} ({{ servico.duracao_minutos }}min)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profissional_id" class="form-label">Profissional</label>
+                            <select name="profissional_id" id="profissional_id" class="form-control">
+                                <option value="">Sem profissional definido</option>
+                                {% for prof in profissionais %}
+                                <option value="{{ prof.id }}">{{ prof.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="data_hora_inicio" class="form-label">Data e Hora *</label>
+                            <input type="datetime-local" name="data_hora_inicio" id="data_hora_inicio" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notas" class="form-label">Notas</label>
+                            <textarea name="notas" id="notas" class="form-control" rows="3" placeholder="Adicione notas sobre o agendamento"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Criar Agendamento</button>
+                            <a href="{% url 'calendario' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
