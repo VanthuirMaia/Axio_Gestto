@@ -3,67 +3,110 @@
 {% block title %}Novo Agendamento - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
+
 <div class="container py-4">
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <div class="card">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mb-3">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow-sm">
                 <div class="card-header">
                     <h4 class="mb-0">Novo Agendamento</h4>
                 </div>
+
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
 
+                        <!-- CLIENTE -->
                         <div class="mb-3">
-                            <label for="cliente_id" class="form-label">Cliente *</label>
-                            <select name="cliente_id" id="cliente_id" class="form-control" required>
+                            <label class="form-label">Cliente *</label>
+                            <select name="cliente_id" class="form-control" required>
                                 <option value="">Selecione um cliente</option>
+
                                 {% for cliente in clientes %}
-                                <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.telefone }}</option>
+                                    <option value="{{ cliente.id }}"
+                                        {% if form_values.cliente_id == cliente.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ cliente.nome }} - {{ cliente.telefone }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
 
+                        <!-- SERVIÇO -->
                         <div class="mb-3">
-                            <label for="servico_id" class="form-label">Servico *</label>
+                            <label class="form-label">Serviço *</label>
                             <select name="servico_id" id="servico_id" class="form-control" required>
-                                <option value="">Selecione um servico</option>
+                                <option value="">Selecione um serviço</option>
+
                                 {% for servico in servicos %}
-                                <option value="{{ servico.id }}" data-duracao="{{ servico.duracao_minutos }}" data-preco="{{ servico.preco }}">
-                                    {{ servico.nome }} - R$ {{ servico.preco }} ({{ servico.duracao_minutos }}min)
-                                </option>
+                                    <option value="{{ servico.id }}"
+                                            data-duracao="{{ servico.duracao_minutos }}"
+                                            data-preco="{{ servico.preco }}"
+                                        {% if form_values.servico_id == servico.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ servico.nome }} — R$ {{ servico.preco }} ({{ servico.duracao_minutos }} min)
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
 
+                        <!-- PROFISSIONAL -->
                         <div class="mb-3">
-                            <label for="profissional_id" class="form-label">Profissional</label>
-                            <select name="profissional_id" id="profissional_id" class="form-control">
+                            <label class="form-label">Profissional</label>
+                            <select name="profissional_id" class="form-control">
                                 <option value="">Sem profissional definido</option>
+
                                 {% for prof in profissionais %}
-                                <option value="{{ prof.id }}">{{ prof.nome }}</option>
+                                    <option value="{{ prof.id }}"
+                                        {% if form_values.profissional_id == prof.id|stringformat:"s" %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ prof.nome }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
 
+                        <!-- DATA/HORA -->
                         <div class="mb-3">
-                            <label for="data_hora_inicio" class="form-label">Data e Hora *</label>
-                            <input type="datetime-local" name="data_hora_inicio" id="data_hora_inicio" class="form-control" required>
+                            <label class="form-label">Data e Hora *</label>
+                            <input type="datetime-local"
+                                   name="data_hora_inicio"
+                                   class="form-control"
+                                   required
+                                   value="{{ form_values.data_hora_inicio }}">
                         </div>
 
+                        <!-- NOTAS -->
                         <div class="mb-3">
-                            <label for="notas" class="form-label">Notas</label>
-                            <textarea name="notas" id="notas" class="form-control" rows="3" placeholder="Adicione notas sobre o agendamento"></textarea>
+                            <label class="form-label">Notas</label>
+                            <textarea name="notas" class="form-control" rows="3"
+                                      placeholder="Observações adicionais">{{ form_values.notas }}</textarea>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Criar Agendamento</button>
                             <a href="{% url 'calendario' %}" class="btn btn-secondary">Cancelar</a>
                         </div>
+
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
+
 {% endblock %}

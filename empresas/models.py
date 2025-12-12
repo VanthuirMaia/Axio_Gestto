@@ -57,6 +57,14 @@ class Profissional(models.Model):
     servicos = models.ManyToManyField(Servico, related_name='profissionais')
     comissao_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     ativo = models.BooleanField(default=True)
+
+    # 👉 COR DO PROFISSIONAL PARA APARECER NO CALENDÁRIO
+    cor_hex = models.CharField(
+        max_length=7,
+        default="#1e3a8a",
+        help_text="Cor dos eventos deste profissional no calendário (ex: #3b82f6)"
+    )
+
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 

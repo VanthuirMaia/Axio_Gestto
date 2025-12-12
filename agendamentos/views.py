@@ -3,10 +3,20 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.utils import timezone
+from dateutil import parser
 from datetime import datetime, timedelta
 from .models import Agendamento, DisponibilidadeProfissional
 from empresas.models import Servico, Profissional
 from clientes.models import Cliente
+
+STATUS_COLORS = {
+    "pendente": "#facc15",       # amarelo
+    "confirmado": "#3b82f6",     # azul
+    "cancelado": "#ef4444",      # vermelho
+    "concluido": "#22c55e",      # verde
+    "nao_compareceu": "#6b7280"  # cinza
+}
 
 @login_required
 def calendario_view(request):
@@ -36,80 +46,146 @@ def calendario_view(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def criar_agendamento(request):
+
     empresa = request.user.empresa
     if not empresa:
         return redirect('logout')
-    
+
+    # se for GET, renderiza vazio
+    clientes = empresa.clientes.filter(ativo=True)
+    servicos = empresa.servicos.filter(ativo=True)
+    profissionais = empresa.profissionais.filter(ativo=True)
+
     if request.method == 'POST':
+
         cliente_id = request.POST.get('cliente_id')
         servico_id = request.POST.get('servico_id')
         profissional_id = request.POST.get('profissional_id')
-        data_hora_inicio = request.POST.get('data_hora_inicio')
-        notas = request.POST.get('notas', '')
-        
+        raw_datetime = request.POST.get('data_hora_inicio')
+        notas = request.POST.get('notas')
+
         try:
             cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
             servico = Servico.objects.get(id=servico_id, empresa=empresa)
             profissional = Profissional.objects.get(id=profissional_id, empresa=empresa) if profissional_id else None
-            
-            data_hora = datetime.fromisoformat(data_hora_inicio)
-            duracao = timedelta(minutes=servico.duracao_minutos)
-            data_hora_fim = data_hora + duracao
-            
-            agendamento = Agendamento.objects.create(
+
+            # parser e timezone
+            data_hora = parser.parse(raw_datetime)
+            data_hora = timezone.make_aware(data_hora, timezone.get_current_timezone())
+            data_fim = data_hora + timedelta(minutes=servico.duracao_minutos)
+
+            # 🔥 VERIFICAÇÃO DE CONFLITO
+            conflito = Agendamento.objects.filter(
+                empresa=empresa,
+                profissional=profissional,
+                data_hora_inicio__lt=data_fim,
+                data_hora_fim__gt=data_hora
+            ).exists()
+
+            if conflito:
+                messages.error(request, "Este horário já está ocupado para este profissional.")
+
+                # retorna a mesma página COM TODOS OS VALORES MANTIDOS
+                return render(request, 'agendamentos/criar.html', {
+                    'empresa': empresa,
+                    'clientes': clientes,
+                    'servicos': servicos,
+                    'profissionais': profissionais,
+                    'form_values': request.POST  # 🔥 magic
+                })
+
+            # cria agendamento
+            Agendamento.objects.create(
                 empresa=empresa,
                 cliente=cliente,
                 servico=servico,
                 profissional=profissional,
                 data_hora_inicio=data_hora,
-                data_hora_fim=data_hora_fim,
+                data_hora_fim=data_fim,
                 notas=notas,
                 valor_cobrado=servico.preco,
                 status='confirmado'
             )
-            
-            messages.success(request, f'Agendamento criado com sucesso!')
-            return redirect('calendario')
-        except Exception as e:
-            messages.error(request, f'Erro ao criar agendamento: {str(e)}')
-    
-    context = {
-        'empresa': empresa,
-        'clientes': empresa.clientes.filter(ativo=True),
-        'servicos': empresa.servicos.filter(ativo=True),
-        'profissionais': empresa.profissionais.filter(ativo=True),
-    }
-    return render(request, 'agendamentos/criar.html', context)
 
-@login_required
+            messages.success(request, "Agendamento criado com sucesso!")
+            return redirect('calendario')
+
+        except Exception as e:
+            messages.error(request, f"Erro ao criar agendamento: {e}")
+
+            return render(request, 'agendamentos/criar.html', {
+                'empresa': empresa,
+                'clientes': clientes,
+                'servicos': servicos,
+                'profissionais': profissionais,
+                'form_values': request.POST
+            })
+
+    # GET normal
+    return render(request, 'agendamentos/criar.html', {
+        'empresa': empresa,
+        'clientes': clientes,
+        'servicos': servicos,
+        'profissionais': profissionais,
+        'form_values': {}
+    })
+
+
 def api_agendamentos(request):
     empresa = request.user.empresa
     if not empresa:
-        return JsonResponse({'error': 'Nao autorizado'}, status=403)
+        return JsonResponse({"error": "Não autorizado"}, status=403)
 
-    mes = int(request.GET.get('mes', datetime.now().month))
-    ano = int(request.GET.get('ano', datetime.now().year))
+    mes = request.GET.get("mes")
+    ano = request.GET.get("ano")
 
-    agendamentos = Agendamento.objects.filter(
+    # ------------------------------
+    # 1. Busca dos agendamentos
+    # ------------------------------
+    ags = Agendamento.objects.filter(
         empresa=empresa,
         data_hora_inicio__month=mes,
         data_hora_inicio__year=ano
-    ).select_related('cliente', 'servico', 'profissional')
+    ).select_related("cliente", "servico", "profissional")
 
     eventos = []
 
-    for ag in agendamentos:
+    # ------------------------------
+    # 2. Montagem profissional do JSON
+    # ------------------------------
+    for a in ags:
+
+        # Convertendo corretamente para America/Recife
+        inicio = timezone.localtime(a.data_hora_inicio)
+        fim = timezone.localtime(a.data_hora_fim)
+
+        # Cor do status
+        status_color = STATUS_COLORS.get(a.status, "#3b82f6")
+
+        # Cor do profissional (caso você adicione no model)
+        profissional_color = getattr(a.profissional, "cor_hex", None)
+
+        # Cor final (profissional tem prioridade)
+        cor_final = profissional_color if profissional_color else "#6b7280"
+
         eventos.append({
-            "id": ag.id,
-            "title": f"{ag.cliente.nome} – {ag.servico.nome}",
-            "start": ag.data_hora_inicio.strftime("%Y-%m-%dT%H:%M:%S"),
-            "end": ag.data_hora_fim.strftime("%Y-%m-%dT%H:%M:%S"),
-            "status": ag.status,
-            "cliente": ag.cliente.nome,
-            "servico": ag.servico.nome,
-            "profissional": ag.profissional.nome if ag.profissional else None,
-            "valor": float(ag.valor_cobrado or 0),
+            "id": a.id,
+            "title": f"{a.cliente.nome} – {a.servico.nome}",
+            "start": inicio.isoformat(),
+            "end": fim.isoformat(),
+
+            # CORREÇÃO DEFINITIVA – sempre enviar todas as cores
+            "backgroundColor": cor_final,
+            "borderColor": cor_final,
+            "textColor": "#ffffff",
+
+            "status": a.status,
+            "cliente": a.cliente.nome,
+            "servico": a.servico.nome,
+            "profissional": a.profissional.nome if a.profissional else None,
+            "valor": float(a.valor_cobrado or 0),
         })
+
 
     return JsonResponse(eventos, safe=False)
 

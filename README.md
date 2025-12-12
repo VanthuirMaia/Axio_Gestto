@@ -1,88 +1,176 @@
-# Gestao Negocios - Sistema de Gerenciamento
+# 🚀 Gestto — Sistema de Gestão para Pequenos Negócios
 
-Sistema Django completo para gerenciar pequenos negócios (barbearias, salões, studios).
+Aplicação Django moderna para gerenciamento completo de salões, barbearias, estúdios e microempresas que dependem de agendamentos.
 
-## Funcionalidades
+O sistema já implementa:
 
-- Autenticação multi-tenant (cada empresa tem seu login)
-- Agendamentos com calendário
-- Gestão de clientes
-- Controle financeiro com comissões
-- Dashboard com insights
-- Personalização por empresa (logo, cores)
-- API REST
-- Integração com n8n (via webhooks)
+✔ Multi-tenant real (cada empresa tem seu ambiente e seus dados)  
+✔ Agendamentos com FullCalendar moderno  
+✔ Controle de clientes  
+✔ Serviços e profissionais  
+✔ Comissões  
+✔ Dashboard e relatórios  
+✔ API integrada  
+✔ Integração com n8n (agendamentos automáticos via IA / WhatsApp)
 
-## Instalação Local
+---
 
-1. Clone o repositório
-2. Crie um ambiente virtual:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate  # Windows
-   ```
+## 📌 Funcionalidades Principais
 
-3. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 🗓 Agendamentos Inteligentes
 
-4. Configure o banco de dados:
-   ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   ```
+- Calendário FullCalendar totalmente integrado
+- Exibição por mês, semana e dia
+- Modal profissional com edição e exclusão
+- Prevenção de conflitos de horário
+- Cores personalizadas por status e por profissional
+- Suporte a múltiplos profissionais
+- Zona de tempo corrigida (America/Recife)
 
-5. Inicie o servidor:
-   ```bash
-   python manage.py runserver
-   ```
+### 👤 Gestão de Clientes
 
-Acesse http://localhost:8000
+- Cadastro simples e rápido
+- Histórico de agendamentos
+- Telefones e dados estruturados
 
-## Docker
+### 💈 Serviços e Profissionais
 
-Para subir com Docker:
+- Duração do serviço
+- Preço
+- Comissão por profissional
+- Cores personalizadas por profissional no calendário
 
-```bash
+### 💰 Financeiro
+
+- Valores por atendimento
+- Cálculo automático de comissão
+- Relatórios futuros
+
+### ⚙️ Empresa / Multi-tenant
+
+- Cada empresa com seus próprios:
+  - clientes
+  - agendamentos
+  - serviços
+  - profissionais
+- Logos e personalização futura
+
+### 🤖 Integração com IA e n8n
+
+- Webhooks para criar agendamentos automaticamente
+- Futuro: IA sugerindo horários e confirmando clientes via WhatsApp
+
+---
+
+## 🛠 Instalação Local
+
+### 1. Clone o repositório
+
+```
+git clone https://github.com/seu-repo.git
+cd gestto
+```
+
+### 2. Crie um ambiente virtual
+
+```
+python -m venv venv
+venv\Scripts\activate  # Windows
+# ou
+source venv/bin/activate  # Linux/Mac
+```
+
+### 3. Instale as dependências
+
+```
+pip install -r requirements.txt
+```
+
+### 4. Configure o banco
+
+```
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### 5. Inicie a aplicação
+
+```
+python manage.py runserver
+```
+
+Acesse:  
+👉 http://localhost:8000
+
+---
+
+## 🐳 Rodando com Docker
+
+```
 docker-compose up -d
 ```
 
-Acesse http://localhost:8000
+Acesse:  
+👉 http://localhost:8000
 
-## Estrutura
+---
 
-- `core/` - Autenticação e usuários
-- `empresas/` - Modelos de empresa, serviços, profissionais
-- `agendamentos/` - Sistema de agendamentos
-- `clientes/` - Gestão de clientes
-- `financeiro/` - Controle financeiro
-- `dashboard/` - Dashboard e relatórios
+## 📁 Estrutura do Projeto
 
-## Variáveis de Ambiente
+```
+core/           # Autenticação, usuários e multi-tenant
+empresas/       # Dados da empresa, serviços e profissionais
+agendamentos/   # Lógica completa de calendário e agendamentos
+clientes/       # Gerenciamento de clientes
+financeiro/     # Comissões e controle financeiro
+dashboard/      # Gráficos e indicadores
+static/         # Arquivos estáticos
+templates/      # Templates HTML
+```
 
-Crie um arquivo `.env`:
+---
+
+## 🔐 Variáveis de Ambiente
+
+Crie um `.env`:
 
 ```
 DEBUG=True
 SECRET_KEY=sua-chave-secreta
-DB_NAME=gestao_negocios
+DB_NAME=gestto
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
+TIME_ZONE=America/Recife
 ```
 
-## API
+---
 
-A API está disponível em `/api/` com autenticação via sessão.
+## 📡 API
 
-## Próximas Etapas
+Endpoints disponíveis em `/api/`.
 
-- [ ] Implementar agendamentos completos
-- [ ] Criar gestão de clientes
-- [ ] Desenvolver controle financeiro
-- [ ] Integração com n8n
-- [ ] Webhooks para sincronização
-- [ ] Relatórios avançados
+A autenticação é baseada em sessão (por enquanto).  
+Futuro: JWT ou Tokens para integração profunda com n8n.
+
+---
+
+## 🧭 Roadmap — Próximas Releases
+
+### 📌 Versão Atual (Feita)
+
+- ✔ Calendário com FullCalendar
+- ✔ Edição e exclusão via modal
+- ✔ Cores por profissional
+- ✔ Verificação de conflito
+- ✔ Manter valores em caso de erro no formulário
+- ✔ Timezone corrigido
+
+### 📌 Versão 1.1 — Próximas entregas
+
+- [ ] Arrastar eventos para mover horário
+- [ ] Criar agendamento clicando no calendário
+- [ ] Bloqueio de horários por folga/ausência
+- [ ] Dashboard financeiro avançado
+- [ ] API pública para integração externa
