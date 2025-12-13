@@ -20,13 +20,8 @@ class Cliente(models.Model):
         verbose_name = 'Cliente'
         verbose_name_plural = 'Clientes'
         ordering = ['nome']
-        unique_together = ('empresa', 'email', 'telefone')
+        unique_together = ('empresa', 'telefone')
 
     def __str__(self):
-        return f"{self.nome} - {self.empresa}"
+        return f"{self.nome} ({self.telefone})"
 
-    def total_agendamentos(self):
-        return self.agendamentos.count()
-
-    def total_gasto(self):
-        return sum(a.valor_cobrado or 0 for a in self.agendamentos.filter(status='concluido'))

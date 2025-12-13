@@ -12,6 +12,8 @@ urlpatterns = [
     path('agendamentos/', include('agendamentos.urls')),
     path('clientes/', include('clientes.urls')),
     path('', dashboard_view, name='home'),
+    path('clientes/', include('clientes.urls')),
+
 ]
 
 if settings.DEBUG:

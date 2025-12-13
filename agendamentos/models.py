@@ -1,15 +1,15 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 
-class Agendamento(models.Model):
-    STATUS_CHOICES = [
-        ('pendente', 'Pendente'),
-        ('confirmado', 'Confirmado'),
-        ('cancelado', 'Cancelado'),
-        ('concluido', 'Concluido'),
-        ('nao_compareceu', 'Nao Compareceu'),
-    ]
 
+class StatusAgendamento(models.TextChoices):
+    PENDENTE = 'pendente', 'Pendente'
+    CONFIRMADO = 'confirmado', 'Confirmado'
+    CANCELADO = 'cancelado', 'Cancelado'
+    CONCLUIDO = 'concluido', 'Concluído'
+    NAO_COMPARECEU = 'nao_compareceu', 'Não Compareceu'
+
+class Agendamento(models.Model):
     empresa = models.ForeignKey('empresas.Empresa', on_delete=models.CASCADE, related_name='agendamentos')
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE, related_name='agendamentos')
     servico = models.ForeignKey('empresas.Servico', on_delete=models.SET_NULL, null=True, related_name='agendamentos')
@@ -17,7 +17,11 @@ class Agendamento(models.Model):
     
     data_hora_inicio = models.DateTimeField()
     data_hora_fim = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
+    status = models.CharField(
+        max_length=20,
+        choices=StatusAgendamento.choices,
+        default=StatusAgendamento.PENDENTE
+    )
     
     notas = models.TextField(blank=True)
     valor_cobrado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -58,3 +62,4 @@ class DisponibilidadeProfissional(models.Model):
 
     def __str__(self):
         return f"{self.profissional} - {self.get_dia_semana_display()} {self.hora_inicio}-{self.hora_fim}"
+

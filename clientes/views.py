@@ -1,3 +1,5 @@
+from clientes.services.metricas_clientes import listar_clientes_com_metricas
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -102,3 +104,10 @@ def deletar_cliente(request, id):
         'cliente': cliente,
     }
     return render(request, 'clientes/deletar.html', context)
+
+def dashboard_clientes(request):
+    clientes = listar_clientes_com_metricas()
+    return render(request, 'clientes/dashboard.html', {'clientes': clientes})
+
+def lista_clientes(request):
+    return render(request, 'clientes/lista.html')
