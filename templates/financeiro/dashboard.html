@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Financeiro – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+<!-- Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h2 class="fw-bold mb-1">Financeiro</h2>
+        <p class="text-muted mb-0">{{ mes_atual }}</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Seletor de Período -->
+        <form method="get" class="d-flex gap-2" id="formPeriodo">
+          <select name="mes" class="form-select form-select-sm" style="width: 140px;">
+            {% for num, nome in meses_pt %}
+              <option value="{{ num }}" {% if num == mes_selecionado %}selected{% endif %}>
+                {{ nome }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <select name="ano" class="form-select form-select-sm" style="width: 100px;">
+            {% for ano in anos_disponiveis reversed %}
+              <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>
+                {{ ano }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <button type="submit" class="btn btn-sm btn-outline-primary" title="Atualizar">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </form>
+        
+        <a href="{% url 'lancamento_criar' %}" class="btn btn-primary">
+          <i class="bi bi-plus-circle me-2"></i>Novo Lançamento
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Métricas Principais -->
+  <div class="row g-3 mb-4">
+    
+    <!-- Receitas -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-success border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Receitas do Mês</small>
+            <i class="bi bi-arrow-up-circle text-success fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1">R$ {{ receitas_total|floatformat:2 }}</h3>
+          <div class="small">
+            <span class="text-success">✓ Pagas: R$ {{ receitas_pagas|floatformat:2 }}</span><br>
+            <span class="text-warning">⏳ Pendentes: R$ {{ receitas_pendentes|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Despesas -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-danger border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Despesas do Mês</small>
+            <i class="bi bi-arrow-down-circle text-danger fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1">R$ {{ despesas_total|floatformat:2 }}</h3>
+          <div class="small">
+            <span class="text-danger">✓ Pagas: R$ {{ despesas_pagas|floatformat:2 }}</span><br>
+            <span class="text-warning">⏳ Pendentes: R$ {{ despesas_pendentes|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saldo Real -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-primary border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Saldo Real</small>
+            <i class="bi bi-wallet2 text-primary fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1 {% if saldo_real >= 0 %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ saldo_real|floatformat:2 }}
+          </h3>
+          <small class="text-muted">Receitas pagas - Despesas pagas</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saldo Previsto -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-info border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Saldo Previsto</small>
+            <i class="bi bi-graph-up text-info fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1 {% if saldo_previsto >= 0 %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ saldo_previsto|floatformat:2 }}
+          </h3>
+          <small class="text-muted">Total de receitas - Total de despesas</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Alertas de Vencidas -->
+  {% if contas_vencidas > 0 %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+        <div>
+          <strong>Atenção!</strong> Você tem {{ contas_vencidas }} conta(s) vencida(s).
+          <a href="{% url 'lancamentos_lista' %}?status=pendente" class="alert-link ms-2">Ver todas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Contas a Receber e Pagar -->
+  <div class="row g-3 mb-4">
+    
+    <!-- Contas a Receber -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-arrow-down-circle text-success me-2"></i>
+            Contas a Receber
+          </h5>
+          <a href="{% url 'lancamentos_lista' %}?tipo=receita&status=pendente" class="btn btn-sm btn-outline-secondary">
+            Ver todas
+          </a>
+        </div>
+        <div class="card-body p-0">
+          {% if contas_receber %}
+            <div class="list-group list-group-flush">
+              {% for conta in contas_receber %}
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <h6 class="mb-1">{{ conta.descricao }}</h6>
+                    <small class="text-muted">
+                      {{ conta.categoria.nome }} · Venc: {{ conta.data_vencimento|date:"d/m/Y" }}
+                      {% if conta.data_vencimento < hoje %}
+                        <span class="badge bg-danger ms-2">Vencida</span>
+                      {% endif %}
+                    </small>
+                  </div>
+                  <div class="text-end">
+                    <strong class="text-success">R$ {{ conta.valor|floatformat:2 }}</strong>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <p class="mb-0">Nenhuma conta a receber nos próximos 30 dias</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Contas a Pagar -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-arrow-up-circle text-danger me-2"></i>
+            Contas a Pagar
+          </h5>
+          <a href="{% url 'lancamentos_lista' %}?tipo=despesa&status=pendente" class="btn btn-sm btn-outline-secondary">
+            Ver todas
+          </a>
+        </div>
+        <div class="card-body p-0">
+          {% if contas_pagar %}
+            <div class="list-group list-group-flush">
+              {% for conta in contas_pagar %}
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <h6 class="mb-1">{{ conta.descricao }}</h6>
+                    <small class="text-muted">
+                      {{ conta.categoria.nome }} · Venc: {{ conta.data_vencimento|date:"d/m/Y" }}
+                      {% if conta.data_vencimento < hoje %}
+                        <span class="badge bg-danger ms-2">Vencida</span>
+                      {% endif %}
+                    </small>
+                  </div>
+                  <div class="text-end">
+                    <strong class="text-danger">R$ {{ conta.valor|floatformat:2 }}</strong>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              <p class="mb-0">Nenhuma conta a pagar nos próximos 30 dias</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Receitas por Categoria -->
+  {% if receitas_por_categoria %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-pie-chart text-primary me-2"></i>
+            Receitas por Categoria (Pagas)
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for cat in receitas_por_categoria %}
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                  <div style="width: 40px; height: 40px; background-color: {{ cat.categoria__cor }}; border-radius: 8px;"></div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <h6 class="mb-0">{{ cat.categoria__nome }}</h6>
+                  <strong class="text-success">R$ {{ cat.total|floatformat:2 }}</strong>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Auto-submit ao mudar mês ou ano
+  const formPeriodo = document.getElementById('formPeriodo');
+  const selects = formPeriodo.querySelectorAll('select');
+  
+  selects.forEach(select => {
+    select.addEventListener('change', function() {
+      formPeriodo.submit();
+    });
+  });
+</script>
+{% endblock %}

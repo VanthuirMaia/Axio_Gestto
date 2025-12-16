@@ -1,0 +1,108 @@
+<!-- Sidebar -->
+<div class="sidebar bg-dark text-white d-flex flex-column" id="sidebar">
+  
+  <!-- Logo/Brand -->
+  <div class="sidebar-header p-3 border-bottom border-secondary">
+    <div class="d-flex align-items-center justify-content-center">
+      <div class="text-center flex-grow-1">
+        <h5 class="mb-0 fw-bold">Gestto</h5>
+        <small class="text-muted sidebar-text">{{ empresa.nome|truncatechars:20 }}</small>
+      </div>
+      <button class="btn btn-link text-white d-lg-none p-0 position-absolute end-0 me-3" id="sidebarClose">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <!-- Toggle button (desktop only) -->
+    <div class="sidebar-toggle-btn d-none d-lg-flex" id="sidebarToggle">
+      <i class="bi bi-chevron-left"></i>
+    </div>
+  </div>
+
+  <!-- Menu Items -->
+  <nav class="flex-grow-1 overflow-auto">
+    <ul class="nav flex-column p-2">
+      
+      <!-- Dashboard -->
+      <li class="nav-item">
+        <a href="{% url 'dashboard' %}" 
+           class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+           data-title="Dashboard">
+          <i class="bi bi-speedometer2 me-2"></i>
+          <span class="sidebar-text">Dashboard</span>
+        </a>
+      </li>
+
+      <!-- Agendamentos -->
+      <li class="nav-item">
+        <a href="{% url 'calendario' %}" 
+           class="nav-link {% if 'agendamentos' in request.path or 'calendario' in request.path %}active{% endif %}"
+           data-title="Agendamentos">
+          <i class="bi bi-calendar-check me-2"></i>
+          <span class="sidebar-text">Agendamentos</span>
+        </a>
+      </li>
+
+      <!-- Clientes -->
+      <li class="nav-item">
+        <a href="{% url 'clientes_lista' %}" 
+           class="nav-link {% if 'clientes' in request.path %}active{% endif %}"
+           data-title="Clientes">
+          <i class="bi bi-people me-2"></i>
+          <span class="sidebar-text">Clientes</span>
+        </a>
+      </li>
+
+      <!-- Financeiro -->
+      <li class="nav-item">
+        <a href="{% url 'financeiro_dashboard' %}" 
+           class="nav-link {% if 'financeiro' in request.path %}active{% endif %}"
+           data-title="Financeiro">
+          <i class="bi bi-cash-coin me-2"></i>
+          <span class="sidebar-text">Financeiro</span>
+        </a>
+      </li>
+
+      <li class="nav-item mt-2">
+        <hr class="border-secondary">
+      </li>
+
+      <!-- Configurações -->
+      <li class="nav-item">
+        <a href="/admin/" 
+           class="nav-link" 
+           target="_blank"
+           data-title="Configurações">
+          <i class="bi bi-gear me-2"></i>
+          <span class="sidebar-text">Configurações</span>
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+
+  <!-- User Info -->
+  <div class="sidebar-footer border-top border-secondary p-3">
+    <div class="d-flex align-items-center">
+      <div class="flex-shrink-0">
+        <div class="user-avatar bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+             style="width: 40px; height: 40px;">
+          <i class="bi bi-person-fill fs-5"></i>
+        </div>
+      </div>
+      <div class="flex-grow-1 ms-3 text-truncate sidebar-text">
+        <div class="fw-semibold small text-white">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">{{ request.user.email }}</small>
+      </div>
+      <a href="{% url 'logout' %}" 
+         class="btn btn-link text-white p-0 flex-shrink-0" 
+         title="Sair"
+         data-title="Sair">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>

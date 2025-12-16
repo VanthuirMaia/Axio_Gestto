@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editando %}Editar{% else %}Novo{% endif %} Lançamento – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <a href="{% url 'lancamentos_lista' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <h2 class="fw-bold mb-1">
+            {% if editando %}Editar Lançamento{% else %}Novo Lançamento{% endif %}
+          </h2>
+          <p class="text-muted mb-0">Preencha os dados do lançamento financeiro</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <form method="post" id="lancamentoForm">
+            {% csrf_token %}
+
+            <!-- Tipo -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Tipo de Lançamento *</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tipo" id="tipo_receita" value="receita" 
+                       {% if not editando or lancamento.tipo == 'receita' %}checked{% endif %} required>
+                <label class="btn btn-outline-success" for="tipo_receita">
+                  <i class="bi bi-arrow-down-circle me-2"></i>Receita
+                </label>
+
+                <input type="radio" class="btn-check" name="tipo" id="tipo_despesa" value="despesa"
+                       {% if editando and lancamento.tipo == 'despesa' %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="tipo_despesa">
+                  <i class="bi bi-arrow-up-circle me-2"></i>Despesa
+                </label>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Categoria -->
+              <div class="col-md-6 mb-3">
+                <label for="categoria" class="form-label">Categoria *</label>
+                <select name="categoria" id="categoria" class="form-select" required>
+                  <option value="">Selecione uma categoria</option>
+                  {% for cat in categorias %}
+                    <option value="{{ cat.id }}" 
+                            data-tipo="{{ cat.tipo }}"
+                            {% if editando and lancamento.categoria.id == cat.id %}selected{% endif %}>
+                      {{ cat.nome }} ({{ cat.get_tipo_display }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Valor -->
+              <div class="col-md-6 mb-3">
+                <label for="valor" class="form-label">Valor *</label>
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input type="number" name="valor" id="valor" class="form-control" 
+                         step="0.01" min="0.01" 
+                         value="{% if editando %}{{ lancamento.valor }}{% endif %}" 
+                         placeholder="0,00" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Descrição -->
+            <div class="mb-3">
+              <label for="descricao" class="form-label">Descrição *</label>
+              <input type="text" name="descricao" id="descricao" class="form-control" 
+                     value="{% if editando %}{{ lancamento.descricao }}{% endif %}" 
+                     placeholder="Ex: Pagamento de serviço, Aluguel, Conta de luz..." required>
+            </div>
+
+            <div class="row">
+              <!-- Data de Vencimento -->
+              <div class="col-md-6 mb-3">
+                <label for="data_vencimento" class="form-label">Data de Vencimento *</label>
+                <input type="date" name="data_vencimento" id="data_vencimento" class="form-control" 
+                       value="{% if editando %}{{ lancamento.data_vencimento|date:'Y-m-d' }}{% endif %}" required>
+              </div>
+
+              <!-- Status -->
+              <div class="col-md-6 mb-3">
+                <label for="status" class="form-label">Status *</label>
+                <select name="status" id="status" class="form-select" required>
+                  <option value="pendente" {% if not editando or lancamento.status == 'pendente' %}selected{% endif %}>
+                    Pendente
+                  </option>
+                  <option value="pago" {% if editando and lancamento.status == 'pago' %}selected{% endif %}>
+                    Pago
+                  </option>
+                  <option value="cancelado" {% if editando and lancamento.status == 'cancelado' %}selected{% endif %}>
+                    Cancelado
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Campos de Pagamento (aparecem se status = pago) -->
+            <div id="camposPagamento" style="display: none;">
+              <div class="card bg-light mb-3">
+                <div class="card-body">
+                  <h6 class="card-title mb-3">Informações de Pagamento</h6>
+                  
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label for="data_pagamento" class="form-label">Data de Pagamento</label>
+                      <input type="date" name="data_pagamento" id="data_pagamento" class="form-control"
+                             value="{% if editando and lancamento.data_pagamento %}{{ lancamento.data_pagamento|date:'Y-m-d' }}{% endif %}">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
+                      <select name="forma_pagamento" id="forma_pagamento" class="form-select">
+                        <option value="">Selecione...</option>
+                        {% for forma in formas_pagamento %}
+                          <option value="{{ forma.id }}" 
+                                  {% if editando and lancamento.forma_pagamento.id == forma.id %}selected{% endif %}>
+                            {{ forma.nome }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="mb-4">
+              <label for="observacoes" class="form-label">Observações</label>
+              <textarea name="observacoes" id="observacoes" class="form-control" rows="3" 
+                        placeholder="Informações adicionais (opcional)">{% if editando %}{{ lancamento.observacoes }}{% endif %}</textarea>
+            </div>
+
+            <!-- Botões -->
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>
+                {% if editando %}Salvar Alterações{% else %}Criar Lançamento{% endif %}
+              </button>
+              <a href="{% url 'lancamentos_lista' %}" class="btn btn-outline-secondary">
+                Cancelar
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tipoRadios = document.querySelectorAll('input[name="tipo"]');
+    const categoriaSelect = document.getElementById('categoria');
+    const statusSelect = document.getElementById('status');
+    const camposPagamento = document.getElementById('camposPagamento');
+    const dataPagamento = document.getElementById('data_pagamento');
+
+    // Filtrar categorias por tipo
+    function filtrarCategorias() {
+      const tipoSelecionado = document.querySelector('input[name="tipo"]:checked').value;
+      const options = categoriaSelect.querySelectorAll('option');
+      
+      options.forEach(option => {
+        if (option.value === '') {
+          option.style.display = 'block';
+          return;
+        }
+        
+        const tipoCategoria = option.dataset.tipo;
+        if (tipoCategoria === tipoSelecionado) {
+          option.style.display = 'block';
+        } else {
+          option.style.display = 'none';
+        }
+      });
+
+      // Reset seleção se categoria não for compatível
+      const categoriaAtual = categoriaSelect.value;
+      if (categoriaAtual) {
+        const optionAtual = categoriaSelect.querySelector(`option[value="${categoriaAtual}"]`);
+        if (optionAtual && optionAtual.dataset.tipo !== tipoSelecionado) {
+          categoriaSelect.value = '';
+        }
+      }
+    }
+
+    // Mostrar/ocultar campos de pagamento
+    function toggleCamposPagamento() {
+      if (statusSelect.value === 'pago') {
+        camposPagamento.style.display = 'block';
+        dataPagamento.required = true;
+        // Define data de hoje se estiver vazio
+        if (!dataPagamento.value) {
+          dataPagamento.value = new Date().toISOString().split('T')[0];
+        }
+      } else {
+        camposPagamento.style.display = 'none';
+        dataPagamento.required = false;
+      }
+    }
+
+    // Event listeners
+    tipoRadios.forEach(radio => {
+      radio.addEventListener('change', filtrarCategorias);
+    });
+
+    statusSelect.addEventListener('change', toggleCamposPagamento);
+
+    // Inicializar
+    filtrarCategorias();
+    toggleCamposPagamento();
+  });
+</script>
+{% endblock %}

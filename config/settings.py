@@ -109,3 +109,17 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+
+
+
+
+# ============================================
+# AGENDADOR DE TAREFAS (Desenvolvimento)
+# ============================================
+if DEBUG:
+    # Em desenvolvimento, use APScheduler
+    INSTALLED_APPS += ['django_apscheduler']
+    
+    APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+    APSCHEDULER_RUN_NOW_TIMEOUT = 25
