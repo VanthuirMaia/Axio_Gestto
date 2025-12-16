@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Serviços – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
+              <li class="breadcrumb-item active">Serviços</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0">Serviços</h2>
+        </div>
+        <div>
+          <a href="{% url 'servico_criar' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Novo Serviço
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th>Duração</th>
+                  <th>Preço</th>
+                  <th>Status</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for servico in servicos %}
+                <tr>
+                  <td><strong>{{ servico.nome }}</strong></td>
+                  <td>{{ servico.descricao|truncatewords:10 }}</td>
+                  <td>{{ servico.duracao }} min</td>
+                  <td><strong class="text-success">R$ {{ servico.preco|floatformat:2 }}</strong></td>
+                  <td>
+                    {% if servico.ativo %}
+                      <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                      <a href="{% url 'servico_editar' servico.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="{% url 'servico_deletar' servico.id %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    <p class="mb-0">Nenhum serviço cadastrado</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

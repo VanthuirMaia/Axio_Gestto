@@ -1,0 +1,39 @@
+<!-- Componente de Header de Página -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <!-- Breadcrumb -->
+        {% if breadcrumb %}
+        <div class="d-flex align-items-center mb-2 text-muted small">
+          {% for item in breadcrumb %}
+            {% if not forloop.last %}
+              <a href="{{ item.url }}" class="text-decoration-none text-muted">
+                {% if item.icon %}<i class="bi bi-{{ item.icon }} me-1"></i>{% endif %}
+                {{ item.label }}
+              </a>
+              <i class="bi bi-chevron-right mx-2" style="font-size: 0.7rem;"></i>
+            {% else %}
+              <span class="fw-semibold text-dark">{{ item.label }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Título -->
+        <h2 class="fw-bold mb-0">{{ title }}</h2>
+        
+        {% if subtitle %}
+        <p class="text-muted mb-0">{{ subtitle }}</p>
+        {% endif %}
+      </div>
+      
+      <!-- Botões de ação (opcional) -->
+      {% if actions %}
+      <div class="d-flex gap-2">
+        {{ actions }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

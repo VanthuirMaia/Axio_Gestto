@@ -228,3 +228,29 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
+
+/* User Avatar Icon */
+.user-avatar {
+  transition: all 0.3s;
+}
+
+.sidebar.collapsed .user-avatar {
+  margin: 0 auto;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: 1rem 0.5rem !important;
+}
+
+.sidebar.collapsed .sidebar-footer .d-flex {
+  justify-content: center;
+}
+
+/* Centralizar logo quando colapsado */
+.sidebar.collapsed .sidebar-header {
+  text-align: center;
+}
+
+.sidebar.collapsed .sidebar-header .text-center {
+  width: 100%;
+}

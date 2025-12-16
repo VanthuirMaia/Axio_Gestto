@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editando %}Editar{% else %}Novo{% endif %} Serviço – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <a href="{% url 'servicos_lista' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'servicos_lista' %}">Serviços</a></li>
+              <li class="breadcrumb-item active">{% if editando %}Editar{% else %}Novo{% endif %}</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0">{% if editando %}Editar Serviço{% else %}Novo Serviço{% endif %}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="nome" class="form-label">Nome do Serviço *</label>
+              <input type="text" name="nome" id="nome" class="form-control" 
+                     value="{% if editando %}{{ servico.nome }}{% endif %}" 
+                     placeholder="Ex: Corte de Cabelo" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="descricao" class="form-label">Descrição</label>
+              <textarea name="descricao" id="descricao" class="form-control" rows="3" 
+                        placeholder="Descreva o serviço (opcional)">{% if editando %}{{ servico.descricao }}{% endif %}</textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="duracao" class="form-label">Duração (minutos) *</label>
+                <input type="number" name="duracao" id="duracao" class="form-control" 
+                       value="{% if editando %}{{ servico.duracao }}{% endif %}" 
+                       placeholder="60" min="1" required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="preco" class="form-label">Preço (R$) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input type="number" name="preco" id="preco" class="form-control" 
+                         step="0.01" min="0" 
+                         value="{% if editando %}{{ servico.preco }}{% endif %}" 
+                         placeholder="0,00" required>
+                </div>
+              </div>
+            </div>
+
+            {% if editando %}
+            <div class="mb-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="ativo" id="ativo" 
+                       {% if servico.ativo %}checked{% endif %}>
+                <label class="form-check-label" for="ativo">
+                  Serviço ativo
+                </label>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>
+                {% if editando %}Salvar Alterações{% else %}Criar Serviço{% endif %}
+              </button>
+              <a href="{% url 'servicos_lista' %}" class="btn btn-outline-secondary">
+                Cancelar
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

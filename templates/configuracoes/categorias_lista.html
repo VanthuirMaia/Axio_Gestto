@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorias Financeiras – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
+              <li class="breadcrumb-item active">Categorias</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0">Categorias Financeiras</h2>
+        </div>
+        <div>
+          <a href="{% url 'categoria_criar' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Nova Categoria
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Cor</th>
+                  <th>Status</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cat in categorias %}
+                <tr>
+                  <td><strong>{{ cat.nome }}</strong></td>
+                  <td>
+                    {% if cat.tipo == 'receita' %}
+                      <span class="badge bg-success">Receita</span>
+                    {% else %}
+                      <span class="badge bg-danger">Despesa</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ cat.descricao|truncatewords:10|default:"—" }}</td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div style="width: 30px; height: 30px; background-color: {{ cat.cor }}; border-radius: 5px; border: 1px solid #ddd;"></div>
+                      <code>{{ cat.cor }}</code>
+                    </div>
+                  </td>
+                  <td>
+                    {% if cat.ativo %}
+                      <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <a href="{% url 'categoria_editar' cat.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    <p class="mb-0">Nenhuma categoria cadastrada</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

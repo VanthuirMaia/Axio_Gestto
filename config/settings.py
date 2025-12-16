@@ -9,20 +9,23 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'django.contrib.admin',  # ← Mantenha (para casos de emergência)
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'corsheaders',
-    'core',
-    'empresas',
-    'agendamentos',
-    'clientes',
-    'financeiro',
-    'dashboard',
+    
+    # Apps do projeto
+    'core.apps.CoreConfig',
+    'empresas.apps.EmpresasConfig',
+    'clientes.apps.ClientesConfig',
+    'agendamentos.apps.AgendamentosConfig',
+    'financeiro.apps.FinanceiroConfig',
+    'configuracoes.apps.ConfiguracoesConfig',  # ← ADICIONE
+    
+    # Third party
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -110,16 +113,36 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# ============================================
+# MATERIAL ADMIN CUSTOMIZATION
+# ============================================
+MATERIAL_ADMIN_SITE = {
+    'HEADER': 'Axio Gestto Admin',
+    'TITLE': 'Axio Gestto',
+    'FAVICON': '/static/img/favicon.ico',  # Se tiver favicon
+    'MAIN_BG_COLOR': '#0d6efd',  # Azul do seu sistema
+    'MAIN_HOVER_COLOR': '#0a58ca',
+    'PROFILE_PICTURE': '/static/img/user.png',  # Se tiver
+    'PROFILE_BG': '/static/img/profile-bg.jpg',  # Se tiver
+    'LOGIN_LOGO': '/static/img/logo.png',  # Se tiver
+    'LOGOUT_ON_PASSWORD_CHANGE': False,
+    'SHOW_THEMES': True,  # Permite trocar tema
+    'SHOW_COUNTS': True,  # Mostra contadores
+    'APP_ICONS': {  # Ícones customizados
+        'auth': 'people',
+        'core': 'dashboard',
+        'empresas': 'business',
+        'clientes': 'people_outline',
+        'agendamentos': 'event',
+        'financeiro': 'attach_money',
+    }
+}
 
-
-
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+APSCHEDULER_RUN_NOW_TIMEOUT = 25
 
 # ============================================
-# AGENDADOR DE TAREFAS (Desenvolvimento)
+# ADMIN INTERFACE
 # ============================================
-if DEBUG:
-    # Em desenvolvimento, use APScheduler
-    INSTALLED_APPS += ['django_apscheduler']
-    
-    APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
-    APSCHEDULER_RUN_NOW_TIMEOUT = 25
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+SILENCED_SYSTEM_CHECKS = ['security.W019']

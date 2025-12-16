@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editando %}Editar{% else %}Nova{% endif %} Categoria – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <a href="{% url 'categorias_lista' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'categorias_lista' %}">Categorias</a></li>
+              <li class="breadcrumb-item active">{% if editando %}Editar{% else %}Nova{% endif %}</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0">{% if editando %}Editar Categoria{% else %}Nova Categoria{% endif %}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="nome" class="form-label">Nome da Categoria *</label>
+              <input type="text" name="nome" id="nome" class="form-control" 
+                     value="{% if editando %}{{ categoria.nome }}{% endif %}" 
+                     placeholder="Ex: Produtos de Beleza" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tipo *</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tipo" id="tipo_receita" value="receita" 
+                       {% if not editando or categoria.tipo == 'receita' %}checked{% endif %} required>
+                <label class="btn btn-outline-success" for="tipo_receita">
+                  <i class="bi bi-arrow-down-circle me-2"></i>Receita
+                </label>
+
+                <input type="radio" class="btn-check" name="tipo" id="tipo_despesa" value="despesa"
+                       {% if editando and categoria.tipo == 'despesa' %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="tipo_despesa">
+                  <i class="bi bi-arrow-up-circle me-2"></i>Despesa
+                </label>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="descricao" class="form-label">Descrição</label>
+              <textarea name="descricao" id="descricao" class="form-control" rows="3" 
+                        placeholder="Descreva a categoria (opcional)">{% if editando %}{{ categoria.descricao }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="cor" class="form-label">Cor</label>
+              <div class="d-flex gap-3 align-items-center">
+                <input type="color" name="cor" id="cor" class="form-control form-control-color" 
+                       value="{% if editando %}{{ categoria.cor }}{% else %}#6c757d{% endif %}" 
+                       style="width: 80px; height: 50px;">
+                <div>
+                  <small class="text-muted">Escolha uma cor para identificar esta categoria nos gráficos</small>
+                </div>
+              </div>
+            </div>
+
+            {% if editando %}
+            <div class="mb-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="ativo" id="ativo" 
+                       {% if categoria.ativo %}checked{% endif %}>
+                <label class="form-check-label" for="ativo">
+                  Categoria ativa
+                </label>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>
+                {% if editando %}Salvar Alterações{% else %}Criar Categoria{% endif %}
+              </button>
+              <a href="{% url 'categorias_lista' %}" class="btn btn-outline-secondary">
+                Cancelar
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -13,7 +13,9 @@ urlpatterns = [
     path('clientes/', include('clientes.urls')),
     path('', dashboard_view, name='home'),
     path('clientes/', include('clientes.urls')),
-    path('financeiro/', include('financeiro.urls')),  # ← ADICIONE ESTA LINHA
+    path('financeiro/', include('financeiro.urls')),
+    path('configuracoes/', include('configuracoes.urls')),
+
 
 
 ]

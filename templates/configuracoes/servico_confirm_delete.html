@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Deletar Serviço – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <div class="row">
+    <div class="col-12 col-md-6 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Confirmar Exclusão
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">Tem certeza que deseja deletar este serviço?</p>
+          
+          <div class="alert alert-light border">
+            <h6 class="mb-2"><strong>{{ servico.nome }}</strong></h6>
+            <div class="small">
+              <p class="mb-1"><strong>Duração:</strong> {{ servico.duracao }} minutos</p>
+              <p class="mb-1"><strong>Preço:</strong> R$ {{ servico.preco|floatformat:2 }}</p>
+              {% if servico.descricao %}
+              <p class="mb-0"><strong>Descrição:</strong> {{ servico.descricao }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <p class="text-danger mb-4">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong>Esta ação não pode ser desfeita!</strong>
+          </p>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash me-2"></i>Sim, Deletar
+              </button>
+              <a href="{% url 'servicos_lista' %}" class="btn btn-outline-secondary">
+                Cancelar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
