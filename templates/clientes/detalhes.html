@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ cliente.nome }} – {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center mb-3">
+        <a href="{% url 'dashboard_clientes' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1">
+          <h2 class="fw-bold mb-1">{{ cliente.nome }}</h2>
+          <p class="text-muted mb-0">Perfil completo do cliente</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-2"></i>Editar
+          </a>
+          <a href="{% url 'criar_agendamento' %}" class="btn btn-primary">
+            <i class="bi bi-calendar-plus me-2"></i>Novo Agendamento
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    
+    <!-- Coluna Esquerda: Informações do Cliente -->
+    <div class="col-12 col-lg-4">
+      
+      <!-- Card: Dados Principais -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+          <!-- Avatar -->
+          <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
+               style="width: 100px; height: 100px;">
+            <i class="bi bi-person-fill text-primary" style="font-size: 3rem;"></i>
+          </div>
+          
+          <h4 class="fw-bold mb-2">{{ cliente.nome }}</h4>
+          
+          {% if cliente.ativo %}
+            <span class="badge bg-success mb-3">Ativo</span>
+          {% else %}
+            <span class="badge bg-secondary mb-3">Inativo</span>
+          {% endif %}
+          
+          <!-- Métricas Rápidas -->
+          <div class="row text-center mt-4">
+            <div class="col-6 border-end">
+              <h3 class="fw-bold text-primary mb-0">{{ total_visitas }}</h3>
+              <small class="text-muted">Visitas</small>
+            </div>
+            <div class="col-6">
+              <h3 class="fw-bold text-success mb-0">R$ {{ total_gasto|floatformat:2 }}</h3>
+              <small class="text-muted">Total Gasto</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Informações de Contato -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-person-lines-fill me-2"></i>
+            Informações de Contato
+          </h6>
+        </div>
+        <div class="card-body">
+          
+          {% if cliente.telefone %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-1">Telefone</small>
+            <a href="tel:{{ cliente.telefone }}" class="text-decoration-none">
+              <i class="bi bi-telephone me-2"></i>{{ cliente.telefone }}
+            </a>
+          </div>
+          {% endif %}
+          
+          {% if cliente.email %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-1">E-mail</small>
+            <a href="mailto:{{ cliente.email }}" class="text-decoration-none">
+              <i class="bi bi-envelope me-2"></i>{{ cliente.email }}
+            </a>
+          </div>
+          {% endif %}
+          
+          {% if cliente.data_nascimento %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-1">Data de Nascimento</small>
+            <i class="bi bi-cake2 me-2"></i>{{ cliente.data_nascimento|date:"d/m/Y" }}
+          </div>
+          {% endif %}
+          
+          {% if cliente.cpf %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-1">CPF</small>
+            <i class="bi bi-card-text me-2"></i>{{ cliente.cpf }}
+          </div>
+          {% endif %}
+          
+          {% if not cliente.telefone and not cliente.email and not cliente.data_nascimento and not cliente.cpf %}
+            <p class="text-muted mb-0 small">Nenhuma informação de contato cadastrada</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Card: Endereço -->
+      {% if cliente.endereco or cliente.cidade or cliente.estado %}
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-geo-alt me-2"></i>
+            Endereço
+          </h6>
+        </div>
+        <div class="card-body">
+          {% if cliente.endereco %}
+            <p class="mb-1">{{ cliente.endereco }}</p>
+          {% endif %}
+          {% if cliente.cidade or cliente.estado %}
+            <p class="mb-1">{{ cliente.cidade }}{% if cliente.estado %}, {{ cliente.estado }}{% endif %}</p>
+          {% endif %}
+          {% if cliente.cep %}
+            <p class="mb-0 text-muted small">CEP: {{ cliente.cep }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Card: Observações -->
+      {% if cliente.notas %}
+      <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-sticky me-2"></i>
+            Observações
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-0 small">{{ cliente.notas }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Coluna Direita: Histórico -->
+    <div class="col-12 col-lg-8">
+      
+      <!-- Card: Estatísticas -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+          <div class="card shadow-sm border-start border-primary border-4 h-100">
+            <div class="card-body">
+              <small class="text-muted d-block mb-2">Total de Visitas</small>
+              <h3 class="fw-bold mb-0">{{ total_visitas }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-12 col-md-4">
+          <div class="card shadow-sm border-start border-success border-4 h-100">
+            <div class="card-body">
+              <small class="text-muted d-block mb-2">Gasto Total</small>
+              <h3 class="fw-bold mb-0 text-success">R$ {{ total_gasto|floatformat:2 }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-12 col-md-4">
+          <div class="card shadow-sm border-start border-info border-4 h-100">
+            <div class="card-body">
+              <small class="text-muted d-block mb-2">Última Visita</small>
+              {% if ultimo_agendamento %}
+                <h6 class="fw-bold mb-0">{{ ultimo_agendamento.data_hora_inicio|date:"d/m/Y" }}</h6>
+                <small class="text-muted">{{ ultimo_agendamento.data_hora_inicio|date:"H:i" }}</small>
+              {% else %}
+                <p class="mb-0 text-muted">Nunca</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Histórico de Agendamentos -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-clock-history me-2"></i>
+            Histórico de Agendamentos
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if agendamentos %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Serviço</th>
+                    <th>Profissional</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ag in agendamentos %}
+                  <tr>
+                    <td>
+                      <strong>{{ ag.data_hora_inicio|date:"d/m/Y" }}</strong>
+                      <br>
+                      <small class="text-muted">{{ ag.data_hora_inicio|date:"H:i" }}</small>
+                    </td>
+                    <td>{{ ag.servico.nome }}</td>
+                    <td>{{ ag.profissional.nome|default:"—" }}</td>
+                    <td><strong class="text-success">R$ {{ ag.valor_cobrado|floatformat:2 }}</strong></td>
+                    <td>
+                      {% if ag.status == 'pendente' %}
+                        <span class="badge bg-warning">Pendente</span>
+                      {% elif ag.status == 'confirmado' %}
+                        <span class="badge bg-success">Confirmado</span>
+                      {% elif ag.status == 'concluido' %}
+                        <span class="badge bg-primary">Concluído</span>
+                      {% elif ag.status == 'cancelado' %}
+                        <span class="badge bg-danger">Cancelado</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ ag.get_status_display }}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-5 text-center text-muted">
+              <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+              <p class="mb-0">Nenhum agendamento registrado ainda</p>
+            </div>
+          {% endif %}
+        </div>
+        
+        {% if agendamentos.count > 20 %}
+        <div class="card-footer bg-white text-center">
+          <small class="text-muted">Mostrando os 20 agendamentos mais recentes</small>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

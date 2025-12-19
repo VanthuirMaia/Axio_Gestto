@@ -3,54 +3,224 @@
 {% block title %}Clientes - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-    <div class="row mb-3">
+<div class="container-fluid py-4 px-4">
+    
+    <!-- Header -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4>Clientes</h4>
-                <a href="{% url 'criar_cliente' %}" class="btn btn-primary btn-sm">+ Novo Cliente</a>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1">Lista de Clientes</h2>
+                    <p class="text-muted mb-0">{{ clientes|length }} cliente{{ clientes|length|pluralize }} encontrado{{ clientes|length|pluralize }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'dashboard_clientes' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up me-2"></i>Dashboard
+                    </a>
+                    <a href="{% url 'criar_cliente' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Novo Cliente
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Barra de Busca e Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        
+                        <!-- Busca -->
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       name="busca" 
+                                       class="form-control" 
+                                       placeholder="Buscar por nome, telefone ou email..."
+                                       value="{{ busca }}">
+                            </div>
+                        </div>
+
+                        <!-- Filtro de Status -->
+                        <div class="col-md-3">
+                            <select name="status" class="form-select">
+                                <option value="">Todos os status</option>
+                                <option value="ativo" {% if status_filtro == 'ativo' %}selected{% endif %}>Ativos</option>
+                                <option value="inativo" {% if status_filtro == 'inativo' %}selected{% endif %}>Inativos</option>
+                            </select>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-funnel me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'listar_clientes' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Clientes -->
     <div class="row">
         <div class="col-12">
             {% if clientes %}
-            <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nome</th>
-                            <th>Telefone</th>
-                            <th>Email</th>
-                            <th>Cidade</th>
-                            <th>Agendamentos</th>
-                            <th>Acao</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cliente in clientes %}
-                        <tr>
-                            <td>{{ cliente.nome }}</td>
-                            <td>{{ cliente.telefone }}</td>
-                            <td>{{ cliente.email|default:'N/A' }}</td>
-                            <td>{{ cliente.cidade|default:'N/A' }}</td>
-                            <td><span class="badge bg-info">{{ cliente.total_agendamentos }}</span></td>
-                            <td>
-                                <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                <a href="{% url 'deletar_cliente' cliente.id %}" class="btn btn-sm btn-danger">Deletar</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="py-3">Cliente</th>
+                                    <th class="py-3">Contato</th>
+                                    <th class="py-3">Localização</th>
+                                    <th class="py-3 text-center">Visitas</th>
+                                    <th class="py-3 text-center">Total Gasto</th>
+                                    <th class="py-3">Última Visita</th>
+                                    <th class="py-3 text-center">Status</th>
+                                    <th class="py-3 text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes %}
+                                <tr>
+                                    <!-- Cliente -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="bi bi-person-fill text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <a href="{% url 'detalhes_cliente' cliente.id %}" class="text-decoration-none">
+                                                    <strong class="d-block">{{ cliente.nome }}</strong>
+                                                </a>
+                                                {% if cliente.cpf %}
+                                                    <small class="text-muted">CPF: {{ cliente.cpf }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Contato -->
+                                    <td>
+                                        {% if cliente.telefone %}
+                                            <div class="mb-1">
+                                                <i class="bi bi-telephone me-1 text-muted"></i>
+                                                <small>{{ cliente.telefone }}</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if cliente.email %}
+                                            <div>
+                                                <i class="bi bi-envelope me-1 text-muted"></i>
+                                                <small>{{ cliente.email }}</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if not cliente.telefone and not cliente.email %}
+                                            <small class="text-muted">—</small>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Localização -->
+                                    <td>
+                                        {% if cliente.cidade %}
+                                            <small>{{ cliente.cidade }}{% if cliente.estado %}/{{ cliente.estado }}{% endif %}</small>
+                                        {% else %}
+                                            <small class="text-muted">—</small>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Visitas -->
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ cliente.total_agendamentos|default:0 }}</span>
+                                    </td>
+
+                                    <!-- Total Gasto -->
+                                    <td class="text-center">
+                                        {% if cliente.total_gasto %}
+                                            <strong class="text-success">R$ {{ cliente.total_gasto|floatformat:2 }}</strong>
+                                        {% else %}
+                                            <small class="text-muted">R$ 0,00</small>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Última Visita -->
+                                    <td>
+                                        {% if cliente.ultimo_agendamento %}
+                                            <small>{{ cliente.ultimo_agendamento|date:"d/m/Y" }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Nunca</small>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Status -->
+                                    <td class="text-center">
+                                        {% if cliente.ativo %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Ações -->
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'detalhes_cliente' cliente.id %}" 
+                                               class="btn btn-outline-info" 
+                                               title="Ver Detalhes">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'editar_cliente' cliente.id %}" 
+                                               class="btn btn-outline-primary" 
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'deletar_cliente' cliente.id %}" 
+                                               class="btn btn-outline-danger" 
+                                               title="Deletar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             {% else %}
-            <div class="alert alert-info">
-                Nenhum cliente cadastrado. <a href="{% url 'criar_cliente' %}">Criar um novo cliente</a>
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-people fs-1 text-muted d-block mb-3"></i>
+                    {% if busca or status_filtro %}
+                        <h5 class="text-muted">Nenhum cliente encontrado</h5>
+                        <p class="text-muted mb-3">Tente ajustar os filtros de busca</p>
+                        <a href="{% url 'listar_clientes' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Limpar Filtros
+                        </a>
+                    {% else %}
+                        <h5 class="text-muted">Nenhum cliente cadastrado</h5>
+                        <p class="text-muted mb-3">Comece adicionando seu primeiro cliente</p>
+                        <a href="{% url 'criar_cliente' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Criar Novo Cliente
+                        </a>
+                    {% endif %}
+                </div>
             </div>
             {% endif %}
         </div>
     </div>
+
 </div>
 {% endblock %}

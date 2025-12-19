@@ -1,117 +1,403 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard – {{ empresa.nome }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4 px-4">
 
-  <!-- Header -->
+  <!-- Hero Section: Saudação -->
   <div class="row mb-4">
     <div class="col-12">
-      <h2 class="fw-bold mb-1">Dashboard</h2>
-      <p class="text-muted mb-0">
-        {{ empresa.nome }} · {{ empresa.cidade }}, {{ empresa.estado }}
-      </p>
+      <div class="card shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+        <div class="card-body text-white py-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <h3 class="fw-bold mb-2" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                {{ saudacao }}, {{ usuario.first_name|default:usuario.username }}! 👋
+              </h3>
+              <p class="mb-0" style="opacity: 0.95;">
+                <i class="bi bi-building me-2"></i>{{ empresa.nome }} · 
+                <i class="bi bi-calendar3 ms-3 me-2"></i>{{ hoje|date:"l, d \d\e F \d\e Y" }}
+              </p>
+            </div>
+            <div class="text-end">
+              <div class="d-flex gap-2">
+                <a href="{% url 'criar_agendamento' %}" class="btn btn-light">
+                  <i class="bi bi-plus-circle me-2"></i>Novo Agendamento
+                </a>
+                <a href="{% url 'calendario' %}" class="btn" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                  <i class="bi bi-calendar3 me-2"></i>Ver Calendário
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- MÉTRICAS PRINCIPAIS -->
+  <!-- Alertas Importantes -->
+  {% if contas_vencidas > 0 or agendamentos_pendentes > 0 or clientes_risco > 0 %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex gap-2 flex-wrap">
+        {% if contas_vencidas > 0 %}
+        <div class="alert alert-danger d-flex align-items-center mb-0 flex-grow-1" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
+          <div>
+            <strong>{{ contas_vencidas }}</strong> conta(s) vencida(s)
+            <a href="{% url 'lancamentos_lista' %}?status=pendente" class="alert-link ms-2">Ver todas</a>
+          </div>
+        </div>
+        {% endif %}
+        
+        {% if agendamentos_pendentes > 0 %}
+        <div class="alert alert-warning d-flex align-items-center mb-0 flex-grow-1" role="alert">
+          <i class="bi bi-clock-fill me-3 fs-5"></i>
+          <div>
+            <strong>{{ agendamentos_pendentes }}</strong> agendamento(s) pendente(s)
+            <a href="{% url 'calendario' %}" class="alert-link ms-2">Confirmar</a>
+          </div>
+        </div>
+        {% endif %}
+        
+        {% if clientes_risco > 0 %}
+        <div class="alert alert-info d-flex align-items-center mb-0 flex-grow-1" role="alert">
+          <i class="bi bi-person-exclamation me-3 fs-5"></i>
+          <div>
+            <strong>{{ clientes_risco }}</strong> cliente(s) em risco
+            <a href="{% url 'dashboard_clientes' %}" class="alert-link ms-2">Recuperar</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- MÉTRICAS PRINCIPAIS - Grid 4 colunas -->
   <div class="row g-3 mb-4">
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card shadow-sm border-start border-primary border-4 h-100">
+    
+    <!-- Agendamentos Hoje -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #667eea !important;">
         <div class="card-body">
-          <small class="text-muted d-block mb-2">Agendamentos hoje</small>
-          <h3 class="fw-bold mb-0">{{ agendamentos_hoje }}</h3>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Hoje</small>
+              <h2 class="fw-bold mb-0 mt-1">{{ agendamentos_hoje }}</h2>
+              <small class="text-muted">agendamentos</small>
+            </div>
+            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+              <i class="bi bi-calendar-check text-primary fs-3"></i>
+            </div>
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-calendar-week me-1"></i>
+            {{ agendamentos_semana }} esta semana
+          </small>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card shadow-sm border-start border-success border-4 h-100">
+    <!-- Faturamento do Mês -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #10b981 !important;">
         <div class="card-body">
-          <small class="text-muted d-block mb-2">Clientes ativos (30 dias)</small>
-          <h3 class="fw-bold mb-0">{{ clientes_ativos }}</h3>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Faturamento</small>
+              <h2 class="fw-bold mb-0 mt-1 text-success">R$ {{ faturamento_mes|floatformat:2 }}</h2>
+              <small class="text-muted">este mês</small>
+            </div>
+            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+              <i class="bi bi-cash-stack text-success fs-3"></i>
+            </div>
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-clock me-1"></i>
+            R$ {{ receitas_pendentes|floatformat:2 }} pendente
+          </small>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card shadow-sm border-start border-warning border-4 h-100">
+    <!-- Clientes Ativos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #f59e0b !important;">
         <div class="card-body">
-          <small class="text-muted d-block mb-2">Ticket médio</small>
-          <h3 class="fw-bold mb-0">
-            R$ {{ ticket_medio|default:0|floatformat:2 }}
-          </h3>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Clientes</small>
+              <h2 class="fw-bold mb-0 mt-1">{{ clientes_ativos }}</h2>
+              <small class="text-muted">ativos (30d)</small>
+            </div>
+            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+              <i class="bi bi-people-fill text-warning fs-3"></i>
+            </div>
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-person-plus me-1"></i>
+            +{{ novos_clientes_mes }} novos este mês
+          </small>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card shadow-sm border-start border-danger border-4 h-100">
+    <!-- Saldo do Mês -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #3b82f6 !important;">
         <div class="card-body">
-          <small class="text-muted d-block mb-2">Clientes inativos</small>
-          <h3 class="fw-bold mb-0">{{ clientes_inativos }}</h3>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Saldo</small>
+              <h2 class="fw-bold mb-0 mt-1 {% if saldo_mes >= 0 %}text-success{% else %}text-danger{% endif %}">
+                R$ {{ saldo_mes|floatformat:2 }}
+              </h2>
+              <small class="text-muted">receitas - despesas</small>
+            </div>
+            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+              <i class="bi bi-wallet2 text-info fs-3"></i>
+            </div>
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-graph-up me-1"></i>
+            Ticket médio: R$ {{ ticket_medio|floatformat:2 }}
+          </small>
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- CONTEÚDO -->
-  <div class="row g-3">
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div class="row g-4">
     
-    <!-- Próximos agendamentos -->
-    <div class="col-12 col-lg-7">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 fw-semibold">Próximos Agendamentos</h5>
+    <!-- Coluna Esquerda: 60% -->
+    <div class="col-12 col-lg-8">
+      
+      <!-- Gráfico de Faturamento -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-graph-up text-primary me-2"></i>
+            Faturamento (Últimos 7 Dias)
+          </h5>
+          <a href="{% url 'financeiro_dashboard' %}" class="btn btn-sm btn-outline-primary">
+            Ver Detalhes
+          </a>
+        </div>
+        <div class="card-body">
+          <canvas id="chartFaturamento" height="80"></canvas>
+        </div>
+      </div>
+
+      <!-- Próximos Agendamentos -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-clock-history text-primary me-2"></i>
+            Agenda de Hoje
+          </h5>
+          <a href="{% url 'calendario' %}" class="btn btn-sm btn-outline-primary">
+            Ver Calendário
+          </a>
         </div>
         <div class="card-body p-0">
           {% if proximos_agendamentos %}
-            <ul class="list-group list-group-flush">
+            <div class="list-group list-group-flush">
               {% for ag in proximos_agendamentos %}
-              <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <div>
-                  <strong class="d-block mb-1">{{ ag.cliente.nome }}</strong>
-                  <small class="text-muted">
-                    {{ ag.servico.nome }} · {{ ag.data_hora_inicio|date:"d/m/Y H:i" }}
-                  </small>
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                         style="width: 45px; height: 45px;">
+                      <i class="bi bi-person-fill text-primary"></i>
+                    </div>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">{{ ag.cliente.nome }}</h6>
+                      <small class="text-muted d-block">
+                        <i class="bi bi-scissors me-1"></i>{{ ag.servico.nome }}
+                        {% if ag.profissional %}
+                          · <i class="bi bi-person-badge ms-2 me-1"></i>{{ ag.profissional.nome }}
+                        {% endif %}
+                      </small>
+                      <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>{{ ag.data_hora_inicio|date:"H:i" }} 
+                        - {{ ag.data_hora_fim|date:"H:i" }}
+                      </small>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    {% if ag.status == 'pendente' %}
+                      <span class="badge bg-warning">Pendente</span>
+                    {% elif ag.status == 'confirmado' %}
+                      <span class="badge bg-success">Confirmado</span>
+                    {% else %}
+                      <span class="badge bg-primary">{{ ag.get_status_display }}</span>
+                    {% endif %}
+                    <div class="mt-2">
+                      <small class="text-success fw-semibold">R$ {{ ag.valor_cobrado|floatformat:2 }}</small>
+                    </div>
+                  </div>
                 </div>
-                <span class="badge bg-primary rounded-pill">
-                  {{ ag.get_status_display }}
-                </span>
-              </li>
+              </div>
               {% endfor %}
-            </ul>
+            </div>
           {% else %}
-            <div class="p-4 text-center text-muted">
-              <p class="mb-0">Nenhum agendamento próximo.</p>
+            <div class="p-5 text-center text-muted">
+              <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+              <p class="mb-2">Nenhum agendamento para hoje</p>
+              <a href="{% url 'criar_agendamento' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-2"></i>Criar Agendamento
+              </a>
             </div>
           {% endif %}
         </div>
       </div>
+
     </div>
 
-    <!-- Ações rápidas -->
-    <div class="col-12 col-lg-5">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 fw-semibold">Ações Rápidas</h5>
+    <!-- Coluna Direita: 40% -->
+    <div class="col-12 col-lg-4">
+      
+      <!-- Top 5 Clientes VIP -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-star-fill text-warning me-2"></i>
+            Top Clientes VIP
+          </h6>
+          <a href="{% url 'dashboard_clientes' %}" class="btn btn-sm btn-link p-0">Ver todos</a>
         </div>
-        <div class="card-body d-grid gap-3">
-          <a href="{% url 'clientes_lista' %}" class="btn btn-outline-primary">
-            <i class="bi bi-people me-2"></i>Gestão de clientes
+        <div class="card-body p-0">
+          {% if top_clientes %}
+            <div class="list-group list-group-flush">
+              {% for cliente in top_clientes %}
+              <a href="{% url 'detalhes_cliente' cliente.id %}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 35px; height: 35px;">
+                      <i class="bi bi-person-fill text-warning"></i>
+                    </div>
+                    <div>
+                      <div class="fw-semibold small">{{ cliente.nome }}</div>
+                      <small class="text-muted">{{ cliente.total_visitas }} visitas</small>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <small class="text-success fw-semibold">R$ {{ cliente.total_gasto|floatformat:2 }}</small>
+                  </div>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="p-3 text-center text-muted">
+              <small>Nenhum cliente com compras ainda</small>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Ações Rápidas -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-lightning-fill text-warning me-2"></i>
+            Ações Rápidas
+          </h6>
+        </div>
+        <div class="card-body d-grid gap-2">
+          <a href="{% url 'criar_cliente' %}" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus me-2"></i>Novo Cliente
           </a>
-          <a href="{% url 'calendario' %}" class="btn btn-outline-success">
-            <i class="bi bi-calendar-plus me-2"></i>Novo agendamento
+          <a href="{% url 'lancamento_criar' %}" class="btn btn-outline-success">
+            <i class="bi bi-cash-coin me-2"></i>Novo Lançamento
           </a>
-          <a href="/admin/" class="btn btn-outline-secondary">
-            <i class="bi bi-gear me-2"></i>Configurações do sistema
+          <a href="{% url 'dashboard_clientes' %}" class="btn btn-outline-info">
+            <i class="bi bi-graph-up me-2"></i>Dashboard Clientes
+          </a>
+          <a href="{% url 'financeiro_dashboard' %}" class="btn btn-outline-warning">
+            <i class="bi bi-wallet2 me-2"></i>Dashboard Financeiro
+          </a>
+          <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-gear me-2"></i>Configurações
           </a>
         </div>
       </div>
+
     </div>
 
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Gráfico de Faturamento
+  const ctx = document.getElementById('chartFaturamento');
+  
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ dias_labels|safe }},
+      datasets: [{
+        label: 'Faturamento (R$)',
+        data: {{ dias_valores|safe }},
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        borderColor: 'rgb(16, 185, 129)',
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: 'rgb(16, 185, 129)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleFont: {
+            size: 14
+          },
+          bodyFont: {
+            size: 13
+          },
+          callbacks: {
+            label: function(context) {
+              return 'R$ ' + context.parsed.y.toFixed(2);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'R$ ' + value.toFixed(0);
+            }
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}

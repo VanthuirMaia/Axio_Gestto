@@ -4,93 +4,401 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales-all.global.min.css">
 
 <style>
 :root {
-    --axio-primary: #1e3a8a;
-    --axio-secondary: #fbbf24;
-    --axio-success: #10b981;
-    --axio-danger: #ef4444;
-    --axio-info: #3b82f6;
-    --axio-muted: #6b7280;
+    --fc-border-color: #e5e7eb;
+    --fc-button-bg-color: #0d6efd;
+    --fc-button-border-color: #0d6efd;
+    --fc-button-hover-bg-color: #0b5ed7;
+    --fc-button-active-bg-color: #0a58ca;
+    --fc-today-bg-color: #e7f3ff;
 }
 
-/* Estilo geral */
-.fc {
-    font-family: "Inter", sans-serif;
-    font-size: 0.9rem;
+/* Container principal */
+#calendar {
+    max-width: 100%;
+    margin: 0 auto;
 }
-.fc-toolbar-title {
+
+/* Cabeçalho do calendário */
+.fc .fc-toolbar {
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-transform: capitalize;
+}
+
+.fc .fc-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    text-transform: none;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: all 0.2s;
+}
+
+.fc .fc-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.fc .fc-button:active {
+    transform: translateY(0);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: var(--fc-button-active-bg-color);
+}
+
+/* Cabeçalhos dos dias da semana */
+.fc .fc-col-header-cell {
+    padding: 1rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    color: #6b7280;
+    background-color: #f9fafb;
+    border-color: var(--fc-border-color);
+}
+
+/* Células dos dias */
+.fc .fc-daygrid-day {
+    transition: background-color 0.2s;
+}
+
+.fc .fc-daygrid-day:hover {
+    background-color: #f9fafb;
+    cursor: pointer;
+}
+
+.fc .fc-daygrid-day-top {
+    padding: 0.5rem;
+}
+
+.fc .fc-daygrid-day-number {
+    padding: 0.25rem 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Dia de hoje */
+.fc .fc-day-today {
+    background-color: var(--fc-today-bg-color) !important;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 600;
 }
 
-/* Cursor pointer */
-.fc-event, .fc-daygrid-event {
+/* Eventos */
+.fc-event {
+    border: none !important;
+    border-radius: 0.375rem !important;
+    padding: 0.25rem 0.5rem !important;
+    margin-bottom: 2px !important;
     cursor: pointer !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
 }
 
-/* Status por classe */
-.fc-event-pendente       { background: var(--axio-secondary) !important; color:#000 !important; }
-.fc-event-confirmado     { background: var(--axio-success) !important; color:#fff !important; }
-.fc-event-cancelado      { background: var(--axio-danger) !important; color:#fff !important; }
-.fc-event-concluido      { background: var(--axio-info) !important; color:#fff !important; }
-.fc-event-nao_compareceu { background: var(--axio-muted) !important; color:#fff !important; }
+.fc-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
 
+.fc-event-title {
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+}
+
+.fc-event-time {
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    opacity: 0.9;
+}
+
+/* Cores por status */
+.fc-event-pendente {
+    background-color: #fbbf24 !important;
+    color: #78350f !important;
+}
+
+.fc-event-confirmado {
+    background-color: #10b981 !important;
+    color: white !important;
+}
+
+.fc-event-cancelado {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+.fc-event-concluido {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.fc-event-nao_compareceu {
+    background-color: #6b7280 !important;
+    color: white !important;
+}
+
+/* Vista de semana/dia */
+.fc .fc-timegrid-slot {
+    height: 3rem;
+}
+
+.fc .fc-timegrid-slot-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .fc .fc-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .fc .fc-toolbar-title {
+        font-size: 1.25rem;
+        text-align: center;
+    }
+    
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+        margin: 0.5rem 0;
+    }
+    
+    .fc .fc-button {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Melhorias no modal */
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    gap: 0.5rem;
+}
+
+.info-row {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 120px;
+}
+
+.info-value {
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* Badge de status customizado */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-pendente {
+    background-color: #fef3c7;
+    color: #78350f;
+}
+
+.status-confirmado {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-cancelado {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-concluido {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-nao_compareceu {
+    background-color: #e5e7eb;
+    color: #374151;
+}
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="container-fluid py-4 px-4">
 
-<div class="container-fluid py-3">
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Calendário</h3>
-        <a href="{% url 'criar_agendamento' %}" class="btn btn-primary">+ Novo</a>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div id="calendar"></div>
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1">Calendário de Agendamentos</h2>
+                    <p class="text-muted mb-0">Gerencie todos os seus agendamentos</p>
+                </div>
+                <div>
+                    <a href="{% url 'criar_agendamento' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Novo Agendamento
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Legenda de status -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
+                        <small class="text-muted fw-semibold">Legenda:</small>
+                        <span class="status-badge status-pendente">
+                            <i class="bi bi-clock me-1"></i>Pendente
+                        </span>
+                        <span class="status-badge status-confirmado">
+                            <i class="bi bi-check-circle me-1"></i>Confirmado
+                        </span>
+                        <span class="status-badge status-concluido">
+                            <i class="bi bi-check-all me-1"></i>Concluído
+                        </span>
+                        <span class="status-badge status-cancelado">
+                            <i class="bi bi-x-circle me-1"></i>Cancelado
+                        </span>
+                        <span class="status-badge status-nao_compareceu">
+                            <i class="bi bi-person-x me-1"></i>Não Compareceu
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendário -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-3">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-
-<!-- MODAL -->
+<!-- Modal de Detalhes -->
 <div class="modal fade" id="eventModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-3">
-
-      <h5 id="modal-title" class="fw-bold mb-2"></h5>
-
-      <p class="mb-1"><strong>Serviço:</strong> <span id="modal-servico"></span></p>
-      <p class="mb-1"><strong>Profissional:</strong> <span id="modal-profissional"></span></p>
-      <p class="mb-1"><strong>Início:</strong> <span id="modal-inicio"></span></p>
-      <p class="mb-1"><strong>Fim:</strong> <span id="modal-fim"></span></p>
-      <p class="mb-1"><strong>Status:</strong> <span id="modal-status" class="badge bg-info"></span></p>
-      <p class="mb-3"><strong>Valor:</strong> R$ <span id="modal-valor"></span></p>
-
-      <div class="text-end mt-3">
-          <a id="editBtn" href="#" class="btn btn-primary">Editar</a>
-          <button id="deleteBtn" class="btn btn-danger">Excluir</button>
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-scissors me-2"></i>Serviço
+                    </span>
+                    <span class="info-value" id="modal-servico"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-person-badge me-2"></i>Profissional
+                    </span>
+                    <span class="info-value" id="modal-profissional"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-clock me-2"></i>Início
+                    </span>
+                    <span class="info-value" id="modal-inicio"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-clock-history me-2"></i>Fim
+                    </span>
+                    <span class="info-value" id="modal-fim"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-flag me-2"></i>Status
+                    </span>
+                    <span id="modal-status"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">
+                        <i class="bi bi-currency-dollar me-2"></i>Valor
+                    </span>
+                    <span class="info-value">R$ <span id="modal-valor"></span></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="editBtn" href="#" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Editar
+                </a>
+                <button id="deleteBtn" class="btn btn-danger">
+                    <i class="bi bi-trash me-2"></i>Excluir
+                </button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales-all.global.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales/pt-br.global.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     const calendarEl = document.getElementById("calendar");
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -98,6 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
         timeZone: "local",
         initialView: "dayGridMonth",
         height: "auto",
+        aspectRatio: 1.8,
 
         headerToolbar: {
             left: "prev,next today",
@@ -113,9 +422,8 @@ document.addEventListener("DOMContentLoaded", function () {
         },
 
         events(info, successCallback, failureCallback) {
-
             const center = new Date(info.start);
-            center.setDate(center.getDate() + 7);
+            center.setDate(center.getDate() + 15);
 
             const month = center.getMonth() + 1;
             const year = center.getFullYear();
@@ -123,7 +431,6 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/agendamentos/api/?mes=${month}&ano=${year}`)
                 .then(r => r.json())
                 .then(lista => {
-
                     const eventos = lista.map(ev => ({
                         id: ev.id,
                         title: ev.title,
@@ -132,30 +439,50 @@ document.addEventListener("DOMContentLoaded", function () {
                         classNames: ["fc-event-" + ev.status],
                         extendedProps: ev
                     }));
-
                     successCallback(eventos);
                 })
-                .catch(err => failureCallback(err));
+                .catch(err => {
+                    console.error('Erro ao carregar eventos:', err);
+                    failureCallback(err);
+                });
         },
 
         eventClick(info) {
-
             const ag = info.event.extendedProps;
+            
+            // Mapear status para classes
+            const statusMap = {
+                'pendente': 'status-pendente',
+                'confirmado': 'status-confirmado',
+                'concluido': 'status-concluido',
+                'cancelado': 'status-cancelado',
+                'nao_compareceu': 'status-nao_compareceu'
+            };
+            
+            const statusNomes = {
+                'pendente': 'Pendente',
+                'confirmado': 'Confirmado',
+                'concluido': 'Concluído',
+                'cancelado': 'Cancelado',
+                'nao_compareceu': 'Não Compareceu'
+            };
 
-            document.getElementById("modal-title").innerText = ag.title;
+            document.getElementById("modal-title").innerText = ag.cliente;
             document.getElementById("modal-servico").innerText = ag.servico;
-            document.getElementById("modal-profissional").innerText = ag.profissional || "—";
+            document.getElementById("modal-profissional").innerText = ag.profissional || "Não definido";
             document.getElementById("modal-inicio").innerText = new Date(info.event.start).toLocaleString("pt-BR");
             document.getElementById("modal-fim").innerText = new Date(info.event.end).toLocaleString("pt-BR");
-            document.getElementById("modal-status").innerText = ag.status;
+            
+            const statusBadge = `<span class="status-badge ${statusMap[ag.status] || ''}">${statusNomes[ag.status] || ag.status}</span>`;
+            document.getElementById("modal-status").innerHTML = statusBadge;
+            
             document.getElementById("modal-valor").innerText = ag.valor.toFixed(2);
 
-            // EDITAR
+            // Botão editar
             document.getElementById("editBtn").href = `/agendamentos/editar/${ag.id}/`;
 
-            // EXCLUIR
+            // Botão excluir
             document.getElementById("deleteBtn").onclick = function () {
-
                 if (!confirm("Tem certeza que deseja excluir este agendamento?")) return;
 
                 fetch(`/agendamentos/deletar/${ag.id}/`, {
@@ -167,8 +494,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(() => {
                     info.event.remove();
                     bootstrap.Modal.getInstance(document.getElementById("eventModal")).hide();
+                    
+                    // Toast de sucesso
+                    const toast = document.createElement('div');
+                    toast.className = 'alert alert-success position-fixed top-0 end-0 m-3';
+                    toast.innerHTML = '<i class="bi bi-check-circle me-2"></i>Agendamento excluído com sucesso!';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
                 })
-                .catch(err => alert("Erro ao excluir: " + err));
+                .catch(err => {
+                    alert("Erro ao excluir: " + err);
+                });
             };
 
             new bootstrap.Modal(document.getElementById("eventModal")).show();
@@ -178,5 +514,4 @@ document.addEventListener("DOMContentLoaded", function () {
     calendar.render();
 });
 </script>
-
 {% endblock %}
