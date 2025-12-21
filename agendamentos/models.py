@@ -63,3 +63,56 @@ class DisponibilidadeProfissional(models.Model):
     def __str__(self):
         return f"{self.profissional} - {self.get_dia_semana_display()} {self.hora_inicio}-{self.hora_fim}"
 
+
+class LogMensagemBot(models.Model):
+    """
+    Registra todas as interações do bot WhatsApp
+    Usado para auditoria e debugging
+    """
+    TIPO_ACAO = [
+        ('agendar', 'Agendar'),
+        ('cancelar', 'Cancelar'),
+        ('reagendar', 'Reagendar'),
+        ('consultar', 'Consultar'),
+        ('confirmar', 'Confirmar'),
+        ('outro', 'Outro'),
+    ]
+
+    STATUS_PROCESSAMENTO = [
+        ('sucesso', 'Sucesso'),
+        ('erro', 'Erro'),
+        ('parcial', 'Parcial'),
+    ]
+
+    empresa = models.ForeignKey('empresas.Empresa', on_delete=models.CASCADE, related_name='logs_bot')
+    telefone = models.CharField(max_length=20, help_text='Telefone do cliente que enviou')
+    mensagem_original = models.TextField(help_text='Mensagem original do WhatsApp')
+    intencao_detectada = models.CharField(max_length=20, choices=TIPO_ACAO)
+    dados_extraidos = models.JSONField(help_text='Dados extraídos pela IA', default=dict)
+
+    agendamento = models.ForeignKey(
+        Agendamento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Agendamento criado/modificado'
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_PROCESSAMENTO)
+    resposta_enviada = models.TextField(help_text='Resposta enviada ao cliente')
+    erro_detalhes = models.TextField(blank=True, help_text='Detalhes do erro se houver')
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Log de Mensagem do Bot'
+        verbose_name_plural = 'Logs de Mensagens do Bot'
+        ordering = ['-criado_em']
+        indexes = [
+            models.Index(fields=['telefone', '-criado_em']),
+            models.Index(fields=['empresa', 'intencao_detectada']),
+        ]
+
+    def __str__(self):
+        return f"{self.telefone} - {self.intencao_detectada} ({self.criado_em.strftime('%d/%m/%Y %H:%M')})"
+

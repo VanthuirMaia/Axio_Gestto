@@ -1,6 +1,10 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core import mail
 from empresas.models import Empresa, Servico, Profissional
 from clientes.models import Cliente
 from agendamentos.models import Agendamento
@@ -357,3 +361,205 @@ class DashboardViewTest(TestCase):
 
         # A saudação deve ser uma das três opções
         self.assertIn(response.context['saudacao'], ['Bom dia', 'Boa tarde', 'Boa noite'])
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class PasswordResetTest(TestCase):
+    """Testes para o fluxo de recuperação de senha"""
+
+    def setUp(self):
+        """Configuração inicial dos testes"""
+        self.client = Client()
+        self.empresa = Empresa.objects.create(
+            nome='Empresa Teste',
+            slug='empresa-teste',
+            telefone='11999999999',
+            email='empresa@teste.com',
+            endereco='Rua Teste, 123',
+            cidade='São Paulo',
+            estado='SP',
+            cep='01234-567',
+            cnpj='12.345.678/0001-90'
+        )
+
+        self.usuario = Usuario.objects.create_user(
+            username='teste',
+            email='teste@teste.com',
+            password='senha123',
+            empresa=self.empresa
+        )
+
+    def test_password_reset_request_view_get(self):
+        """Testa acesso à página de solicitação de reset via GET"""
+        response = self.client.get(reverse('password_reset_request'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'password_reset_request.html')
+
+    def test_password_reset_request_email_existente(self):
+        """Testa solicitação de reset com email existente"""
+        response = self.client.post(reverse('password_reset_request'), {
+            'email': 'teste@teste.com'
+        })
+
+        # Verifica redirecionamento
+        self.assertRedirects(response, reverse('password_reset_sent'))
+
+        # Verifica que email foi enviado
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Recuperação de Senha', mail.outbox[0].subject)
+        self.assertIn('teste@teste.com', mail.outbox[0].to)
+
+    def test_password_reset_request_email_inexistente(self):
+        """Testa solicitação de reset com email inexistente (não revela)"""
+        response = self.client.post(reverse('password_reset_request'), {
+            'email': 'naoexiste@teste.com'
+        })
+
+        # Verifica redirecionamento (mesmo comportamento)
+        self.assertRedirects(response, reverse('password_reset_sent'))
+
+        # Verifica que NENHUM email foi enviado
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_password_reset_email_enviado(self):
+        """Testa que o email contém token e uid corretos"""
+        self.client.post(reverse('password_reset_request'), {
+            'email': 'teste@teste.com'
+        })
+
+        # Verifica que email foi enviado
+        self.assertEqual(len(mail.outbox), 1)
+        email_body = mail.outbox[0].body
+
+        # Verifica que contém elementos essenciais
+        self.assertIn('password-reset/confirm/', email_body)
+        self.assertIn('1 hora', email_body)
+        self.assertIn(self.usuario.username, email_body)
+
+    def test_password_reset_confirm_token_valido(self):
+        """Testa que token válido permite acesso ao formulário"""
+        # Gerar token válido
+        token = default_token_generator.make_token(self.usuario)
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+
+        # Acessar página de confirmação
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'password_reset_confirm.html')
+        self.assertTrue(response.context['validlink'])
+
+    def test_password_reset_confirm_token_invalido(self):
+        """Testa que token inválido mostra erro"""
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        token_invalido = 'token-completamente-invalido'
+
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token_invalido})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['validlink'])
+
+    def test_password_reset_confirm_senhas_diferentes(self):
+        """Testa validação quando senhas não coincidem"""
+        token = default_token_generator.make_token(self.usuario)
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+
+        response = self.client.post(url, {
+            'nova_senha': 'novaSenha123!',
+            'confirmar_senha': 'senhasDiferentes123!'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'As senhas não coincidem')
+
+    def test_password_reset_confirm_senha_fraca(self):
+        """Testa que validadores Django funcionam (senha muito curta)"""
+        token = default_token_generator.make_token(self.usuario)
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+
+        response = self.client.post(url, {
+            'nova_senha': '123',  # Senha muito curta
+            'confirmar_senha': '123'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        # Verifica que alguma mensagem de erro de validação foi exibida
+        self.assertTrue(len(response.context['messages']) > 0)
+
+    def test_password_reset_confirm_senha_numerica(self):
+        """Testa que senha totalmente numérica é rejeitada"""
+        token = default_token_generator.make_token(self.usuario)
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+
+        response = self.client.post(url, {
+            'nova_senha': '12345678',  # Senha totalmente numérica
+            'confirmar_senha': '12345678'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        # Verifica que mensagem de erro foi exibida
+        self.assertTrue(len(response.context['messages']) > 0)
+
+    def test_password_reset_usuario_inativo(self):
+        """Testa que usuário inativo não recebe email"""
+        self.usuario.ativo = False
+        self.usuario.save()
+
+        response = self.client.post(reverse('password_reset_request'), {
+            'email': 'teste@teste.com'
+        })
+
+        # Verifica redirecionamento (comportamento normal)
+        self.assertRedirects(response, reverse('password_reset_sent'))
+
+        # Verifica que NENHUM email foi enviado (usuário inativo)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_login_apos_reset(self):
+        """Testa que login funciona após reset de senha bem-sucedido"""
+        # Gerar token válido
+        token = default_token_generator.make_token(self.usuario)
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+
+        # Redefinir senha
+        response = self.client.post(url, {
+            'nova_senha': 'novaSenhaSegura123!',
+            'confirmar_senha': 'novaSenhaSegura123!'
+        })
+
+        self.assertRedirects(response, reverse('password_reset_complete'))
+
+        # Tentar login com nova senha
+        login_successful = self.client.login(
+            username='teste',
+            password='novaSenhaSegura123!'
+        )
+
+        self.assertTrue(login_successful)
+
+        # Verificar que senha antiga não funciona mais
+        self.client.logout()
+        login_old_password = self.client.login(
+            username='teste',
+            password='senha123'
+        )
+
+        self.assertFalse(login_old_password)
+
+    def test_password_reset_sent_view(self):
+        """Testa visualização da página de confirmação de envio"""
+        response = self.client.get(reverse('password_reset_sent'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'password_reset_sent.html')
+
+    def test_password_reset_complete_view(self):
+        """Testa visualização da página de conclusão"""
+        response = self.client.get(reverse('password_reset_complete'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'password_reset_complete.html')

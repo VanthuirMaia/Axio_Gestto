@@ -1,10 +1,18 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, password_validation
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.tokens import default_token_generator
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.contrib.sites.shortcuts import get_current_site
 from django.utils.timezone import now
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 from django.db.models import Count, Avg, Q, Max, Sum
+from django.core.mail import send_mail
+from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
+from django.conf import settings
 from datetime import timedelta
 from django.utils.timezone import now, localtime
 from .models import Usuario
@@ -237,13 +245,13 @@ def dashboard_view(request):
         'saudacao': saudacao,
         'hoje': hoje,
         'agora': agora,
-        
+
         # Agendamentos
         'agendamentos_hoje': agendamentos_hoje,
         'agendamentos_semana': agendamentos_semana,
         'agendamentos_pendentes': agendamentos_pendentes,
         'proximos_agendamentos': proximos_agendamentos,
-        
+
         # Clientes
         'total_clientes': total_clientes,
         'clientes_ativos': clientes_ativos,
@@ -252,17 +260,119 @@ def dashboard_view(request):
         'ticket_medio': ticket_medio,
         'top_clientes': top_clientes,
         'clientes_risco': clientes_risco,
-        
+
         # Financeiro
         'faturamento_mes': faturamento_mes,
         'receitas_pendentes': receitas_pendentes,
         'despesas_mes': despesas_mes,
         'saldo_mes': saldo_mes,
         'contas_vencidas': contas_vencidas,
-        
+
         # Gráfico
         'dias_labels': dias_labels,
         'dias_valores': dias_valores,
     }
-    
+
     return render(request, 'dashboard.html', context)
+
+
+# ============================================
+# PASSWORD RESET VIEWS
+# ============================================
+
+@require_http_methods(["GET", "POST"])
+def password_reset_request(request):
+    """Formulário para solicitar recuperação de senha"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            usuario = Usuario.objects.get(email=email, ativo=True)
+
+            # Gerar token
+            token = default_token_generator.make_token(usuario)
+            uid = urlsafe_base64_encode(force_bytes(usuario.pk))
+
+            # Preparar email
+            current_site = get_current_site(request)
+            context = {
+                'usuario': usuario,
+                'domain': current_site.domain,
+                'uid': uid,
+                'token': token,
+                'protocol': 'https' if request.is_secure() else 'http',
+            }
+
+            # Enviar email (HTML + texto)
+            subject = 'Recuperação de Senha - Axio Gestto'
+            html_message = render_to_string('emails/password_reset_email.html', context)
+            plain_message = render_to_string('emails/password_reset_email.txt', context)
+
+            send_mail(
+                subject,
+                plain_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [usuario.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+
+            messages.success(request, 'Instruções de recuperação foram enviadas para seu email.')
+            return redirect('password_reset_sent')
+
+        except Usuario.DoesNotExist:
+            # Não revelar se email existe ou não (segurança)
+            messages.success(request, 'Se o email existir, você receberá instruções de recuperação.')
+            return redirect('password_reset_sent')
+
+    return render(request, 'password_reset_request.html')
+
+
+@require_http_methods(["GET"])
+def password_reset_sent(request):
+    """Página confirmando que email foi enviado"""
+    return render(request, 'password_reset_sent.html')
+
+
+@require_http_methods(["GET", "POST"])
+def password_reset_confirm(request, uidb64, token):
+    """Formulário para definir nova senha (via link do email)"""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        usuario = Usuario.objects.get(pk=uid, ativo=True)
+    except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
+        usuario = None
+
+    if usuario is not None and default_token_generator.check_token(usuario, token):
+        if request.method == 'POST':
+            nova_senha = request.POST.get('nova_senha')
+            confirmar_senha = request.POST.get('confirmar_senha')
+
+            if nova_senha != confirmar_senha:
+                messages.error(request, 'As senhas não coincidem.')
+                return render(request, 'password_reset_confirm.html', {'validlink': True})
+
+            # Validar senha usando validators do Django
+            try:
+                password_validation.validate_password(nova_senha, usuario)
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, error)
+                return render(request, 'password_reset_confirm.html', {'validlink': True})
+
+            # Definir nova senha
+            usuario.set_password(nova_senha)
+            usuario.save()
+
+            messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login.')
+            return redirect('password_reset_complete')
+
+        return render(request, 'password_reset_confirm.html', {'validlink': True})
+    else:
+        # Token inválido ou expirado
+        return render(request, 'password_reset_confirm.html', {'validlink': False})
+
+
+@require_http_methods(["GET"])
+def password_reset_complete(request):
+    """Página final confirmando sucesso"""
+    return render(request, 'password_reset_complete.html')
