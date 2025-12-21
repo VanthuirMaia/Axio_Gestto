@@ -62,8 +62,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+        'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
+        'USER': config('DB_USER', default=''),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default=''),
+        'PORT': config('DB_PORT', default=''),
     }
 }
 
@@ -119,6 +123,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # 100 requests por hora para anônimos
+        'user': '1000/hour',  # 1000 requests por hora para autenticados
+        'bot_api': '500/hour',  # 500 requests por hora para API do bot
+    }
 }
 
 if not DEBUG:
@@ -162,3 +175,29 @@ APSCHEDULER_RUN_NOW_TIMEOUT = 25
 # ============================================
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 SILENCED_SYSTEM_CHECKS = ['security.W019']
+
+# ============================================
+# CELERY CONFIGURATION
+# ============================================
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Celery Beat Schedule (tarefas agendadas)
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # Gerar agendamentos recorrentes diariamente à meia-noite
+    'gerar-agendamentos-recorrentes': {
+        'task': 'agendamentos.tasks.gerar_agendamentos_recorrentes',
+        'schedule': crontab(hour=0, minute=0),  # Diariamente às 00:00
+    },
+    # Limpar recorrências expiradas semanalmente (opcional)
+    'limpar-recorrencias-expiradas': {
+        'task': 'agendamentos.tasks.limpar_recorrencias_expiradas',
+        'schedule': crontab(hour=2, minute=0, day_of_week=0),  # Segundas às 02:00
+    },
+}

@@ -7,9 +7,13 @@ from core.views import (
     password_reset_request, password_reset_sent,
     password_reset_confirm, password_reset_complete
 )
+from core.health import health_check
 from agendamentos.bot_api import processar_comando_bot
 
 urlpatterns = [
+    # Health Check (sem autenticação para Docker)
+    path('health/', health_check, name='health_check'),
+
     path('admin/', admin.site.urls),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),

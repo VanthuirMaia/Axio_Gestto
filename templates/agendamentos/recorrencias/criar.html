@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Recorrência - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="bi bi-arrow-repeat me-2"></i>Novo Agendamento Recorrente
+                    </h2>
+                    <p class="text-muted mb-0">Crie agendamentos que se repetem automaticamente</p>
+                </div>
+                <a href="{% url 'agendamentos:listar_recorrencias' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Formulário -->
+    <div class="row">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="POST" id="formRecorrencia">
+                        {% csrf_token %}
+
+                        <!-- Cliente -->
+                        <div class="mb-3">
+                            <label for="cliente_id" class="form-label fw-semibold">
+                                <i class="bi bi-person me-1"></i>Cliente *
+                            </label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">Selecione o cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}" {% if form_values.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ cliente.nome }} - {{ cliente.telefone }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Serviço -->
+                        <div class="mb-3">
+                            <label for="servico_id" class="form-label fw-semibold">
+                                <i class="bi bi-scissors me-1"></i>Serviço *
+                            </label>
+                            <select class="form-select" id="servico_id" name="servico_id" required>
+                                <option value="">Selecione o serviço</option>
+                                {% for servico in servicos %}
+                                <option value="{{ servico.id }}" {% if form_values.servico_id == servico.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ servico.nome }} - R$ {{ servico.preco }} ({{ servico.duracao_minutos }}min)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Profissional -->
+                        <div class="mb-3">
+                            <label for="profissional_id" class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-1"></i>Profissional
+                            </label>
+                            <select class="form-select" id="profissional_id" name="profissional_id">
+                                <option value="">Qualquer profissional</option>
+                                {% for prof in profissionais %}
+                                <option value="{{ prof.id }}" {% if form_values.profissional_id == prof.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ prof.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Frequência -->
+                        <div class="mb-3">
+                            <label for="frequencia" class="form-label fw-semibold">
+                                <i class="bi bi-arrow-repeat me-1"></i>Frequência *
+                            </label>
+                            <select class="form-select" id="frequencia" name="frequencia" required>
+                                <option value="">Selecione a frequência</option>
+                                <option value="diaria" {% if form_values.frequencia == "diaria" %}selected{% endif %}>Diária</option>
+                                <option value="semanal" {% if form_values.frequencia == "semanal" %}selected{% endif %}>Semanal</option>
+                                <option value="mensal" {% if form_values.frequencia == "mensal" %}selected{% endif %}>Mensal</option>
+                            </select>
+                        </div>
+
+                        <!-- Dias da Semana (apenas para frequência semanal) -->
+                        <div class="mb-3" id="diasSemanaContainer" style="display: none;">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar-week me-1"></i>Dias da Semana *
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="0" id="seg">
+                                    <label class="form-check-label" for="seg">Segunda</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="1" id="ter">
+                                    <label class="form-check-label" for="ter">Terça</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="2" id="qua">
+                                    <label class="form-check-label" for="qua">Quarta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="3" id="qui">
+                                    <label class="form-check-label" for="qui">Quinta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="4" id="sex">
+                                    <label class="form-check-label" for="sex">Sexta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="5" id="sab">
+                                    <label class="form-check-label" for="sab">Sábado</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dias_semana" value="6" id="dom">
+                                    <label class="form-check-label" for="dom">Domingo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dia do Mês (apenas para frequência mensal) -->
+                        <div class="mb-3" id="diaMesContainer" style="display: none;">
+                            <label for="dia_mes" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-date me-1"></i>Dia do Mês *
+                            </label>
+                            <input type="number" class="form-control" id="dia_mes" name="dia_mes" min="1" max="31" placeholder="Ex: 15" value="{{ form_values.dia_mes }}">
+                            <small class="form-text text-muted">Número entre 1 e 31</small>
+                        </div>
+
+                        <!-- Horário -->
+                        <div class="mb-3">
+                            <label for="hora_inicio" class="form-label fw-semibold">
+                                <i class="bi bi-clock me-1"></i>Horário *
+                            </label>
+                            <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required value="{{ form_values.hora_inicio }}">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Data Início -->
+                        <div class="mb-3">
+                            <label for="data_inicio" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-1"></i>Válido a partir de *
+                            </label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required value="{{ form_values.data_inicio }}">
+                            <small class="form-text text-muted">A partir de quando gerar os agendamentos</small>
+                        </div>
+
+                        <!-- Data Fim -->
+                        <div class="mb-3">
+                            <label for="data_fim" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-x me-1"></i>Válido até (opcional)
+                            </label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ form_values.data_fim }}">
+                            <small class="form-text text-muted">Deixe vazio para recorrência infinita</small>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{% url 'agendamentos:listar_recorrencias' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Criar Recorrência
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ajuda -->
+            <div class="alert alert-light border mt-3">
+                <h6 class="fw-semibold mb-2"><i class="bi bi-lightbulb me-2"></i>Exemplos:</h6>
+                <ul class="mb-0 small">
+                    <li><strong>Diária:</strong> Cliente com fisioterapia todos os dias às 10h</li>
+                    <li><strong>Semanal:</strong> Personal trainer toda segunda, quarta e sexta às 7h</li>
+                    <li><strong>Mensal:</strong> Consulta de retorno todo dia 15 às 14h</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const frequenciaSelect = document.getElementById('frequencia');
+    const diasSemanaContainer = document.getElementById('diasSemanaContainer');
+    const diaMesContainer = document.getElementById('diaMesContainer');
+
+    // Função para mostrar/ocultar campos baseado na frequência
+    function atualizarCampos() {
+        const frequencia = frequenciaSelect.value;
+
+        // Resetar visibilidade
+        diasSemanaContainer.style.display = 'none';
+        diaMesContainer.style.display = 'none';
+
+        // Mostrar campos relevantes
+        if (frequencia === 'semanal') {
+            diasSemanaContainer.style.display = 'block';
+        } else if (frequencia === 'mensal') {
+            diaMesContainer.style.display = 'block';
+        }
+    }
+
+    // Event listener
+    frequenciaSelect.addEventListener('change', atualizarCampos);
+
+    // Executar ao carregar (caso tenha valor pré-selecionado)
+    atualizarCampos();
+});
+</script>
+{% endblock %}

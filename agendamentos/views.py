@@ -212,9 +212,180 @@ def editar_agendamento(request, id):
 def deletar_agendamento(request, id):
     empresa = request.user.empresa
     agendamento = get_object_or_404(Agendamento, id=id, empresa=empresa)
-    
+
     if request.method == 'POST':
         agendamento.delete()
         messages.success(request, 'Agendamento deletado!')
-    
+
     return redirect('calendario')
+
+
+# ============================================
+# VIEWS DE AGENDAMENTOS RECORRENTES
+# ============================================
+
+@login_required
+def listar_recorrencias(request):
+    """Lista todas as recorrências da empresa"""
+    from .models import AgendamentoRecorrente
+
+    empresa = request.user.empresa
+    if not empresa:
+        return redirect('logout')
+
+    recorrencias = AgendamentoRecorrente.objects.filter(
+        empresa=empresa
+    ).select_related('cliente', 'servico', 'profissional').order_by('-criado_em')
+
+    context = {
+        'empresa': empresa,
+        'recorrencias': recorrencias,
+    }
+    return render(request, 'agendamentos/recorrencias/listar.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def criar_recorrencia(request):
+    """Cria nova recorrência"""
+    from .models import AgendamentoRecorrente
+    import json
+
+    empresa = request.user.empresa
+    if not empresa:
+        return redirect('logout')
+
+    clientes = empresa.clientes.filter(ativo=True)
+    servicos = empresa.servicos.filter(ativo=True)
+    profissionais = empresa.profissionais.filter(ativo=True)
+
+    if request.method == 'POST':
+        try:
+            cliente_id = request.POST.get('cliente_id')
+            servico_id = request.POST.get('servico_id')
+            profissional_id = request.POST.get('profissional_id')
+            frequencia = request.POST.get('frequencia')
+            hora_inicio = request.POST.get('hora_inicio')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim') or None
+
+            # Validações
+            cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
+            servico = Servico.objects.get(id=servico_id, empresa=empresa)
+            profissional = Profissional.objects.get(id=profissional_id, empresa=empresa) if profissional_id else None
+
+            # Processar dias da semana (para frequência semanal)
+            dias_semana = []
+            if frequencia == 'semanal':
+                dias_semana = request.POST.getlist('dias_semana')
+                dias_semana = [int(d) for d in dias_semana if d.isdigit()]
+
+                if not dias_semana:
+                    messages.error(request, 'Para recorrência semanal, selecione pelo menos um dia da semana.')
+                    return render(request, 'agendamentos/recorrencias/criar.html', {
+                        'empresa': empresa,
+                        'clientes': clientes,
+                        'servicos': servicos,
+                        'profissionais': profissionais,
+                        'form_values': request.POST
+                    })
+
+            # Processar dia do mês (para frequência mensal)
+            dia_mes = None
+            if frequencia == 'mensal':
+                dia_mes = request.POST.get('dia_mes')
+                if dia_mes:
+                    dia_mes = int(dia_mes)
+                    if not 1 <= dia_mes <= 31:
+                        messages.error(request, 'Dia do mês deve estar entre 1 e 31.')
+                        return render(request, 'agendamentos/recorrencias/criar.html', {
+                            'empresa': empresa,
+                            'clientes': clientes,
+                            'servicos': servicos,
+                            'profissionais': profissionais,
+                            'form_values': request.POST
+                        })
+                else:
+                    messages.error(request, 'Para recorrência mensal, informe o dia do mês.')
+                    return render(request, 'agendamentos/recorrencias/criar.html', {
+                        'empresa': empresa,
+                        'clientes': clientes,
+                        'servicos': servicos,
+                        'profissionais': profissionais,
+                        'form_values': request.POST
+                    })
+
+            # Criar recorrência
+            recorrencia = AgendamentoRecorrente.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                servico=servico,
+                profissional=profissional,
+                frequencia=frequencia,
+                dias_semana=dias_semana,
+                dia_mes=dia_mes,
+                hora_inicio=hora_inicio,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+                criado_por=request.user,
+                ativo=True
+            )
+
+            messages.success(
+                request,
+                f'Recorrência criada com sucesso! {recorrencia.get_descricao_frequencia()}'
+            )
+            return redirect('agendamentos:listar_recorrencias')
+
+        except Exception as e:
+            messages.error(request, f'Erro ao criar recorrência: {e}')
+            return render(request, 'agendamentos/recorrencias/criar.html', {
+                'empresa': empresa,
+                'clientes': clientes,
+                'servicos': servicos,
+                'profissionais': profissionais,
+                'form_values': request.POST
+            })
+
+    # GET
+    context = {
+        'empresa': empresa,
+        'clientes': clientes,
+        'servicos': servicos,
+        'profissionais': profissionais,
+        'form_values': {}
+    }
+    return render(request, 'agendamentos/recorrencias/criar.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def deletar_recorrencia(request, id):
+    """Deleta uma recorrência"""
+    from .models import AgendamentoRecorrente
+
+    empresa = request.user.empresa
+    recorrencia = get_object_or_404(AgendamentoRecorrente, id=id, empresa=empresa)
+
+    recorrencia.delete()
+    messages.success(request, 'Recorrência removida com sucesso!')
+
+    return redirect('agendamentos:listar_recorrencias')
+
+
+@login_required
+@require_http_methods(["POST"])
+def ativar_desativar_recorrencia(request, id):
+    """Ativa ou desativa uma recorrência"""
+    from .models import AgendamentoRecorrente
+
+    empresa = request.user.empresa
+    recorrencia = get_object_or_404(AgendamentoRecorrente, id=id, empresa=empresa)
+
+    recorrencia.ativo = not recorrencia.ativo
+    recorrencia.save()
+
+    status = 'ativada' if recorrencia.ativo else 'desativada'
+    messages.success(request, f'Recorrência {status} com sucesso!')
+
+    return redirect('agendamentos:listar_recorrencias')

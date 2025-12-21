@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Agendamentos Recorrentes - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="bi bi-arrow-repeat me-2"></i>Agendamentos Recorrentes
+                    </h2>
+                    <p class="text-muted mb-0">Gerencie agendamentos que se repetem automaticamente</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'agendamentos:calendario' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-calendar me-2"></i>Voltar ao Calendário
+                    </a>
+                    <a href="{% url 'agendamentos:criar_recorrencia' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Nova Recorrência
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="bi bi-{{ message.tags == 'success' and 'check-circle' or 'exclamation-triangle' }} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Lista de Recorrências -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if recorrencias %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Serviço</th>
+                                    <th>Profissional</th>
+                                    <th>Recorrência</th>
+                                    <th>Período</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rec in recorrencias %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle fs-4 text-primary me-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">{{ rec.cliente.nome }}</div>
+                                                <small class="text-muted">{{ rec.cliente.telefone }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold">{{ rec.servico.nome }}</div>
+                                            <small class="text-muted">R$ {{ rec.servico.preco }} • {{ rec.servico.duracao_minutos }}min</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rec.profissional %}
+                                            <i class="bi bi-person-badge me-1"></i>{{ rec.profissional.nome }}
+                                        {% else %}
+                                            <span class="text-muted">Não definido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="badge bg-info text-dark">
+                                                <i class="bi bi-arrow-repeat me-1"></i>{{ rec.get_frequencia_display }}
+                                            </span>
+                                            <div class="small mt-1">
+                                                {{ rec.get_descricao_frequencia }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div><i class="bi bi-calendar-event me-1"></i>{{ rec.data_inicio|date:"d/m/Y" }}</div>
+                                            {% if rec.data_fim %}
+                                            <div class="text-muted"><i class="bi bi-calendar-x me-1"></i>{{ rec.data_fim|date:"d/m/Y" }}</div>
+                                            {% else %}
+                                            <div class="text-success"><i class="bi bi-infinity me-1"></i>Sem fim</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rec.ativo %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Ativo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-pause-circle me-1"></i>Pausado
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <form method="POST" action="{% url 'agendamentos:ativar_desativar_recorrencia' rec.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-{{ rec.ativo and 'warning' or 'success' }}" title="{{ rec.ativo and 'Pausar' or 'Ativar' }}">
+                                                    <i class="bi bi-{{ rec.ativo and 'pause' or 'play' }}"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{% url 'agendamentos:deletar_recorrencia' rec.id %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta recorrência? Os agendamentos já criados não serão afetados.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger" title="Excluir">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <!-- Estado vazio -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-arrow-repeat text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3 text-muted">Nenhum agendamento recorrente</h4>
+                        <p class="text-muted">Crie agendamentos que se repetem automaticamente.</p>
+                        <a href="{% url 'agendamentos:criar_recorrencia' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle me-2"></i>Criar Primeira Recorrência
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Como funciona:</strong>
+                Os agendamentos recorrentes geram automaticamente agendamentos futuros (próximos 60 dias) todos os dias à meia-noite.
+                Você pode pausar ou excluir recorrências a qualquer momento sem afetar agendamentos já criados.
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

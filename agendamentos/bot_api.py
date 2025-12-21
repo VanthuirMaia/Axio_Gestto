@@ -3,7 +3,7 @@ API para integração com n8n (Bot WhatsApp)
 Todas as requisições vindas do n8n passam por aqui
 """
 
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,11 +17,13 @@ from .models import Agendamento, LogMensagemBot
 from clientes.models import Cliente
 from empresas.models import Servico, Profissional, Empresa
 from .authentication import APIKeyAuthentication
+from .throttling import BotAPIThrottle
 
 
 @api_view(['POST'])
 @authentication_classes([APIKeyAuthentication])
 @permission_classes([AllowAny])
+@throttle_classes([BotAPIThrottle])
 def processar_comando_bot(request):
     """
     Endpoint central que recebe comandos interpretados pela IA
