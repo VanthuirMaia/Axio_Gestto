@@ -23,10 +23,10 @@
             </div>
             <div class="text-end">
               <div class="d-flex gap-2">
-                <a href="{% url 'criar_agendamento' %}" class="btn btn-light">
+                <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn btn-light">
                   <i class="bi bi-plus-circle me-2"></i>Novo Agendamento
                 </a>
-                <a href="{% url 'calendario' %}" class="btn" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                <a href="{% url 'agendamentos:calendario' %}" class="btn" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
                   <i class="bi bi-calendar3 me-2"></i>Ver Calendário
                 </a>
               </div>
@@ -57,7 +57,7 @@
           <i class="bi bi-clock-fill me-3 fs-5"></i>
           <div>
             <strong>{{ agendamentos_pendentes }}</strong> agendamento(s) pendente(s)
-            <a href="{% url 'calendario' %}" class="alert-link ms-2">Confirmar</a>
+            <a href="{% url 'agendamentos:calendario' %}" class="alert-link ms-2">Confirmar</a>
           </div>
         </div>
         {% endif %}
@@ -200,7 +200,7 @@
             <i class="bi bi-clock-history text-primary me-2"></i>
             Agenda de Hoje
           </h5>
-          <a href="{% url 'calendario' %}" class="btn btn-sm btn-outline-primary">
+          <a href="{% url 'agendamentos:calendario' %}" class="btn btn-sm btn-outline-primary">
             Ver Calendário
           </a>
         </div>
@@ -249,7 +249,7 @@
             <div class="p-5 text-center text-muted">
               <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
               <p class="mb-2">Nenhum agendamento para hoje</p>
-              <a href="{% url 'criar_agendamento' %}" class="btn btn-primary btn-sm">
+              <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle me-2"></i>Criar Agendamento
               </a>
             </div>

@@ -132,18 +132,42 @@ templates/      # Templates HTML
 
 ## 🔐 Variáveis de Ambiente
 
-Crie um `.env`:
+### Configuração Inicial
 
+1. Copie o arquivo de exemplo:
+```bash
+cp .env.example .env
 ```
+
+2. Gere uma SECRET_KEY segura:
+```bash
+python -c "import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)))"
+```
+
+3. Edite o `.env` e substitua os valores:
+
+```env
+# Django Core
+SECRET_KEY=sua-chave-secreta-gerada-aqui
 DEBUG=True
-SECRET_KEY=sua-chave-secreta
-DB_NAME=gestto
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_HOST=localhost
-DB_PORT=5432
-TIME_ZONE=America/Recife
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database (SQLite por padrão, descomente para PostgreSQL)
+# DB_ENGINE=django.db.backends.postgresql
+# DB_NAME=gestao_negocios
+# DB_USER=postgres
+# DB_PASSWORD=postgres
+# DB_HOST=localhost
+# DB_PORT=5432
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
+
+**IMPORTANTE**:
+- Nunca commite o arquivo `.env` no Git
+- Use `.env.example` como template para outros desenvolvedores
+- Em produção, sempre use `DEBUG=False` e uma SECRET_KEY única
 
 ---
 
