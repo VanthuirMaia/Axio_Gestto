@@ -1,0 +1,522 @@
+{
+  "name": "4 - Brandão - FolowUp_CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        224
+      ],
+      "id": "aba33814-1f6b-46ce-8817-7bd6c17b9045",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "crm_geral",
+        "limit": 100,
+        "filterType": "string",
+        "filterString": "=status=eq.confirmado"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        80,
+        224
+      ],
+      "id": "e68ea622-8b78-4bea-a6cb-3004a998c7f9",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jQHru1Fgz53zPHpW",
+          "name": "BrandaoBarbearia"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const atendimento = new Date(item.json.data);\n  const agora = new Date();\n\n  const diff_ms = atendimento - agora;\n  const diff_horas = diff_ms / 1000 / 3600;\n  const diff_dias = diff_horas / 24;\n\n  item.json.diff_horas = diff_horas;\n  item.json.diff_dias = diff_dias;\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        224
+      ],
+      "id": "4d02e38a-68a9-4e76-9dfd-6604dc174de6",
+      "name": "Filtrar Agendamento"
+    },
+    {
+      "parameters": {
+        "content": "## Follow Up\n**Envio de lembretes 1h antes do agendamento",
+        "height": 592,
+        "width": 1872
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -208,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "d63f4a68-9bf3-401c-87c3-5ce9678fd74d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Trigger temporizado\n** Consulta ao Supabase\n** Normalização com JS\n",
+        "height": 448,
+        "width": 672,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -176,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "b4c3ec80-13f1-4599-9c2b-52bd72c4d6cc",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Envio de notificação com 1 dia de antecedência\n\n",
+        "height": 240,
+        "width": 1088,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        -16
+      ],
+      "typeVersion": 1,
+      "id": "0e8df62f-de89-4930-a28f-90f0d4c3fd1d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Envio de notificação com 1 hora de antecedência\n\n",
+        "height": 240,
+        "width": 1088,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "56c19ca7-e56d-4c06-ac59-56d1018a179a",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1d416b98-9831-4263-b897-c8f7e6c6f347",
+              "leftValue": "={{ $json.diff_dias }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "f165238b-46db-459b-a2d8-d77bc5c72c48",
+              "leftValue": "={{ $json.diff_dias }}",
+              "rightValue": 0.9,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "80a15c61-52ef-4e9e-8f8e-33bb66499524",
+              "leftValue": "={{ $json.notificado_1dia }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        64
+      ],
+      "id": "7ad416c0-1f99-488b-8c22-e6345764f9e6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "73b4050c-ace7-4ac4-a9e6-e8bf66bc1747",
+              "leftValue": "={{ $('Filtrar Agendamento').item.json.diff_horas }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "4c2777ff-015b-48c6-8934-7d147cf803a3",
+              "leftValue": "={{ $('Filtrar Agendamento').item.json.diff_horas }}",
+              "rightValue": 0.8,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "3f43a222-32cb-458b-b592-af85b5b1360b",
+              "leftValue": "={{ $('Filtrar Agendamento').item.json.notificado_1hora }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        352
+      ],
+      "id": "f386b6b6-652d-4a64-ae11-4fabf84e13c3",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const nome = item.json.nome || \"cliente\";\n  const servico = item.json.servico || \"\";\n  const telefone = item.json.telefone;\n\n  // Dados fixos da barbearia\n  const nomeEmpresa = \"Brandão Barbearia\";\n  const endereco = \"Av Euclides Dourado, 605 - Heliópolis, Garanhuns/PE\";\n  const linkLocalizacao = \"https://maps.app.goo.gl/gHBzVyrBH5v8cdPL6\"; // substitua depois\n\n  // Data/hora do atendimento\n  const dataAt = new Date(item.json.data);\n\n  // Data em pt-BR\n  const dataBR = dataAt.toLocaleDateString(\"pt-BR\", {\n    day: \"2-digit\",\n    month: \"2-digit\",\n    year: \"numeric\"\n  });\n\n  // Hora em pt-BR\n  const horaBR = dataAt.toLocaleTimeString(\"pt-BR\", {\n    hour: \"2-digit\",\n    minute: \"2-digit\"\n  });\n\n  // Mensagem completa\n  const mensagem = \n`Fala, ${nome}! Tudo bem??? 👋\n\nPassando pra lembrar do seu atendimento *amanhã*, dia ${dataBR}, às ${horaBR}.\n\n📍 *Local:* ${nomeEmpresa}  \n${endereco}\n\nPara facilitar, aqui está a localização:  \n${linkLocalizacao}\n\nQualquer dúvida ou ajuste na agenda, estou por aqui!`;\n\n  item.json.msg = mensagem;\n  item.json.telefone = telefone;\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        48
+      ],
+      "id": "6b00791f-10a5-456f-b189-4c14b2e964a6",
+      "name": "msg_1dia"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const nome = item.json.nome || \"cliente\";\n  const servico = item.json.servico || \"\";\n  const telefone = item.json.telefone;\n\n  // Dados fixos da barbearia\n  const nomeEmpresa = \"Brandão Barbearia\";\n  const endereco = \"Av Euclides Dourado, 605 - Heliópolis, Garanhuns/PE\";\n  const linkLocalizacao = \"https://maps.app.goo.gl/gHBzVyrBH5v8cdPL6\"; // substitua depois\n\n  // Data do atendimento\n  const dataAt = new Date(item.json.data);\n\n  // Hora formatada\n  const horaBR = dataAt.toLocaleTimeString(\"pt-BR\", {\n    hour: \"2-digit\",\n    minute: \"2-digit\"\n  });\n\n  // Mensagem completa\n  const mensagem = \n`Oi, ${nome}! 👋\n\nPassando para lembrar que seu atendimento é *daqui a 1 hora*, às ${horaBR}.\n\n📍 *Local:* ${nomeEmpresa}  \n${endereco}\n\nPara facilitar, aqui está a localização:  \n${linkLocalizacao}\n\nEstamos te aguardando! 💈🔥`;\n\n  item.json.msg = mensagem;\n  item.json.telefone = telefone;\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        336
+      ],
+      "id": "4d03bb0b-ebce-4525-b5bc-9f5e7bc8bc6a",
+      "name": "msg_1hora"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.axiodev.cloud/message/sendText/BrandaoBarbearia",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "EFD515BC0EAD-4BDA-AE9E-09D2084AAB6F"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"number\": \"{{$json.telefone}}\",\n  \"text\": \"{{$json.msg.replace(/\\n/g, '\\\\n').replace(/\\\"/g, '\\\\\"')}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        48
+      ],
+      "id": "02b4b586-f8bf-4f2e-9712-293114a4e04a",
+      "name": "Enviar Whatsapp 1dia"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.axiodev.cloud/message/sendText/BrandaoBarbearia",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "EFD515BC0EAD-4BDA-AE9E-09D2084AAB6F"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"number\": \"{{$json.telefone}}\",\n  \"text\": \"{{$json.msg.replace(/\\n/g, '\\\\n').replace(/\\\"/g, '\\\\\"')}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        336
+      ],
+      "id": "39bf2281-1e1b-4062-9163-66cb82b6e677",
+      "name": "Enviar Whatsapp 1hora"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "crm_geral",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{$json.id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "notificado_1dia",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        48
+      ],
+      "id": "55b84124-dc11-42fd-8756-b9b7d523e785",
+      "name": "Atualiza1dia",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jQHru1Fgz53zPHpW",
+          "name": "BrandaoBarbearia"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "crm_geral",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{$json.id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "notificado_1hora",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        336
+      ],
+      "id": "28b83f6b-4148-4072-ad9c-681beed99e6f",
+      "name": "Atualiza1hora",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jQHru1Fgz53zPHpW",
+          "name": "BrandaoBarbearia"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Agendamento": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "msg_1dia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "msg_1dia": {
+      "main": [
+        [
+          {
+            "node": "Enviar Whatsapp 1dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "msg_1hora",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Enviar Whatsapp 1dia": {
+      "main": [
+        [
+          {
+            "node": "Atualiza1dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "msg_1hora": {
+      "main": [
+        [
+          {
+            "node": "Enviar Whatsapp 1hora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Whatsapp 1hora": {
+      "main": [
+        [
+          {
+            "node": "Atualiza1hora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b5657146-5b3f-48e2-be51-b207a1aca9d4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e8f31c1c3a8c280bb253380614be696f9c911d49488efcd6c433afea74a3f77"
+  },
+  "id": "2o6yntsWHDiOjWnT",
+  "tags": [
+    {
+      "updatedAt": "2025-11-20T18:43:40.290Z",
+      "createdAt": "2025-11-20T18:43:40.290Z",
+      "id": "WkFV2xTlQYr0cqJn",
+      "name": "Barbearia"
+    },
+    {
+      "updatedAt": "2025-11-21T16:57:40.290Z",
+      "createdAt": "2025-11-21T16:57:40.290Z",
+      "id": "hLXvNsJzHOlCMeOx",
+      "name": "Atendimento"
+    },
+    {
+      "updatedAt": "2025-11-25T01:24:01.035Z",
+      "createdAt": "2025-11-25T01:24:01.035Z",
+      "id": "CdWdNyqhv7XXdWuN",
+      "name": "Brandão"
+    }
+  ]
+}

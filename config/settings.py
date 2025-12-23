@@ -179,6 +179,9 @@ SILENCED_SYSTEM_CHECKS = ['security.W019']
 # ============================================
 # CELERY CONFIGURATION
 # ============================================
+# Configurações comentadas para desenvolvimento local sem Redis
+# Descomente quando rodar com Docker ou Redis local
+"""
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
@@ -201,3 +204,4 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=2, minute=0, day_of_week=0),  # Segundas às 02:00
     },
 }
+"""

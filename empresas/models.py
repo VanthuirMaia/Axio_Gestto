@@ -76,3 +76,74 @@ class Profissional(models.Model):
 
     def __str__(self):
         return f"{self.nome} - {self.empresa}"
+
+
+class HorarioFuncionamento(models.Model):
+    """
+    Horários de funcionamento da empresa por dia da semana
+    """
+    DIAS_SEMANA = [
+        (0, 'Segunda-feira'),
+        (1, 'Terça-feira'),
+        (2, 'Quarta-feira'),
+        (3, 'Quinta-feira'),
+        (4, 'Sexta-feira'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='horarios_funcionamento')
+    dia_semana = models.IntegerField(choices=DIAS_SEMANA, help_text="0=Segunda, 6=Domingo")
+    hora_abertura = models.TimeField(help_text="Horário de abertura")
+    hora_fechamento = models.TimeField(help_text="Horário de fechamento")
+
+    # Intervalo (ex: almoço)
+    intervalo_inicio = models.TimeField(null=True, blank=True, help_text="Início do intervalo (opcional)")
+    intervalo_fim = models.TimeField(null=True, blank=True, help_text="Fim do intervalo (opcional)")
+
+    ativo = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Horário de Funcionamento'
+        verbose_name_plural = 'Horários de Funcionamento'
+        ordering = ['empresa', 'dia_semana']
+        unique_together = ('empresa', 'dia_semana')
+
+    def __str__(self):
+        return f"{self.empresa.nome} - {self.get_dia_semana_display()}: {self.hora_abertura.strftime('%H:%M')} às {self.hora_fechamento.strftime('%H:%M')}"
+
+
+class DataEspecial(models.Model):
+    """
+    Datas especiais: feriados (fechado) ou horários diferenciados
+    """
+    TIPO_CHOICES = [
+        ('feriado', 'Feriado - Fechado'),
+        ('especial', 'Horário Especial'),
+    ]
+
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='datas_especiais')
+    data = models.DateField(help_text="Data do feriado ou horário especial")
+    descricao = models.CharField(max_length=200, help_text="Ex: Natal, Ano Novo, Carnaval")
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='feriado')
+
+    # Só preencher se tipo='especial'
+    hora_abertura = models.TimeField(null=True, blank=True, help_text="Horário de abertura (se horário especial)")
+    hora_fechamento = models.TimeField(null=True, blank=True, help_text="Horário de fechamento (se horário especial)")
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Data Especial'
+        verbose_name_plural = 'Datas Especiais'
+        ordering = ['empresa', 'data']
+        unique_together = ('empresa', 'data')
+
+    def __str__(self):
+        if self.tipo == 'feriado':
+            return f"{self.empresa.nome} - {self.data.strftime('%d/%m/%Y')} - {self.descricao} (FECHADO)"
+        else:
+            return f"{self.empresa.nome} - {self.data.strftime('%d/%m/%Y')} - {self.descricao} ({self.hora_abertura.strftime('%H:%M')} às {self.hora_fechamento.strftime('%H:%M')})"

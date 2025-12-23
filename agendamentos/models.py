@@ -25,7 +25,30 @@ class Agendamento(models.Model):
     
     notas = models.TextField(blank=True)
     valor_cobrado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
+    # Follow-up / Notificações
+    notificado_1dia = models.BooleanField(
+        default=False,
+        help_text='Se já enviou notificação 1 dia antes'
+    )
+    notificado_1hora = models.BooleanField(
+        default=False,
+        help_text='Se já enviou notificação 1 hora antes'
+    )
+
+    # Origem do agendamento
+    origem = models.CharField(
+        max_length=20,
+        choices=[
+            ('whatsapp', 'WhatsApp Bot'),
+            ('manual', 'Manual (Admin/Dashboard)'),
+            ('site', 'Site'),
+            ('telefone', 'Telefone'),
+        ],
+        default='manual',
+        help_text='Como o agendamento foi criado'
+    )
+
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 

@@ -1,0 +1,231 @@
+{
+  "name": "3 - Agendamento Fixo",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1200,
+        -640
+      ],
+      "id": "c9003e41-8587-4201-bd21-aa2ef13eb7dc",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pega o output bruto vindo do agente\nlet raw = $json.output || \"\";\n\n// 2. Remove crases, markdown e quebras indesejadas\nraw = raw.replace(/`/g, \"\").trim();\n\nlet data;\ntry {\n  // 3. Faz o parse do JSON interno\n  data = JSON.parse(raw);\n} catch (err) {\n  // IMPORTANTE: Envolve o erro em json\n  return [{\n    json: {\n      erro: true,\n      mensagem: \"Falha ao parsear JSON do agente: \" + err.message,\n      conteudo_recebido: raw\n    }\n  }];\n}\n\n// 4. NORMALIZAÇÃO ROBUSTA DO NOME DO PROFISSIONAL\nconst profissionalOriginal = data.profissional || \"\";\n\n// Função para normalizar texto\nfunction normalizar(texto) {\n  return texto\n    .toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst profissionalNormalizado = normalizar(profissionalOriginal);\n\n// 5. ROTEAMENTO COM MÚLTIPLAS VARIAÇÕES\nlet rota = 'indefinido';\n\n// Variações do Pedro\nconst variacoesPedro = ['pedro', 'brandao', 'pedro brandao', 'p. brandao', 'dr pedro', 'dr. pedro'];\nif (variacoesPedro.some(variacao => profissionalNormalizado.includes(variacao))) {\n  rota = 'pedro';\n}\n\n// Variações do Juan\nconst variacoesJuan = ['juan', 'alves', 'juan alves', 'j. alves', 'dr juan', 'dr. juan'];\nif (variacoesJuan.some(variacao => profissionalNormalizado.includes(variacao))) {\n  rota = 'juan';\n}\n\n// 6. Retorna SEMPRE envolvido em json\nreturn [{\n  json: {\n    rota: rota,\n    nome_cliente: data.nome_cliente || \"\",\n    servico: data.servico || \"\",\n    profissional: profissionalOriginal,\n    profissional_normalizado: profissionalNormalizado,\n    data_inicio: data.data_inicio || \"\",\n    data_fim: data.data_fim || \"\",\n    dia_semana: data.dia_semana || \"\",\n    hora: data.hora || \"\",\n    telefone: $json.telefone || \"\",\n    chat_id: $json.chat_id || \"\",\n    apikey: $json.apikey || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -640
+      ],
+      "id": "1f9f8ada-3056-4e70-875c-2e00d842d5ca",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## Agente de agendamento de datas fixas\n",
+        "height": 560,
+        "width": 1600
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1360,
+        -832
+      ],
+      "typeVersion": 1,
+      "id": "332ed132-f25f-498e-82c8-02a68be2c896",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.profissional }}",
+                    "rightValue": "Pedro",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0323af7d-8a61-492d-b17e-1ac7328d7090"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Pedro"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bd321835-16f5-4f56-abd3-ece7d1727112",
+                    "leftValue": "={{ $json.profissional }}",
+                    "rightValue": "Juan",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Juan"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -592,
+        -640
+      ],
+      "id": "f392ac2c-b13a-4260-95f1-7637cf49b409",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "6255cyEmj4H5wJwP",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/6255cyEmj4H5wJwP"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        -752
+      ],
+      "id": "2a8ed5e6-5268-478a-bd67-d305303714b6",
+      "name": "Call 'Fixo | Pedro Brandão'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "XhDAX1a4k5ex35Le",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/XhDAX1a4k5ex35Le"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        -496
+      ],
+      "id": "10a09b37-69d3-4131-b3e2-de2c12caf7c1",
+      "name": "Call 'Fixo | Juan Alves'"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "output": "````\n{\n\t\"nome_cliente\":  \"Vanthuir Maia\",\n\t\"servico\":  \"Corte de cabelo\",\n\t\"profissional\":  \"Pedro\",\n\t\"data_inicio\":  \"10/12/2025\",\n\t\"data_fim\":  \"17/12/2025\",\n\t\"dia_semana\":  \"Quarta\",\n\t\"hora\":  \"18:00\"\n}\n````",
+          "telefone": "558796075897",
+          "chat_id": "558796075897",
+          "apikey": "EFD515BC0EAD-4BDA-AE9E-09D2084AAB6F"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Call 'Fixo | Pedro Brandão'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Fixo | Juan Alves'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "02a9e37d-a46e-4adf-b61b-9429045534cd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e8f31c1c3a8c280bb253380614be696f9c911d49488efcd6c433afea74a3f77"
+  },
+  "id": "Pv7sebWjTVKWTq14",
+  "tags": []
+}
