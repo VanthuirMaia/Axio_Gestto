@@ -1,0 +1,178 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Preços - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .pricing-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        text-align: center;
+    }
+
+    .pricing-hero h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .pricing-section {
+        padding: 4rem 0;
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .pricing-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-10px);
+    }
+
+    .pricing-card.featured {
+        border: 3px solid #667eea;
+        transform: scale(1.05);
+    }
+
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .plan-price {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin: 1rem 0;
+    }
+
+    .plan-price small {
+        font-size: 1rem;
+        color: #666;
+    }
+
+    .plan-features {
+        list-style: none;
+        margin: 2rem 0;
+        text-align: left;
+    }
+
+    .plan-features li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .plan-features li:before {
+        content: "✅ ";
+        color: #10b981;
+    }
+
+    .btn-plan {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.3s;
+        width: 100%;
+    }
+
+    .btn-plan:hover {
+        background: #5568d3;
+    }
+
+    .badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+</style>
+
+<section class="pricing-hero">
+    <div class="container">
+        <h1>Escolha o Plano Ideal</h1>
+        <p>Teste grátis por 7 dias. Cancele quando quiser.</p>
+    </div>
+</section>
+
+<section class="pricing-section">
+    <div class="container">
+        <div class="pricing-grid">
+            {% for plano in planos %}
+            <div class="pricing-card {% if plano.nome == 'profissional' %}featured{% endif %}">
+                {% if plano.nome == 'profissional' %}
+                <span class="badge">Mais Popular</span>
+                {% endif %}
+
+                <div class="plan-name">{{ plano.get_nome_display }}</div>
+                <div class="plan-price">
+                    R$ {{ plano.preco_mensal|floatformat:0 }}
+                    <small>/mês</small>
+                </div>
+
+                <ul class="plan-features">
+                    <li>{{ plano.max_profissionais }} profissiona{{ plano.max_profissionais|pluralize:"l,is" }}</li>
+                    <li>{% if plano.max_agendamentos_mes >= 999999 %}Agendamentos ilimitados{% else %}{{ plano.max_agendamentos_mes }} agendamentos/mês{% endif %}</li>
+                    <li>Bot WhatsApp automático</li>
+                    <li>Agenda inteligente</li>
+                    <li>Gestão financeira</li>
+                    {% if plano.permite_relatorios_avancados %}
+                    <li>Relatórios avançados</li>
+                    {% endif %}
+                    {% if plano.permite_integracao_contabil %}
+                    <li>Integração contábil</li>
+                    {% endif %}
+                    {% if plano.permite_multi_unidades %}
+                    <li>Múltiplas unidades</li>
+                    {% endif %}
+                    {% if plano.nome == 'essencial' %}
+                    <li>Suporte email (24h)</li>
+                    {% elif plano.nome == 'profissional' %}
+                    <li>Suporte email + WhatsApp (12h)</li>
+                    {% elif plano.nome == 'empresarial' %}
+                    <li>Suporte completo (4h)</li>
+                    <li>Email + WhatsApp + Ligação</li>
+                    {% endif %}
+                    <li>{{ plano.trial_dias }} dias de teste grátis</li>
+                </ul>
+
+                <a href="{% url 'landing:cadastro' %}?plano={{ plano.nome }}" class="btn-plan">
+                    Começar Agora
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f9fafb; border-radius: 12px;">
+            <h3 style="margin-bottom: 1rem;">Todos os planos incluem:</h3>
+            <p>✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+            <h3 style="margin-bottom: 1rem;">Precisa de mais de 6 profissionais?</h3>
+            <p style="margin-bottom: 1.5rem; opacity: 0.9;">Oferecemos ambientes personalizados com infraestrutura dedicada e trabalho exclusivo para sua empresa.</p>
+            <a href="{% url 'landing:contato' %}" style="display: inline-block; background: white; color: #667eea; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                Consultar Disponibilidade
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

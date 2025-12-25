@@ -1,0 +1,160 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Cadastro - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .cadastro-section {
+        padding: 4rem 0;
+        background: #f9fafb;
+        min-height: 80vh;
+    }
+
+    .cadastro-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 3rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .cadastro-container h1 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .cadastro-container p {
+        text-align: center;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 0.25rem;
+        color: #666;
+        font-size: 0.875rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        background: #667eea;
+        color: white;
+        padding: 1rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .btn-submit:hover {
+        background: #5568d3;
+    }
+
+    .already-have-account {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #666;
+    }
+
+    .already-have-account a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .payment-info {
+        background: #f3f4f6;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-info strong {
+        color: #667eea;
+        font-size: 1.125rem;
+    }
+</style>
+
+<section class="cadastro-section">
+    <div class="cadastro-container">
+        <h1>Criar Conta Grátis</h1>
+        <p>Teste grátis por 7 dias. Sem cartão de crédito.</p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="nome_empresa">Nome da Empresa *</label>
+                <input type="text" id="nome_empresa" name="nome_empresa" placeholder="Ex: Barbearia do João" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email_admin">Seu Email *</label>
+                <input type="email" id="email_admin" name="email_admin" placeholder="seu@email.com" required>
+                <small>Você receberá as credenciais de acesso neste email</small>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone (WhatsApp) *</label>
+                <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999" required>
+            </div>
+
+            <div class="form-group">
+                <label for="plano">Plano *</label>
+                <select id="plano" name="plano" required>
+                    {% for plano_obj in planos %}
+                    <option value="{{ plano_obj.nome }}" {% if request.GET.plano == plano_obj.nome %}selected{% endif %}>
+                        {{ plano_obj.get_nome_display }} - R$ {{ plano_obj.preco_mensal|floatformat:0 }}/mês ({{ plano_obj.max_profissionais }} prof)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="payment-info">
+                <strong>💳 Pagamento Seguro via Stripe</strong>
+                <p style="margin: 0.5rem 0 0 0; color: #666;">Cartão de crédito, PIX ou Boleto</p>
+                <input type="hidden" name="gateway" value="stripe">
+            </div>
+
+            <button type="submit" class="btn-submit">Continuar para Pagamento</button>
+
+            <div class="already-have-account">
+                Já tem uma conta? <a href="/app/login/">Fazer Login</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

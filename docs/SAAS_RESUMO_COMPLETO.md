@@ -400,10 +400,10 @@ ASAAS_SANDBOX=True
 
 | Recurso | Essencial | Profissional | Empresarial |
 |---------|-----------|--------------|-------------|
-| **Preço/mês** | R$ 49 | R$ 149 | R$ 299 |
+| **Preço/mês** | R$ 49 | R$ 179 | R$ 399 |
 | **Trial** | 7 dias | 14 dias | 30 dias |
-| **Agendamentos/mês** | 500 | 2000 | Ilimitado (9999) |
-| **Profissionais** | 1 | 5 | Ilimitado (999) |
+| **Agendamentos/mês** | 500 | 2000 | Ilimitado (999999) |
+| **Profissionais** | 1 | 4 | 8 |
 | **WhatsApp Bot** | ✅ | ✅ | ✅ |
 | **Relatórios** | Básico | Avançado | Completo |
 | **Suporte** | Email | Chat | Telefone |

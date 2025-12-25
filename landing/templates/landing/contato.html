@@ -1,0 +1,66 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Contato - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .contato-section {
+        padding: 4rem 0;
+    }
+
+    .contato-section h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .contato-info {
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .contato-card {
+        background: #f9fafb;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .contato-card h3 {
+        margin-bottom: 0.5rem;
+    }
+
+    .contato-card a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+</style>
+
+<section class="contato-section">
+    <div class="container">
+        <h1>Entre em Contato</h1>
+        <div class="contato-info">
+            <div class="contato-card">
+                <h3>📧 Email</h3>
+                <p><a href="mailto:contato@axiodev.cloud">contato@axiodev.cloud</a></p>
+            </div>
+
+            <div class="contato-card">
+                <h3>💬 WhatsApp</h3>
+                <p><a href="https://wa.me/5511999999999" target="_blank">Fale Conosco</a></p>
+            </div>
+
+            <div class="contato-card">
+                <h3>🌐 Site</h3>
+                <p><a href="https://axiodev.cloud" target="_blank">axiodev.cloud</a></p>
+            </div>
+
+            <p style="margin-top: 2rem; color: #666;">
+                Respondemos todos os contatos em até 24 horas úteis.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

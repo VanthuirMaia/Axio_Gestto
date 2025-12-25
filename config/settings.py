@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Apps do projeto
+    'landing.apps.LandingConfig',  # ← Landing Page (público)
     'core.apps.CoreConfig',
     'empresas.apps.EmpresasConfig',
     'clientes.apps.ClientesConfig',
@@ -101,8 +102,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.Usuario'
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = '/app/login/'
+LOGIN_REDIRECT_URL = '/app/dashboard/'
 LOGOUT_REDIRECT_URL = 'login'
 
 # Email Configuration

@@ -1,0 +1,54 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Sobre - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .sobre-section {
+        padding: 4rem 0;
+    }
+
+    .sobre-section h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .sobre-content {
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.8;
+    }
+
+    .sobre-content p {
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<section class="sobre-section">
+    <div class="container">
+        <h1>Sobre o Gestto</h1>
+        <div class="sobre-content">
+            <p>
+                O <strong>Gestto</strong> é uma plataforma completa de gestão de agendamentos desenvolvida especialmente para profissionais autônomos e pequenas empresas que desejam automatizar seus processos.
+            </p>
+
+            <p>
+                Com integração direta ao WhatsApp e bot com inteligência artificial, seus clientes podem agendar serviços de forma totalmente automática, sem que você precise responder cada mensagem manualmente.
+            </p>
+
+            <p>
+                Além disso, oferecemos ferramentas completas de gestão financeira, controle de profissionais, relatórios avançados e muito mais.
+            </p>
+
+            <p>
+                <strong>Nossa missão:</strong> Simplificar a gestão do seu negócio para que você possa focar no que realmente importa - atender bem seus clientes.
+            </p>
+
+            <p style="text-align: center; margin-top: 3rem;">
+                <a href="{% url 'landing:cadastro' %}" style="background: #667eea; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Comece Gratuitamente</a>
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}
