@@ -1,0 +1,59 @@
+[
+  {
+    "model": "assinaturas.plano",
+    "pk": 1,
+    "fields": {
+      "nome": "essencial",
+      "descricao": "Ideal para profissionais autônomos e pequenos negócios que estão começando. Inclui todas as funcionalidades básicas para gerenciar agendamentos via WhatsApp.",
+      "preco_mensal": "49.00",
+      "max_profissionais": 1,
+      "max_agendamentos_mes": 500,
+      "max_usuarios": 1,
+      "max_servicos": 10,
+      "trial_dias": 7,
+      "permite_relatorios_avancados": false,
+      "permite_integracao_contabil": false,
+      "permite_multi_unidades": false,
+      "ativo": true,
+      "ordem_exibicao": 1
+    }
+  },
+  {
+    "model": "assinaturas.plano",
+    "pk": 2,
+    "fields": {
+      "nome": "profissional",
+      "descricao": "Para negócios em crescimento com equipe. Inclui relatórios avançados, mais profissionais e maior limite de agendamentos mensais.",
+      "preco_mensal": "149.00",
+      "max_profissionais": 5,
+      "max_agendamentos_mes": 2000,
+      "max_usuarios": 3,
+      "max_servicos": 50,
+      "trial_dias": 14,
+      "permite_relatorios_avancados": true,
+      "permite_integracao_contabil": false,
+      "permite_multi_unidades": false,
+      "ativo": true,
+      "ordem_exibicao": 2
+    }
+  },
+  {
+    "model": "assinaturas.plano",
+    "pk": 3,
+    "fields": {
+      "nome": "empresarial",
+      "descricao": "Solução completa para redes e franquias. Agendamentos ilimitados, múltiplas unidades, integração contábil e suporte prioritário.",
+      "preco_mensal": "299.00",
+      "max_profissionais": 999,
+      "max_agendamentos_mes": 999999,
+      "max_usuarios": 10,
+      "max_servicos": 200,
+      "trial_dias": 30,
+      "permite_relatorios_avancados": true,
+      "permite_integracao_contabil": true,
+      "permite_multi_unidades": true,
+      "ativo": true,
+      "ordem_exibicao": 3
+    }
+  }
+]

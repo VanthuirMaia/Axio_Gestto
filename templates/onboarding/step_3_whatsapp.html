@@ -1,0 +1,86 @@
+{% extends "onboarding/base_wizard.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #333;">Passo 3: Conectar WhatsApp (Opcional)</h2>
+
+<p style="color: #666; margin-bottom: 30px;">
+    Configure o WhatsApp para receber agendamentos automáticos via bot. Você pode pular e configurar depois.
+</p>
+
+<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 30px; border-radius: 8px;">
+    <strong style="color: #1e40af;">📱 Como funciona:</strong>
+    <ul style="margin-top: 10px; padding-left: 20px; color: #1e3a8a;">
+        <li>Clientes enviam mensagens no WhatsApp</li>
+        <li>Bot com IA entende e agenda automaticamente</li>
+        <li>Cliente recebe confirmação na hora</li>
+        <li>Você economiza tempo e não perde agendamentos!</li>
+    </ul>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label>Instance ID (Identificador Único) *</label>
+        <input type="text" name="whatsapp_instance_id" placeholder="empresa123" value="{{ empresa.whatsapp_instance_id }}" required>
+        <small style="color: #666; display: block; margin-top: 5px;">
+            Nome único da sua instância no Evolution API. Ex: {{ empresa.slug }}
+        </small>
+    </div>
+
+    <div class="form-group">
+        <label>Número do WhatsApp Business *</label>
+        <input type="tel" name="whatsapp_numero" placeholder="(11) 99999-9999" value="{{ empresa.whatsapp_numero }}" required>
+        <small style="color: #666; display: block; margin-top: 5px;">Número que seus clientes usarão para agendar</small>
+    </div>
+
+    <div class="form-group">
+        <label>Token da API (Evolution/Z-API)</label>
+        <input type="text" name="whatsapp_token" placeholder="Cole aqui o token fornecido pelo provedor" value="{{ empresa.whatsapp_token }}">
+        <small style="color: #666; display: block; margin-top: 5px;">
+            Token de autenticação do provedor (opcional se usar webhook público)
+        </small>
+    </div>
+
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+        <strong style="color: #92400e;">⚠️ Configuração opcional</strong>
+        <p style="color: #78350f; margin-top: 5px;">
+            Você pode pular este passo e configurar o WhatsApp depois em <strong>Configurações → Integrações</strong>
+        </p>
+    </div>
+
+    <div class="button-group">
+        <a href="{% url 'onboarding_step_2' %}" class="btn btn-secondary">← Voltar</a>
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" name="pular" value="true" class="btn btn-secondary">Pular por enquanto</button>
+            <button type="submit" class="btn btn-primary">Conectar WhatsApp →</button>
+        </div>
+    </div>
+</form>
+
+<div style="margin-top: 40px; padding: 20px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #10b981;">
+    <h3 style="margin-bottom: 15px; color: #065f46;">📡 Configurar Webhook no Evolution API:</h3>
+    <p style="color: #047857; margin-bottom: 10px;">Após criar sua instância, configure o webhook para:</p>
+    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+        <code style="color: #3b82f6; word-break: break-all;">{{ request.scheme }}://{{ request.get_host }}/api/whatsapp-webhook/</code>
+    </div>
+    <small style="color: #047857;">
+        ✅ Este webhook detecta automaticamente sua empresa pelo Instance ID<br>
+        ✅ Não precisa configurar headers de autenticação
+    </small>
+</div>
+
+<div style="margin-top: 20px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+    <h3 style="margin-bottom: 15px; color: #333;">Provedores recomendados:</h3>
+    <ul style="list-style: none; padding: 0;">
+        <li style="margin-bottom: 10px;">
+            <strong>Evolution API</strong> - Gratuito e open-source
+            <br><small style="color: #666;">https://github.com/EvolutionAPI/evolution-api</small>
+        </li>
+        <li>
+            <strong>Z-API</strong> - Plano grátis disponível
+            <br><small style="color: #666;">https://z-api.io</small>
+        </li>
+    </ul>
+</div>
+{% endblock %}

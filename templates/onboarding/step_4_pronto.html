@@ -1,0 +1,140 @@
+{% extends "onboarding/base_wizard.html" %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 20px 0;">
+    <div style="font-size: 80px; margin-bottom: 20px;">🎉</div>
+
+    <h2 style="color: #333; margin-bottom: 15px;">Parabéns! Tudo pronto!</h2>
+
+    <p style="color: #666; font-size: 18px; margin-bottom: 40px;">
+        Sua conta está configurada e você já pode começar a receber agendamentos!
+    </p>
+
+    <!-- Resumo do que foi configurado -->
+    <div style="background: #f9fafb; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: left;">
+        <h3 style="margin-bottom: 20px; color: #333;">📋 O que você configurou:</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+                <div style="font-size: 32px; color: #10b981; margin-bottom: 10px;">{{ total_servicos }}</div>
+                <div style="color: #666; font-weight: 600;">Serviços cadastrados</div>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 32px; color: #3b82f6; margin-bottom: 10px;">{{ total_profissionais }}</div>
+                <div style="color: #666; font-weight: 600;">Profissionais ativos</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background: {% if whatsapp_configurado %}#d1fae5{% else %}#fee2e2{% endif %}; border-radius: 8px;">
+            {% if whatsapp_configurado %}
+                <strong style="color: #065f46;">✅ WhatsApp Conectado</strong>
+                <p style="color: #047857; margin-top: 5px;">Bot de agendamento automático pronto!</p>
+            {% else %}
+                <strong style="color: #991b1b;">⏳ WhatsApp Não Conectado</strong>
+                <p style="color: #991b1b; margin-top: 5px;">Você pode conectar depois em Configurações</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Próximos passos -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: left;">
+        <h3 style="margin-bottom: 20px; color: white;">🚀 Próximos passos:</h3>
+
+        <ol style="padding-left: 20px; line-height: 1.8;">
+            <li><strong>Compartilhe seu link de agendamento</strong> com os clientes</li>
+            <li><strong>Configure seus horários</strong> de funcionamento</li>
+            <li><strong>Comece a receber agendamentos</strong> automaticamente</li>
+            <li><strong>Acompanhe tudo no dashboard</strong> em tempo real</li>
+        </ol>
+    </div>
+
+    <!-- Link de agendamento -->
+    <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+        <label style="display: block; margin-bottom: 10px; color: #666; font-weight: 600;">
+            🔗 Seu link de agendamento público:
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input
+                type="text"
+                id="link-agendamento"
+                value="{{ request.scheme }}://{{ request.get_host }}{{ link_agendamento }}"
+                readonly
+                style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: monospace; background: white;"
+            >
+            <button onclick="copiarLink()" class="btn btn-primary" style="white-space: nowrap;">
+                📋 Copiar
+            </button>
+        </div>
+        <small style="color: #666; display: block; margin-top: 10px;">
+            Cole este link em seu Instagram, WhatsApp, Google Maps, etc.
+        </small>
+    </div>
+
+    <!-- Botões de ação -->
+    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 40px;">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary" style="font-size: 18px; padding: 16px 40px;">
+            Ir para o Dashboard →
+        </a>
+    </div>
+
+    <p style="color: #999; margin-top: 30px; font-size: 14px;">
+        Precisa de ajuda? Entre em contato com o suporte: <strong>suporte@gestto.com.br</strong>
+    </p>
+</div>
+
+<script>
+// Confete ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    // Explosão de confete
+    confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+
+    // Mais confete após 300ms
+    setTimeout(function() {
+        confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+        });
+        confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+        });
+    }, 300);
+});
+
+function copiarLink() {
+    const input = document.getElementById('link-agendamento');
+    input.select();
+    input.setSelectionRange(0, 99999); // Mobile
+
+    try {
+        document.execCommand('copy');
+
+        // Feedback visual
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '✅ Copiado!';
+        button.style.background = '#10b981';
+
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.background = '';
+        }, 2000);
+    } catch (err) {
+        alert('Link: ' + input.value);
+    }
+}
+</script>
+{% endblock %}

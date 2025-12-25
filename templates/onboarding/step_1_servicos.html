@@ -1,0 +1,106 @@
+{% extends "onboarding/base_wizard.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #333;">Passo 1: Quais serviços você oferece?</h2>
+
+<p style="color: #666; margin-bottom: 30px;">
+    Liste os serviços que seus clientes podem agendar. Exemplos: Corte Masculino, Barba, Manicure, etc.
+</p>
+
+<form method="post" id="form-servicos">
+    {% csrf_token %}
+
+    <div id="lista-servicos">
+        <!-- Serviços existentes -->
+        {% for servico in servicos %}
+        <div class="servico-item" style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 2;">
+                <strong>{{ servico.nome }}</strong>
+            </div>
+            <div style="flex: 1; text-align: right;">
+                R$ {{ servico.preco }}
+            </div>
+            <div style="flex: 1; text-align: right;">
+                {{ servico.duracao_minutos }} min
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Template para novo serviço -->
+        <div class="servico-item novo" style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nome do Serviço *</label>
+                <input type="text" name="servico_nome[]" placeholder="Ex: Corte Masculino" required>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Preço (R$) *</label>
+                    <input type="number" name="servico_preco[]" placeholder="45.00" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group" style="flex: 1;">
+                    <label>Duração (minutos) *</label>
+                    <input type="number" name="servico_duracao[]" placeholder="30" min="1" required>
+                </div>
+            </div>
+
+            <button type="button" class="btn-remove" onclick="removerServico(this)" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                Remover
+            </button>
+        </div>
+    </div>
+
+    <button type="button" id="btn-adicionar" onclick="adicionarServico()" style="background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 30px; font-weight: 600;">
+        + Adicionar Outro Serviço
+    </button>
+
+    <div class="button-group">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Voltar</a>
+        <button type="submit" class="btn btn-primary">Próximo →</button>
+    </div>
+</form>
+
+<script>
+let servicoCounter = {{ servicos.count }};
+
+function adicionarServico() {
+    const template = `
+        <div class="servico-item novo" style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nome do Serviço *</label>
+                <input type="text" name="servico_nome[]" placeholder="Ex: Barba" required>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Preço (R$) *</label>
+                    <input type="number" name="servico_preco[]" placeholder="30.00" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group" style="flex: 1;">
+                    <label>Duração (minutos) *</label>
+                    <input type="number" name="servico_duracao[]" placeholder="20" min="1" required>
+                </div>
+            </div>
+
+            <button type="button" class="btn-remove" onclick="removerServico(this)" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                Remover
+            </button>
+        </div>
+    `;
+
+    document.getElementById('lista-servicos').insertAdjacentHTML('beforeend', template);
+    servicoCounter++;
+}
+
+function removerServico(button) {
+    const items = document.querySelectorAll('.servico-item.novo');
+    if (items.length > 1) {
+        button.closest('.servico-item').remove();
+    } else {
+        alert('Você precisa ter pelo menos 1 serviço.');
+    }
+}
+</script>
+{% endblock %}

@@ -23,8 +23,9 @@ INSTALLED_APPS = [
     'clientes.apps.ClientesConfig',
     'agendamentos.apps.AgendamentosConfig',
     'financeiro.apps.FinanceiroConfig',
-    'configuracoes.apps.ConfiguracoesConfig',  # ← ADICIONE
-    
+    'configuracoes.apps.ConfiguracoesConfig',
+    'assinaturas.apps.AssinaturasConfig',  # ← SaaS: Planos e pagamentos
+
     # Third party
     'django_apscheduler',
 ]
@@ -38,6 +39,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # SaaS Middlewares
+    'core.middleware.AssinaturaExpiracaoMiddleware',  # Avisos de expiração
+    'core.middleware.LimitesPlanoMiddleware',  # Bloqueio por limites
+    'core.middleware.UsageTrackingMiddleware',  # Rastreamento de uso
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -113,6 +119,22 @@ PASSWORD_RESET_TIMEOUT = 3600  # 1 hora em segundos
 
 # API Configuration (n8n Bot)
 N8N_API_KEY = config('N8N_API_KEY', default='desenvolvimento-inseguro-mudar-em-producao')
+
+# ============================================
+# SaaS CONFIGURATION - Pagamentos
+# ============================================
+
+# Site URL (para emails e redirects)
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
+# Stripe (Cartão de Crédito - Internacional)
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+
+# Asaas (Boleto/PIX/Cartão - Brasil) - RECOMENDADO
+ASAAS_API_KEY = config('ASAAS_API_KEY', default='')
+ASAAS_SANDBOX = config('ASAAS_SANDBOX', default=True, cast=bool)
 
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000', cast=Csv())
 

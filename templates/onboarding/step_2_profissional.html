@@ -1,0 +1,58 @@
+{% extends "onboarding/base_wizard.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #333;">Passo 2: Cadastre um profissional</h2>
+
+<p style="color: #666; margin-bottom: 30px;">
+    Quem vai executar os serviços? Pode ser você mesmo ou seus colaboradores.
+</p>
+
+{% if profissionais %}
+<div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin-bottom: 30px; border-radius: 8px;">
+    <strong style="color: #065f46;">Profissionais já cadastrados:</strong>
+    <ul style="margin-top: 10px; padding-left: 20px; color: #047857;">
+        {% for prof in profissionais %}
+        <li>{{ prof.nome }} - {{ prof.email }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label>Nome Completo *</label>
+        <input type="text" name="prof_nome" placeholder="Ex: João Silva" required>
+    </div>
+
+    <div class="form-group">
+        <label>Email *</label>
+        <input type="email" name="prof_email" placeholder="joao@exemplo.com" required>
+    </div>
+
+    <div class="form-group">
+        <label>Telefone (opcional)</label>
+        <input type="tel" name="prof_telefone" placeholder="(11) 99999-9999">
+    </div>
+
+    <div class="form-group">
+        <label>Quais serviços este profissional executa? *</label>
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px;">
+            {% for servico in servicos %}
+            <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+                <input type="checkbox" name="prof_servicos" value="{{ servico.id }}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                <span style="font-weight: normal;">{{ servico.nome }} (R$ {{ servico.preco }} - {{ servico.duracao_minutos }}min)</span>
+            </label>
+            {% empty %}
+            <p style="color: #ef4444;">Nenhum serviço cadastrado ainda. <a href="{% url 'onboarding_step_1' %}">Voltar e cadastrar serviços</a></p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="button-group">
+        <a href="{% url 'onboarding_step_1' %}" class="btn btn-secondary">← Voltar</a>
+        <button type="submit" class="btn btn-primary">Próximo →</button>
+    </div>
+</form>
+{% endblock %}

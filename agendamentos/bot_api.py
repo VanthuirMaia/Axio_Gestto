@@ -12,6 +12,7 @@ from django.utils.dateparse import parse_datetime, parse_date
 from datetime import datetime, timedelta, time
 from django.db.models import Q
 from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Agendamento, LogMensagemBot
 from clientes.models import Cliente
@@ -386,6 +387,199 @@ def processar_confirmacao(empresa, telefone, dados, log):
         'mensagem': f'✅ Agendamento confirmado!\n\n'
                    f'Te esperamos em {agendamento.data_hora_inicio.strftime("%d/%m/%Y às %H:%M")}!'
     }
+
+
+# ============================================
+# WEBHOOK MULTI-TENANT (SAAS)
+# ============================================
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def whatsapp_webhook_saas(request):
+    """
+    Endpoint público multi-tenant para webhooks WhatsApp
+
+    Detecta automaticamente o tenant (empresa) baseado no instance_id
+    ou número de telefone da Evolution API / Z-API
+
+    Payload esperado (Evolution API):
+    {
+        "instance": "empresa123",  // whatsapp_instance_id da empresa
+        "event": "messages.upsert",
+        "data": {
+            "key": {
+                "remoteJid": "5511999998888@s.whatsapp.net",
+                "fromMe": false,
+                "id": "..."
+            },
+            "message": {
+                "conversation": "Quero agendar corte amanhã 14h"
+            },
+            "pushName": "João Silva"
+        }
+    }
+
+    Payload esperado (n8n processado):
+    {
+        "instance": "empresa123",
+        "telefone": "5511999998888",
+        "mensagem_original": "Quero agendar corte amanhã 14h",
+        "intencao": "agendar",
+        "dados": {...}
+    }
+    """
+
+    try:
+        # 1. Extrair instance ID
+        instance_id = request.data.get('instance') or request.data.get('instanceId')
+
+        if not instance_id:
+            return Response({
+                'sucesso': False,
+                'erro': 'Instance ID não fornecido. Envie campo "instance" no payload.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Buscar empresa por instance_id
+        try:
+            empresa = Empresa.objects.get(
+                whatsapp_instance_id=instance_id,
+                ativa=True,
+                whatsapp_conectado=True
+            )
+        except Empresa.DoesNotExist:
+            return Response({
+                'sucesso': False,
+                'erro': f'Nenhuma empresa encontrada para instance "{instance_id}". '
+                       'Verifique a configuração no painel de onboarding.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # 3. Verificar status da assinatura (CRÍTICO PARA SAAS)
+        if not hasattr(empresa, 'assinatura'):
+            return Response({
+                'sucesso': False,
+                'erro': 'Empresa sem assinatura ativa. Configure um plano.'
+            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+        assinatura = empresa.assinatura
+
+        # Bloquear se assinatura não está ativa ou em trial
+        if assinatura.status not in ['ativa', 'trial']:
+            return Response({
+                'sucesso': False,
+                'erro': f'Assinatura {assinatura.status}. Regularize o pagamento para continuar.',
+                'status_assinatura': assinatura.status,
+                'plano': assinatura.plano.nome
+            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+        # 4. Verificar se assinatura expirou
+        if assinatura.data_expiracao and assinatura.data_expiracao < now():
+            # Suspender automaticamente
+            assinatura.status = 'suspensa'
+            assinatura.save()
+
+            return Response({
+                'sucesso': False,
+                'erro': 'Assinatura expirada. Renove para continuar usando o bot.',
+                'data_expiracao': assinatura.data_expiracao.strftime('%d/%m/%Y')
+            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+        # 5. Verificar limites do plano (agendamentos do mês)
+        from django.utils.timezone import now as django_now
+        inicio_mes = django_now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        agendamentos_mes = Agendamento.objects.filter(
+            empresa=empresa,
+            criado_em__gte=inicio_mes,
+            status__in=['pendente', 'confirmado', 'concluido']
+        ).count()
+
+        if agendamentos_mes >= assinatura.plano.max_agendamentos_mes:
+            return Response({
+                'sucesso': False,
+                'erro': f'Limite de {assinatura.plano.max_agendamentos_mes} agendamentos/mês atingido. '
+                       f'Faça upgrade do plano para continuar.',
+                'agendamentos_usados': agendamentos_mes,
+                'limite': assinatura.plano.max_agendamentos_mes,
+                'plano_atual': assinatura.plano.nome
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # 6. Processar mensagem
+        # Verificar se já vem processada pelo n8n (com intencao) ou se é webhook bruto
+        if 'intencao' in request.data:
+            # Payload já processado pelo n8n
+            telefone = request.data.get('telefone')
+            mensagem_original = request.data.get('mensagem_original', '')
+            intencao = request.data.get('intencao')
+            dados = request.data.get('dados', {})
+        else:
+            # Webhook bruto - retornar para n8n processar
+            # Apenas validamos e retornamos OK para n8n continuar o fluxo
+            return Response({
+                'sucesso': True,
+                'mensagem': 'Webhook recebido. Empresa validada.',
+                'empresa_id': empresa.id,
+                'empresa_nome': empresa.nome,
+                'assinatura_status': assinatura.status,
+                'plano': assinatura.plano.nome
+            }, status=status.HTTP_200_OK)
+
+        # 7. Criar log da interação
+        log = LogMensagemBot.objects.create(
+            empresa=empresa,
+            telefone=telefone,
+            mensagem_original=mensagem_original,
+            intencao_detectada=intencao,
+            dados_extraidos=dados,
+            status='parcial'
+        )
+
+        # 8. Rotear para lógica de processamento existente
+        try:
+            if intencao == 'agendar':
+                resultado = processar_agendamento(empresa, telefone, dados, log)
+
+            elif intencao == 'cancelar':
+                resultado = processar_cancelamento(empresa, telefone, dados, log)
+
+            elif intencao == 'consultar':
+                resultado = processar_consulta(empresa, telefone, dados, log)
+
+            elif intencao == 'confirmar':
+                resultado = processar_confirmacao(empresa, telefone, dados, log)
+
+            else:
+                resultado = {
+                    'sucesso': False,
+                    'mensagem': 'Desculpe, não entendi o que você quer fazer. Pode reformular?'
+                }
+
+            # Atualizar log
+            log.status = 'sucesso' if resultado['sucesso'] else 'erro'
+            log.resposta_enviada = resultado['mensagem']
+            log.save()
+
+            return Response(resultado)
+
+        except Exception as e:
+            # Registrar erro
+            log.status = 'erro'
+            log.erro_detalhes = str(e)
+            log.resposta_enviada = 'Ops! Algo deu errado. Tente novamente.'
+            log.save()
+
+            return Response({
+                'sucesso': False,
+                'mensagem': 'Desculpe, ocorreu um erro ao processar sua solicitação.',
+                'erro': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        # Erro não tratado
+        return Response({
+            'sucesso': False,
+            'erro': f'Erro interno: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ============================================

@@ -39,6 +39,12 @@ def login_view(request):
         
         if user is not None and user.ativo:
             login(request, user)
+
+            # Redirecionar para onboarding se não completado
+            if hasattr(user, 'empresa') and user.empresa:
+                if not user.empresa.onboarding_completo:
+                    return redirect('onboarding')
+
             return redirect('dashboard')
         else:
             messages.error(request, 'Email/Usuario ou senha incorretos.')
@@ -60,6 +66,10 @@ def dashboard_view(request):
     if not empresa:
         messages.error(request, 'Usuário não associado a nenhuma empresa.')
         return redirect('logout')
+
+    # Redirecionar para onboarding se não completado
+    if not empresa.onboarding_completo:
+        return redirect('onboarding')
     
     agora = now()
     hoje = agora.date()

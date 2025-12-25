@@ -3,20 +3,74 @@ from django.core.validators import MinValueValidator
 from PIL import Image
 
 class Empresa(models.Model):
+    # Dados básicos
     nome = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(unique=True)
     descricao = models.TextField(blank=True)
     logo = models.ImageField(upload_to='logos/', null=True, blank=True)
     cor_primaria = models.CharField(max_length=7, default='#1e3a8a')
     cor_secundaria = models.CharField(max_length=7, default='#3b82f6')
+
+    # Contato
     telefone = models.CharField(max_length=20)
     email = models.EmailField()
-    endereco = models.TextField()
-    cidade = models.CharField(max_length=100)
-    estado = models.CharField(max_length=2)
-    cep = models.CharField(max_length=10)
+
+    # Endereço
+    endereco = models.TextField(blank=True)  # Tornando opcional para onboarding
+    cidade = models.CharField(max_length=100, blank=True)
+    estado = models.CharField(max_length=2, blank=True)
+    cep = models.CharField(max_length=10, blank=True)
     cnpj = models.CharField(max_length=20, unique=True)
+
+    # Controle
     ativa = models.BooleanField(default=True)
+
+    # ====== NOVOS CAMPOS PARA SaaS ======
+
+    # Onboarding
+    onboarding_completo = models.BooleanField(
+        default=False,
+        help_text="Se a empresa completou o wizard de configuração inicial"
+    )
+    onboarding_etapa = models.IntegerField(
+        default=0,
+        help_text="Etapa atual do onboarding (0-4)"
+    )
+
+    # WhatsApp / Integração
+    whatsapp_numero = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Número WhatsApp conectado (com código do país)"
+    )
+    whatsapp_token = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Token da Evolution API / Z-API"
+    )
+    whatsapp_instance_id = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="ID da instância no provedor WhatsApp"
+    )
+    whatsapp_conectado = models.BooleanField(
+        default=False,
+        help_text="Se WhatsApp está conectado e funcionando"
+    )
+
+    # Metadados
+    origem_cadastro = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=[
+            ('manual', 'Cadastro Manual'),
+            ('checkout', 'Checkout Automático'),
+            ('indicacao', 'Indicação'),
+        ],
+        default='checkout'
+    )
+
+    # Timestamps
     criada_em = models.DateTimeField(auto_now_add=True)
     atualizada_em = models.DateTimeField(auto_now=True)
 

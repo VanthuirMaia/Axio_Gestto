@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.utils.timezone import now
+from datetime import timedelta
 
 from empresas.models import Empresa, Servico, Profissional
 from financeiro.models import CategoriaFinanceira, FormaPagamento
@@ -331,3 +333,74 @@ def profissional_deletar(request, pk):
         'empresa': empresa,
         'profissional': profissional
     })
+
+
+# ==========================================
+# ASSINATURA E PLANO (SAAS)
+# ==========================================
+
+@login_required
+def assinatura_gerenciar(request):
+    """
+    Gerenciar assinatura e plano
+    - Ver plano atual
+    - Uso atual vs limites
+    - Fazer upgrade/downgrade
+    - Cancelar assinatura
+    """
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        messages.error(request, 'Empresa sem assinatura ativa.')
+        return redirect('dashboard')
+
+    assinatura = empresa.assinatura
+    plano = assinatura.plano
+
+    # Calcular uso do mês atual
+    inicio_mes = now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    from agendamentos.models import Agendamento
+
+    agendamentos_mes = Agendamento.objects.filter(
+        empresa=empresa,
+        criado_em__gte=inicio_mes,
+        status__in=['pendente', 'confirmado', 'concluido']
+    ).count()
+
+    profissionais_ativos = Profissional.objects.filter(
+        empresa=empresa,
+        ativo=True
+    ).count()
+
+    # Calcular percentuais de uso
+    percentual_agendamentos = (agendamentos_mes / plano.max_agendamentos_mes) * 100 if plano.max_agendamentos_mes > 0 else 0
+    percentual_profissionais = (profissionais_ativos / plano.max_profissionais) * 100 if plano.max_profissionais > 0 else 0
+
+    # Buscar todos os planos disponíveis
+    from assinaturas.models import Plano
+
+    planos_disponiveis = Plano.objects.filter(ativo=True).order_by('preco_mensal')
+
+    # Dias restantes
+    dias_restantes = None
+    if assinatura.data_expiracao:
+        dias_restantes = (assinatura.data_expiracao - now()).days
+
+    context = {
+        'empresa': empresa,
+        'assinatura': assinatura,
+        'plano': plano,
+        'planos_disponiveis': planos_disponiveis,
+
+        # Uso atual
+        'agendamentos_mes': agendamentos_mes,
+        'profissionais_ativos': profissionais_ativos,
+        'percentual_agendamentos': round(percentual_agendamentos, 1),
+        'percentual_profissionais': round(percentual_profissionais, 1),
+
+        # Status
+        'dias_restantes': dias_restantes,
+    }
+
+    return render(request, 'configuracoes/assinatura.html', context)
