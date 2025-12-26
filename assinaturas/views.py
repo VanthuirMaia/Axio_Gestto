@@ -17,8 +17,9 @@ import logging
 from empresas.models import Empresa
 from core.models import Usuario
 from .models import Plano, Assinatura
-from .stripe_integration import processar_webhook_stripe
+from .stripe_integration import processar_webhook_stripe, criar_checkout_session
 from .asaas_integration import processar_webhook_asaas
+from .validators import validar_cpf_cnpj
 
 logger = logging.getLogger(__name__)
 
@@ -56,25 +57,37 @@ def create_tenant(request):
     }
     """
 
-    # 1. Validar dados obrigatórios
-    required_fields = ['company_name', 'email', 'telefone', 'cnpj']
-    for field in required_fields:
-        if not request.data.get(field):
-            return Response({
-                'sucesso': False,
-                'erro': f'Campo obrigatório: {field}'
-            }, status=status.HTTP_400_BAD_REQUEST)
+    # 1. Normalizar campos (aceitar tanto company_name quanto nome_empresa)
+    company_name = request.data.get('company_name') or request.data.get('nome_empresa')
+    email = request.data.get('email') or request.data.get('email_admin')
+    telefone = request.data.get('telefone')
+    cnpj_informado = request.data.get('cnpj', '').strip()
 
-    # 2. Validar CNPJ único
-    cnpj = request.data['cnpj'].replace('.', '').replace('/', '').replace('-', '')
+    # 2. Validar dados obrigatórios
+    if not company_name or not email or not telefone or not cnpj_informado:
+        return Response({
+            'sucesso': False,
+            'erro': 'Todos os campos são obrigatórios: nome_empresa, email, telefone, CPF/CNPJ'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # 3. Validar CPF/CNPJ
+    valido, tipo_doc, cnpj, mensagem_erro = validar_cpf_cnpj(cnpj_informado)
+
+    if not valido:
+        return Response({
+            'sucesso': False,
+            'erro': mensagem_erro
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # 4. Verificar se CPF/CNPJ já está cadastrado
     if Empresa.objects.filter(cnpj=cnpj).exists():
         return Response({
             'sucesso': False,
-            'erro': 'CNPJ já cadastrado. Entre em contato com o suporte.'
+            'erro': f'{tipo_doc.upper()} já cadastrado. Entre em contato com o suporte.'
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # 3. Gerar slug único
-    slug = slugify(request.data['company_name'])
+    # 5. Gerar slug único
+    slug = slugify(company_name)
     base_slug = slug
     counter = 1
 
@@ -82,13 +95,13 @@ def create_tenant(request):
         slug = f"{base_slug}-{counter}"
         counter += 1
 
-    # 4. Criar Empresa
+    # 5. Criar Empresa
     try:
         empresa = Empresa.objects.create(
-            nome=request.data['company_name'],
+            nome=company_name,
             slug=slug,
-            email=request.data['email'],
-            telefone=request.data['telefone'],
+            email=email,
+            telefone=telefone,
             cnpj=cnpj,
             ativa=True,
             onboarding_completo=False,
@@ -111,7 +124,7 @@ def create_tenant(request):
             'erro': f'Erro ao criar empresa: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # 5. Buscar plano
+    # 6. Buscar plano
     plano_nome = request.data.get('plano', 'essencial')
     try:
         plano = Plano.objects.get(nome=plano_nome, ativo=True)
@@ -126,7 +139,7 @@ def create_tenant(request):
                 'erro': 'Nenhum plano disponível no momento'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # 6. Criar Assinatura (trial)
+    # 7. Criar Assinatura (trial)
     try:
         assinatura = Assinatura.objects.create(
             empresa=empresa,
@@ -148,13 +161,13 @@ def create_tenant(request):
             'erro': f'Erro ao criar assinatura: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # 7. Criar usuário admin
+    # 8. Criar usuário admin
     try:
         senha_temporaria = _gerar_senha_temporaria()
 
         usuario = Usuario.objects.create_user(
             username=f"admin_{empresa.id}",
-            email=request.data['email'],
+            email=email,
             password=senha_temporaria,
             empresa=empresa,
             is_staff=False,  # Não é staff do Django admin
@@ -175,15 +188,36 @@ def create_tenant(request):
             'erro': f'Erro ao criar usuário: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # 8. Enviar email de boas-vindas
-    try:
-        _enviar_email_boas_vindas(usuario, empresa, senha_temporaria, plano)
-    except Exception as e:
-        logger.error(f'Erro ao enviar email: {str(e)}')
-        # Não fazer rollback por causa de email (tenant já foi criado)
+    # 9. Criar sessão de checkout do Stripe
+    checkout_url = None
+    gateway = request.data.get('gateway', 'stripe')
 
-    # 9. Retornar resposta de sucesso
-    return Response({
+    if gateway == 'stripe':
+        try:
+            checkout_result = criar_checkout_session(empresa, plano)
+
+            if checkout_result.get('sucesso'):
+                checkout_url = checkout_result.get('url')
+                logger.info(f'Checkout URL criada para empresa {empresa.nome}: {checkout_url}')
+            else:
+                logger.error(f'Erro ao criar checkout: {checkout_result.get("erro")}')
+                # Não fazer rollback - empresa já foi criada
+                # Apenas loga o erro e continua
+
+        except Exception as e:
+            logger.error(f'Erro ao criar checkout Stripe: {str(e)}')
+            # Não fazer rollback - empresa já foi criada
+
+    # 10. Email de boas-vindas será enviado pelo webhook após pagamento confirmado
+    # Se não houver checkout (gateway manual), envia agora
+    if not checkout_url:
+        try:
+            _enviar_email_boas_vindas(usuario, empresa, senha_temporaria, plano)
+        except Exception as e:
+            logger.error(f'Erro ao enviar email: {str(e)}')
+
+    # 11. Retornar resposta de sucesso
+    response_data = {
         'sucesso': True,
         'empresa_id': empresa.id,
         'slug': empresa.slug,
@@ -192,10 +226,16 @@ def create_tenant(request):
         'trial_dias': plano.trial_dias,
         'plano': plano.get_nome_display(),
         'credenciais': {
-            'email': request.data['email'],
+            'email': email,
             'senha_temporaria': senha_temporaria if settings.DEBUG else '***ENVIADA_POR_EMAIL***'
         }
-    }, status=status.HTTP_201_CREATED)
+    }
+
+    # Adicionar checkout_url se houver
+    if checkout_url:
+        response_data['checkout_url'] = checkout_url
+
+    return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

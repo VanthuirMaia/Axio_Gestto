@@ -1,0 +1,143 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Pagamento Confirmado - Gestto{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .success-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        padding: 3rem;
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+    }
+
+    .success-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: scaleIn 0.5s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+
+    .success-card h1 {
+        color: #10b981;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .success-card p {
+        color: #6b7280;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        line-height: 1.8;
+    }
+
+    .info-box {
+        background: #f0fdf4;
+        border: 2px solid #10b981;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: #065f46;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .info-box ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .info-box li {
+        padding: 0.5rem 0;
+        color: #047857;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-box li:before {
+        content: "✓";
+        color: #10b981;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .btn-dashboard {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .btn-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .session-id {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-top: 2rem;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <h1>Pagamento Confirmado!</h1>
+        <p>
+            Sua assinatura foi ativada com sucesso.
+            Em instantes você receberá um email com suas credenciais de acesso.
+        </p>
+
+        <div class="info-box">
+            <h3>Próximos passos:</h3>
+            <ul>
+                <li>Verifique sua caixa de entrada (e spam) para receber o email de boas-vindas</li>
+                <li>Use as credenciais enviadas para fazer login no sistema</li>
+                <li>Configure seus serviços e profissionais</li>
+                <li>Comece a agendar seus clientes!</li>
+            </ul>
+        </div>
+
+        <a href="/app/login/" class="btn-dashboard">Acessar Sistema</a>
+
+        {% if session_id %}
+        <div class="session-id">
+            ID da Sessão: {{ session_id }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

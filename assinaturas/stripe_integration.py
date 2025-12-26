@@ -25,28 +25,26 @@ def criar_checkout_session(empresa, plano):
         dict com url e session_id
     """
     try:
-        # Criar sessão de checkout
+        # Validar se plano tem stripe_price_id configurado
+        if not plano.stripe_price_id:
+            logger.error(f'Plano {plano.nome} sem stripe_price_id configurado!')
+            return {
+                'sucesso': False,
+                'erro': 'Plano sem preço configurado no Stripe. Contate o suporte.'
+            }
+
+        # Criar sessão de checkout usando Price ID pre-configurado
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price_data': {
-                    'currency': 'brl',
-                    'product_data': {
-                        'name': f'Gestto - Plano {plano.get_nome_display()}',
-                        'description': plano.descricao,
-                    },
-                    'unit_amount': int(plano.preco_mensal * 100),  # Centavos
-                    'recurring': {
-                        'interval': 'month',
-                        'interval_count': 1,
-                    },
-                },
+                'price': plano.stripe_price_id,  # Usar Price ID pre-cadastrado
                 'quantity': 1,
             }],
             mode='subscription',
             success_url=f'{settings.SITE_URL}/assinatura/sucesso?session_id={{CHECKOUT_SESSION_ID}}',
             cancel_url=f'{settings.SITE_URL}/assinatura/cancelado',
             client_reference_id=str(empresa.id),
+            customer_email=empresa.email,  # Pre-preencher email do cliente
             metadata={
                 'empresa_id': empresa.id,
                 'empresa_nome': empresa.nome,

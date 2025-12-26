@@ -133,6 +133,12 @@
             </div>
 
             <div class="form-group">
+                <label for="cnpj">CPF ou CNPJ *</label>
+                <input type="text" id="cnpj" name="cnpj" placeholder="000.000.000-00 ou 00.000.000/0000-00" required>
+                <small>Informe seu CPF (pessoa física) ou CNPJ (pessoa jurídica)</small>
+            </div>
+
+            <div class="form-group">
                 <label for="plano">Plano *</label>
                 <select id="plano" name="plano" required>
                     {% for plano_obj in planos %}
@@ -149,7 +155,27 @@
                 <input type="hidden" name="gateway" value="stripe">
             </div>
 
-            <button type="submit" class="btn-submit">Continuar para Pagamento</button>
+            <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1.5rem 0;">
+                <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
+                    ⚖️ <strong>Garantia Legal:</strong> Você tem 7 dias de trial grátis + direito de arrependimento
+                    de 7 dias após a primeira cobrança com reembolso total, conforme CDC (Art. 49).
+                    <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #0284c7; text-decoration: underline;">Saiba mais</a>
+                </p>
+            </div>
+
+            <div style="margin: 1rem 0;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" required style="width: auto;">
+                    <span style="font-size: 0.9rem; color: #555;">
+                        Li e concordo com os
+                        <a href="{% url 'landing:termos_uso' %}" target="_blank" style="color: #667eea;">Termos de Uso</a>
+                        e a
+                        <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #667eea;">Política de Cancelamento</a>
+                    </span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-submit">Iniciar Trial Grátis de 7 Dias</button>
 
             <div class="already-have-account">
                 Já tem uma conta? <a href="/app/login/">Fazer Login</a>

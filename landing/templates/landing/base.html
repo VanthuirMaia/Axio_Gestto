@@ -165,7 +165,11 @@
     <footer>
         <div class="container">
             <p>&copy; 2025 Gestto. Todos os direitos reservados.</p>
-            <p>Desenvolvido por Axio Dev</p>
+            <p>
+                <a href="{% url 'landing:termos_uso' %}" style="color: #ccc; margin: 0 1rem;">Termos de Uso</a>
+                <a href="{% url 'landing:politica_cancelamento' %}" style="color: #ccc; margin: 0 1rem;">Política de Cancelamento</a>
+            </p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Desenvolvido por Axio Dev</p>
         </div>
     </footer>
 

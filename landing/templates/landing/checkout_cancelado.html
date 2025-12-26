@@ -1,0 +1,134 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Pagamento Cancelado - Gestto{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cancel-container {
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .cancel-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        padding: 3rem;
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+    }
+
+    .cancel-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .cancel-card h1 {
+        color: #f59e0b;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .cancel-card p {
+        color: #6b7280;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        line-height: 1.8;
+    }
+
+    .info-box {
+        background: #fffbeb;
+        border: 2px solid #fbbf24;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: #92400e;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .info-box p {
+        color: #78350f;
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+        background: #f3f4f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cancel-container">
+    <div class="cancel-card">
+        <div class="cancel-icon">😕</div>
+        <h1>Pagamento Cancelado</h1>
+        <p>
+            Você cancelou o processo de pagamento.
+            Nenhuma cobrança foi realizada.
+        </p>
+
+        <div class="info-box">
+            <h3>O que aconteceu?</h3>
+            <p>
+                O pagamento não foi processado e você não foi cobrado.
+                Seus dados estão seguros e você pode tentar novamente quando quiser.
+            </p>
+        </div>
+
+        <div class="btn-group">
+            <a href="{% url 'landing:cadastro' %}" class="btn btn-primary">Tentar Novamente</a>
+            <a href="{% url 'landing:precos' %}" class="btn btn-secondary">Ver Planos</a>
+        </div>
+
+        <p style="margin-top: 2rem; font-size: 0.9rem; color: #9ca3af;">
+            Precisa de ajuda? <a href="{% url 'landing:contato' %}" style="color: #667eea;">Entre em contato</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

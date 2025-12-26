@@ -1,0 +1,148 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Termos de Uso - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .termos-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 3rem 2rem;
+    }
+
+    .termos-container h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #1a1a1a;
+    }
+
+    .termos-container h2 {
+        font-size: 1.5rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .termos-container p {
+        margin-bottom: 1rem;
+        line-height: 1.8;
+        color: #555;
+    }
+
+    .destaque {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .destaque strong {
+        color: #856404;
+    }
+</style>
+
+<div class="termos-container">
+    <h1>Termos de Uso e Política de Cancelamento</h1>
+    <p><small>Última atualização: 26 de dezembro de 2025</small></p>
+
+    <h2>1. Período de Teste Gratuito</h2>
+    <p>
+        Oferecemos um período de teste <strong>100% gratuito de 7 dias</strong> para todos os novos usuários.
+        Durante este período, você tem acesso completo ao sistema sem nenhum custo.
+    </p>
+    <p>
+        Ao final do período de teste, caso você não cancele, sua assinatura será automaticamente
+        convertida em plano pago e seu cartão de crédito será cobrado.
+    </p>
+
+    <h2>2. Direito de Arrependimento (CDC - Art. 49)</h2>
+    <div class="destaque">
+        <strong>⚖️ Garantia Legal:</strong>
+        <p>
+            De acordo com o Código de Defesa do Consumidor Brasileiro (Lei 8.078/90, Art. 49),
+            você tem o direito de cancelar sua assinatura e solicitar <strong>reembolso total</strong>
+            em até <strong>7 dias corridos</strong> após a primeira cobrança.
+        </p>
+    </div>
+
+    <h2>3. Como Funciona o Cancelamento</h2>
+    <p><strong>Opção 1 - Cancelar durante o trial (Dias 1-7):</strong></p>
+    <ul>
+        <li>Não há cobrança</li>
+        <li>Não há multa ou taxa</li>
+        <li>Basta cancelar pela plataforma ou entrar em contato</li>
+    </ul>
+
+    <p><strong>Opção 2 - Cancelar após primeira cobrança (Dias 8-15):</strong></p>
+    <ul>
+        <li>Direito a <strong>reembolso total</strong> do valor pago</li>
+        <li>Prazo de até 7 dias corridos após o pagamento</li>
+        <li>Reembolso processado em até 5 dias úteis</li>
+        <li>Valor devolvido no mesmo método de pagamento</li>
+    </ul>
+
+    <p><strong>Opção 3 - Cancelar após 15 dias:</strong></p>
+    <ul>
+        <li>Assinatura cancelada imediatamente</li>
+        <li>Você mantém acesso até o fim do período pago</li>
+        <li>Não há reembolso proporcional (você já usou o serviço)</li>
+    </ul>
+
+    <h2>4. Como Solicitar Cancelamento e Reembolso</h2>
+    <p>Para solicitar cancelamento com reembolso dentro dos 7 dias após a cobrança:</p>
+    <ol>
+        <li>Acesse sua conta em <strong>Configurações → Assinatura</strong></li>
+        <li>Clique em <strong>"Cancelar Assinatura"</strong></li>
+        <li>Selecione o motivo <strong>"Direito de Arrependimento (CDC)"</strong></li>
+        <li>O reembolso será processado automaticamente</li>
+    </ol>
+
+    <p><strong>Ou entre em contato:</strong></p>
+    <ul>
+        <li>Email: suporte@gestto.com.br</li>
+        <li>WhatsApp: (11) 99999-9999</li>
+        <li>Horário: Segunda a Sexta, 9h às 18h</li>
+    </ul>
+
+    <h2>5. Renovação Automática</h2>
+    <p>
+        Após o período de trial e o primeiro pagamento, sua assinatura será renovada
+        automaticamente todo mês, até que você cancele.
+    </p>
+    <p>
+        Você pode cancelar a qualquer momento. O acesso será mantido até o fim do período já pago.
+    </p>
+
+    <h2>6. Alteração de Plano</h2>
+    <p>
+        Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.
+        O valor será ajustado proporcionalmente na próxima cobrança.
+    </p>
+
+    <h2>7. Dados e Privacidade</h2>
+    <p>
+        Ao cancelar sua assinatura, seus dados serão mantidos por 90 dias caso você deseje reativar.
+        Após este período, você pode solicitar exclusão permanente dos dados conforme LGPD.
+    </p>
+
+    <h2>8. Contato</h2>
+    <p>
+        Dúvidas sobre cancelamento, reembolso ou qualquer assunto relacionado aos Termos de Uso?
+    </p>
+    <p>
+        <strong>Email:</strong> suporte@gestto.com.br<br>
+        <strong>WhatsApp:</strong> (11) 99999-9999
+    </p>
+
+    <hr style="margin: 2rem 0;">
+
+    <p style="font-size: 0.9rem; color: #888;">
+        Ao utilizar o Gestto, você concorda com estes Termos de Uso.
+        Reservamo-nos o direito de alterar estes termos mediante aviso prévio de 30 dias.
+    </p>
+
+    <p style="text-align: center; margin-top: 2rem;">
+        <a href="/" style="color: #667eea; text-decoration: none;">← Voltar para Home</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Política de Cancelamento - Gestto{% endblock %}
+
+{% block content %}
+<style>
+    .policy-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem 2rem;
+    }
+
+    .policy-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .policy-header h1 {
+        font-size: 2.5rem;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+    }
+
+    .policy-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .policy-card h2 {
+        color: #667eea;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .timeline {
+        display: flex;
+        justify-content: space-between;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .timeline-item {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+    }
+
+    .timeline-item.highlight {
+        background: #fff3cd;
+        border-color: #ffc107;
+    }
+
+    .timeline-item h3 {
+        color: #667eea;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-item p {
+        color: #555;
+        margin: 0;
+    }
+
+    .cta-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .cta-box h3 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .cta-box .btn {
+        background: white;
+        color: #667eea;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+</style>
+
+<div class="policy-container">
+    <div class="policy-header">
+        <h1>Política de Cancelamento</h1>
+        <p>Transparência e respeito ao consumidor</p>
+    </div>
+
+    <div class="policy-card">
+        <h2>⚖️ Seu Direito Garantido por Lei</h2>
+        <p>
+            De acordo com o <strong>Código de Defesa do Consumidor (CDC - Art. 49)</strong>,
+            você tem direito a cancelar sua assinatura e receber <strong>reembolso total</strong>
+            em até <strong>7 dias corridos</strong> após a primeira cobrança.
+        </p>
+        <p style="margin-top: 1rem;">
+            Não fazemos perguntas. Não cobramos taxas. É simples, rápido e 100% garantido.
+        </p>
+    </div>
+
+    <div class="policy-card">
+        <h2>📅 Linha do Tempo - Cancelamento</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h3>Dias 1-7</h3>
+                <p><strong>Trial Grátis</strong></p>
+                <p>Teste sem pagar nada. Cancele quando quiser.</p>
+            </div>
+
+            <div class="timeline-item highlight">
+                <h3>Dias 8-15</h3>
+                <p><strong>Reembolso Total</strong></p>
+                <p>Cancele e receba 100% do valor de volta (CDC).</p>
+            </div>
+
+            <div class="timeline-item">
+                <h3>Após Dia 15</h3>
+                <p><strong>Cancelamento Normal</strong></p>
+                <p>Acesso até fim do mês pago. Sem reembolso.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="policy-card">
+        <h2>🔄 Como Cancelar e Pedir Reembolso</h2>
+
+        <h3 style="margin-top: 1.5rem;">Opção 1 - Pelo Sistema (Recomendado)</h3>
+        <ol>
+            <li>Faça login na sua conta</li>
+            <li>Vá em <strong>Configurações → Assinatura</strong></li>
+            <li>Clique em <strong>"Cancelar Assinatura"</strong></li>
+            <li>Selecione <strong>"Direito de Arrependimento (CDC)"</strong></li>
+            <li>Confirme o cancelamento</li>
+            <li><strong>Reembolso automático em até 5 dias úteis</strong></li>
+        </ol>
+
+        <h3 style="margin-top: 1.5rem;">Opção 2 - Por Email/WhatsApp</h3>
+        <p>Envie uma mensagem para:</p>
+        <ul>
+            <li><strong>Email:</strong> suporte@gestto.com.br</li>
+            <li><strong>WhatsApp:</strong> (11) 99999-9999</li>
+            <li><strong>Assunto:</strong> "Cancelamento e Reembolso - CDC"</li>
+        </ul>
+        <p>Resposta em até 24 horas. Reembolso em até 5 dias úteis.</p>
+    </div>
+
+    <div class="policy-card">
+        <h2>💰 Prazo de Reembolso</h2>
+        <p>O reembolso é processado em até <strong>5 dias úteis</strong> após a solicitação.</p>
+        <p>O valor será devolvido no <strong>mesmo método de pagamento</strong> utilizado na compra.</p>
+        <ul>
+            <li><strong>Cartão de Crédito:</strong> Estorno na fatura (pode levar 1-2 ciclos de faturamento)</li>
+            <li><strong>PIX:</strong> Devolução imediata na conta bancária cadastrada</li>
+            <li><strong>Boleto:</strong> Transferência bancária em até 5 dias úteis</li>
+        </ul>
+    </div>
+
+    <div class="policy-card">
+        <h2>❓ Perguntas Frequentes</h2>
+
+        <h3>Posso cancelar durante o trial grátis?</h3>
+        <p>Sim! E não há nenhuma cobrança. Basta cancelar antes do 7º dia.</p>
+
+        <h3>Preciso justificar o motivo do cancelamento?</h3>
+        <p>Não. É seu direito cancelar sem dar explicações dentro dos 7 dias após o pagamento.</p>
+
+        <h3>Vou perder meus dados ao cancelar?</h3>
+        <p>Seus dados ficam salvos por 90 dias. Você pode reativar a qualquer momento neste período.</p>
+
+        <h3>Posso cancelar após 15 dias e pedir reembolso?</h3>
+        <p>Após 15 dias (7 dias de trial + 7 dias de arrependimento), não há mais direito a reembolso,
+        mas você pode cancelar e terá acesso até o fim do mês já pago.</p>
+
+        <h3>O que acontece se eu não gostar do serviço?</h3>
+        <p>Se estiver no período de trial (7 dias), cancele sem pagar nada. Se já pagou e está nos
+        primeiros 7 dias após o pagamento, cancele e receba reembolso total.</p>
+    </div>
+
+    <div class="cta-box">
+        <h3>Precisa de Ajuda?</h3>
+        <p>Nossa equipe está pronta para ajudar você!</p>
+        <a href="/contato/" class="btn">Falar com Suporte</a>
+    </div>
+</div>
+{% endblock %}
