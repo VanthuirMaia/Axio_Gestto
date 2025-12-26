@@ -119,16 +119,26 @@ class EvolutionAPIService:
             "token": webhook_secret,  # Token para autenticação de webhooks
             "qrcode": True,  # Retornar QR code
             "integration": "WHATSAPP-BAILEYS",  # Tipo de integração
+
+            # Webhook configuration
             "webhookUrl": webhook_url,  # URL do webhook
             "webhookByEvents": True,  # Receber webhooks por evento
-            "webhookBase64": True,  # QR Code em base64
+            "webhookBase64": True,  # Retornar dados em base64 (imagens, áudios, etc)
+
+            # Settings/Configurations
+            "rejectCall": True,  # Rejeitar chamadas automaticamente
+            "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",  # Mensagem ao rejeitar
+            "groupsIgnore": True,  # Ignorar mensagens de grupos
+            "alwaysOnline": False,  # Não ficar sempre online
+            "readMessages": False,  # Não marcar mensagens como lidas automaticamente
+            "readStatus": False,  # Não enviar status de leitura
+
+            # Events to receive via webhook
             "events": [
-                "QRCODE_UPDATED",
-                "MESSAGES_UPSERT",
-                "MESSAGES_UPDATE",
-                "CONNECTION_UPDATE",
-                "CALL",
-                "NEW_MESSAGE",
+                "QRCODE_UPDATED",  # QR Code atualizado
+                "MESSAGES_UPSERT",  # Nova mensagem recebida/enviada
+                "MESSAGES_UPDATE",  # Mensagem atualizada
+                "CONNECTION_UPDATE",  # Mudança de status de conexão
             ]
         }
 
