@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.timezone import now
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from datetime import timedelta
 
 from empresas.models import Empresa, Servico, Profissional
@@ -743,3 +744,132 @@ def whatsapp_sincronizar(request):
             'success': False,
             'error': result.get('message', 'Erro ao sincronizar')
         })
+
+
+# ==========================================
+# WEBHOOK INTERMEDIÁRIO (Evolution → Django → n8n)
+# ==========================================
+
+@csrf_exempt
+def whatsapp_webhook_n8n(request, empresa_id, secret):
+    """
+    Webhook intermediário que recebe mensagens da Evolution API,
+    valida empresa/assinatura e encaminha para n8n.
+
+    URL: /api/webhooks/whatsapp/<empresa_id>/<secret>/
+
+    Fluxo:
+    1. Evolution API → Django (aqui)
+    2. Django valida empresa, secret, assinatura
+    3. Django adiciona empresa_id ao payload
+    4. Django → n8n workflow
+    5. n8n processa e responde via Evolution API
+    """
+    import json
+    import requests
+    import logging
+    from django.views.decorators.csrf import csrf_exempt
+    from django.http import JsonResponse
+    from empresas.models import Empresa, ConfiguracaoWhatsApp
+
+    logger = logging.getLogger(__name__)
+
+    # Apenas POST
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Apenas POST permitido'}, status=405)
+
+    try:
+        # 1. Buscar empresa e configuração WhatsApp
+        try:
+            empresa = Empresa.objects.select_related('whatsapp_config').get(id=empresa_id)
+            config = empresa.whatsapp_config
+        except Empresa.DoesNotExist:
+            logger.error(f"Webhook: Empresa {empresa_id} não encontrada")
+            return JsonResponse({'error': 'Empresa não encontrada'}, status=404)
+        except ConfiguracaoWhatsApp.DoesNotExist:
+            logger.error(f"Webhook: Empresa {empresa_id} sem configuração WhatsApp")
+            return JsonResponse({'error': 'WhatsApp não configurado'}, status=404)
+
+        # 2. Validar secret
+        if config.webhook_secret != secret:
+            logger.warning(f"Webhook: Secret inválido para empresa {empresa_id}")
+            return JsonResponse({'error': 'Não autorizado'}, status=403)
+
+        # 3. Validar se assinatura está ativa
+        if not empresa.assinatura_ativa:
+            logger.warning(f"Webhook: Assinatura inativa para empresa {empresa_id} ({empresa.nome})")
+
+            # TODO: Enviar mensagem informando que assinatura está vencida
+            # (pode fazer isso via Evolution API direto aqui, ou deixar n8n decidir)
+
+            return JsonResponse({
+                'error': 'Assinatura inativa',
+                'message': 'Entre em contato com suporte para reativar'
+            }, status=402)
+
+        # 4. Parsear payload da Evolution API
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            logger.error("Webhook: Payload inválido (não é JSON)")
+            return JsonResponse({'error': 'Payload inválido'}, status=400)
+
+        # 5. Montar payload enriquecido para n8n
+        payload_n8n = {
+            'empresa_id': empresa.id,
+            'empresa_nome': empresa.nome,
+            'instance': config.instance_name,
+            'body': body  # Payload original da Evolution
+        }
+
+        # Log para debug
+        logger.info(f"Webhook recebido: empresa={empresa.nome} (ID={empresa.id}), instance={config.instance_name}")
+
+        # 6. Encaminhar para n8n
+        n8n_webhook_url = settings.N8N_WEBHOOK_URL
+
+        if not n8n_webhook_url:
+            logger.error("N8N_WEBHOOK_URL não configurado em settings")
+            return JsonResponse({'error': 'Configuração interna incorreta'}, status=500)
+
+        try:
+            response = requests.post(
+                n8n_webhook_url,
+                json=payload_n8n,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                logger.info(f"Webhook encaminhado para n8n com sucesso: empresa={empresa.nome}")
+                return JsonResponse({
+                    'success': True,
+                    'forwarded_to_n8n': True,
+                    'empresa': empresa.nome
+                })
+            else:
+                logger.error(f"Erro ao encaminhar para n8n: status={response.status_code}, body={response.text[:200]}")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Erro ao processar mensagem no n8n'
+                }, status=500)
+
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout ao encaminhar para n8n: empresa={empresa.nome}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Timeout ao processar mensagem'
+            }, status=504)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro de conexão com n8n: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro de conexão com sistema de processamento'
+            }, status=500)
+
+    except Exception as e:
+        logger.error(f"Erro inesperado no webhook: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro interno do servidor'
+        }, status=500)

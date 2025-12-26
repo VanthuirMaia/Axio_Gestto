@@ -120,6 +120,7 @@ PASSWORD_RESET_TIMEOUT = 3600  # 1 hora em segundos
 
 # API Configuration (n8n Bot)
 N8N_API_KEY = config('N8N_API_KEY', default='desenvolvimento-inseguro-mudar-em-producao')
+N8N_WEBHOOK_URL = config('N8N_WEBHOOK_URL', default='')
 
 # ============================================
 # SaaS CONFIGURATION - Pagamentos

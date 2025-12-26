@@ -112,7 +112,8 @@ class EvolutionAPIService:
         webhook_secret = self.config.gerar_webhook_secret()
 
         # Configurar webhook URL
-        webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp/{self.config.empresa.id}/{webhook_secret}/"
+        # URL do webhook intermediário (Django valida e encaminha para n8n)
+        webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp-n8n/{self.config.empresa.id}/{webhook_secret}/"
 
         data = {
             "instanceName": instance_name,

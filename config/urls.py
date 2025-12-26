@@ -17,6 +17,7 @@ from agendamentos.api_n8n import (
     consultar_horarios_disponiveis
 )
 from empresas.api_views import whatsapp_webhook
+from configuracoes.views import whatsapp_webhook_n8n
 
 urlpatterns = [
     # ==========================================
@@ -32,8 +33,11 @@ urlpatterns = [
     path('api/whatsapp-webhook/', whatsapp_webhook_saas, name='whatsapp_webhook_saas'),
     path('api/bot/processar/', processar_comando_bot, name='api_bot_processar'),
 
-    # Evolution API - Webhook WhatsApp
+    # Evolution API - Webhook WhatsApp (antigo - direto do bot_api.py)
     path('api/webhooks/whatsapp/<int:empresa_id>/<str:secret>/', whatsapp_webhook, name='whatsapp_webhook_evolution'),
+
+    # Evolution API → Django → n8n (NOVO - webhook intermediário)
+    path('api/webhooks/whatsapp-n8n/<int:empresa_id>/<str:secret>/', whatsapp_webhook_n8n, name='whatsapp_webhook_n8n'),
 
     # APIs n8n - Consultas
     path('api/n8n/servicos/', listar_servicos, name='api_n8n_servicos'),
