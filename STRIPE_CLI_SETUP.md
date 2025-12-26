@@ -80,15 +80,15 @@ Deve mostrar:
 ```
 ✅ Plano 'Essencial' atualizado:
    - Preço: R$ 49.00
-   - Price ID: price_1SiaBDEOfuBf9VWtRdF5EG81
+   - Price ID: price_1XXXXXXXXXXXXXXXXXXXXX
 
 ✅ Plano 'Profissional' atualizado:
    - Preço: R$ 179.00
-   - Price ID: price_1SiaBaEOfuBf9VWtGFlixF1Z
+   - Price ID: price_1YYYYYYYYYYYYYYYYYYYYYY
 
 ✅ Plano 'Empresarial' atualizado:
    - Preço: R$ 399.00
-   - Price ID: price_1SiaBrEOfuBf9VWt0AmAoR3X
+   - Price ID: price_1ZZZZZZZZZZZZZZZZZZZZZ
 ```
 
 ---
