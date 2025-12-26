@@ -1,0 +1,499 @@
+{
+  "name": "TEMPLATE - Bot Universal VPS Simplificado ⚡",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bot-universal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "id": "webhook-trigger",
+      "name": "Webhook - Recebe Mensagem",
+      "webhookId": "bot-universal-saas"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "config_django_url",
+              "name": "config_django_url",
+              "value": "https://axiogestto.com",
+              "type": "string"
+            },
+            {
+              "id": "config_django_key",
+              "name": "config_django_key",
+              "value": "={{ $env.DJANGO_API_KEY || 'SUA-CHAVE-DJANGO-AQUI' }}",
+              "type": "string"
+            },
+            {
+              "id": "config_evolution_url",
+              "name": "config_evolution_url",
+              "value": "https://evolution.axiodev.cloud",
+              "type": "string"
+            },
+            {
+              "id": "config_evolution_key",
+              "name": "config_evolution_key",
+              "value": "={{ $env.EVOLUTION_API_KEY || 'SUA-CHAVE-EVOLUTION-AQUI' }}",
+              "type": "string"
+            },
+            {
+              "id": "config_openai_key",
+              "name": "config_openai_key",
+              "value": "={{ $env.OPENAI_API_KEY || 'sk-proj-SUA-CHAVE-OPENAI-AQUI' }}",
+              "type": "string"
+            },
+            {
+              "id": "empresa_id",
+              "name": "empresa_id",
+              "value": "={{ $json.body.empresa_id || 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "instance_name",
+              "name": "instance_name",
+              "value": "={{ $json.body.instance || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.body.data?.key?.remoteJid?.replace('@s.whatsapp.net', '') || $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "mensagem",
+              "name": "mensagem",
+              "value": "={{ $json.body.data?.message?.conversation || $json.body.data?.message?.extendedTextMessage?.text || $json.body.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "nome_cliente",
+              "name": "nome_cliente",
+              "value": "={{ $json.body.data?.pushName || 'Cliente' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "id": "normalizar-dados",
+      "name": "⚙️ Configurações + Dados"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 CONFIGURAÇÃO SIMPLIFICADA\n\n### ✅ VANTAGENS DESTA VERSÃO:\n\n1. **Tudo em um lugar** - Edite URLs diretamente no node \"Configurações + Dados\"\n2. **Sem restart** - Salva e já funciona\n3. **Híbrido** - Usa variáveis de ambiente SE existir, senão usa valores diretos\n\n### 📝 COMO CONFIGURAR:\n\n**Passo 1:** Clique no node \"⚙️ Configurações + Dados\"\n\n**Passo 2:** Edite os valores:\n\n```\nconfig_django_url: https://axiogestto.com\nconfig_django_key: SUA-CHAVE-REAL-AQUI\n\nconfig_evolution_url: https://evolution.axiodev.cloud  \nconfig_evolution_key: SUA-CHAVE-REAL-AQUI\n\nconfig_openai_key: sk-proj-SUA-CHAVE-REAL-AQUI\n```\n\n**Passo 3:** Salve (Ctrl+S) e ative!\n\n### 🔒 SEGURANÇA:\n\n⚠️ Se você tem variáveis de ambiente configuradas, elas terão prioridade.\n\n✅ Para produção, configure variáveis de ambiente e deixe os valores padrão.\n\n📖 Ver: docs/N8N_HUMANIZACAO_IA.md",
+        "height": 580,
+        "width": 520,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-160, 80],
+      "typeVersion": 1,
+      "id": "note-config",
+      "name": "📋 Config Fácil"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('⚙️ Configurações + Dados').item.json.config_django_url }}/api/n8n/profissionais/",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "empresa_id",
+              "value": "={{ $json.empresa_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.config_django_key }}"
+            },
+            {
+              "name": "empresa_id",
+              "value": "={{ $json.empresa_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 180],
+      "id": "buscar-profissionais",
+      "name": "Buscar Profissionais"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('⚙️ Configurações + Dados').item.json.config_django_url }}/api/n8n/servicos/",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "empresa_id",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.empresa_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.config_django_key }}"
+            },
+            {
+              "name": "empresa_id",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.empresa_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "buscar-servicos",
+      "name": "Buscar Servicos"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('⚙️ Configurações + Dados').item.json.config_django_url }}/api/n8n/horarios-funcionamento/",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "empresa_id",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.empresa_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.config_django_key }}"
+            },
+            {
+              "name": "empresa_id",
+              "value": "={{ $('⚙️ Configurações + Dados').item.json.empresa_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 420],
+      "id": "buscar-horarios",
+      "name": "Buscar Horarios"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolida todos os dados buscados da API\nconst dados = $('⚙️ Configurações + Dados').item.json;\nconst profissionais = $('Buscar Profissionais').item.json.profissionais || [];\nconst servicos = $('Buscar Servicos').item.json.servicos || [];\nconst horarios = $('Buscar Horarios').item.json.horarios || [];\n\n// Formata dados para o agente de forma mais humanizada\nconst contextoProfissionais = profissionais.length > 0\n  ? profissionais.map(p => `- ${p.nome} (ID: ${p.id})`).join('\\n')\n  : 'Nenhum profissional disponível no momento';\n\nconst contextoServicos = servicos.length > 0\n  ? servicos.map(s => `- ${s.nome}: R$ ${s.preco} (${s.duracao_minutos} min)${s.descricao ? ' - ' + s.descricao : ''}`).join('\\n')\n  : 'Nenhum serviço cadastrado';\n\nconst contextoHorarios = horarios.length > 0\n  ? horarios.map(h => `${h.dia_semana_nome}: ${h.hora_abertura} às ${h.hora_fechamento}${h.intervalo_inicio ? ` (intervalo ${h.intervalo_inicio} às ${h.intervalo_fim})` : ''}`).join('\\n')\n  : 'Horários não definidos';\n\n// Data/hora atual para contexto\nconst agora = new Date();\nconst dias = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];\nconst meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];\n\nconst contextoTemporal = `Hoje é ${dias[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]} de ${agora.getFullYear()}, ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;\n\nreturn [{\n  json: {\n    // Mantém configurações\n    config_django_url: dados.config_django_url,\n    config_django_key: dados.config_django_key,\n    config_evolution_url: dados.config_evolution_url,\n    config_evolution_key: dados.config_evolution_key,\n    config_openai_key: dados.config_openai_key,\n    \n    // Dados da mensagem\n    empresa_id: dados.empresa_id,\n    instance_name: dados.instance_name,\n    telefone: dados.telefone,\n    mensagem: dados.mensagem,\n    nome_cliente: dados.nome_cliente,\n    \n    // Dados das APIs\n    profissionais: profissionais,\n    servicos: servicos,\n    horarios: horarios,\n    \n    // Contextos formatados\n    contexto_profissionais: contextoProfissionais,\n    contexto_servicos: contextoServicos,\n    contexto_horarios: contextoHorarios,\n    contexto_temporal: contextoTemporal\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "consolidar-contexto",
+      "name": "Consolidar Contexto"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.config_openai_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"## 👋 QUEM VOCÊ É\\n\\nVocê é Luna, a recepcionista virtual da empresa. 🌙\\n\\n## 💫 SUA PERSONALIDADE\\n\\n- 💚 Atenciosa e sempre disposta a ajudar\\n- 😊 Gentil, educada e empática\\n- 🎯 Eficiente mas sem pressa - o cliente não é um número\\n- 💬 Usa linguagem natural, como se estivesse conversando pessoalmente\\n- ✨ Faz o cliente se sentir bem-vindo e valorizado\\n- 🌈 Positiva e otimista, mas sem exageros\\n\\n## 📅 CONTEXTO ATUAL\\n\\n{{ $json.contexto_temporal }}\\n\\n## 👥 NOSSA EQUIPE\\n\\n{{ $json.contexto_profissionais }}\\n\\n## 💼 SERVIÇOS QUE OFERECEMOS\\n\\n{{ $json.contexto_servicos }}\\n\\n## 🕐 HORÁRIOS DE ATENDIMENTO\\n\\n{{ $json.contexto_horarios }}\\n\\n## 🎯 SUA MISSÃO\\n\\nQuando o cliente enviar uma mensagem, você precisa:\\n\\n### 1️⃣ Identificar a intenção\\n\\n- **agendar**: Cliente quer marcar um horário\\n- **cancelar**: Cliente quer desmarcar agendamento\\n- **consultar**: Cliente quer saber horários disponíveis\\n- **duvida**: Cliente tem perguntas sobre serviços, preços, localização, etc.\\n\\n### 2️⃣ Extrair informações importantes\\n\\nSe for agendamento, você precisa saber:\\n- Nome do cliente (se ainda não souber)\\n- Qual serviço ele quer\\n- Com qual profissional (se ele mencionar - senão pode ser qualquer um)\\n- Que dia\\n- Que horário\\n\\n### 3️⃣ Responder de forma estruturada\\n\\n**IMPORTANTE:** Retorne APENAS um objeto JSON válido, sem markdown, sem ``` ao redor.\\n\\n**Formato da resposta:**\\n\\n```\\n{\\n  \\\"intencao\\\": \\\"agendar\\\",\\n  \\\"nome_cliente\\\": \\\"João Silva\\\",\\n  \\\"servico\\\": \\\"Corte de Cabelo\\\",\\n  \\\"profissional\\\": \\\"Pedro\\\" ou null,\\n  \\\"data\\\": \\\"2025-12-27\\\",\\n  \\\"hora\\\": \\\"14:00\\\",\\n  \\\"observacoes\\\": \\\"Cliente pediu degradê\\\",\\n  \\\"resposta_amigavel\\\": \\\"Perfeito, João! Vou agendar seu corte para amanhã às 14h com o Pedro. Pode deixar que já está reservado! 😊\\\"\\n}\\n```\\n\\n## ✅ REGRAS DE OURO\\n\\n### Como se comunicar:\\n\\n1. **Seja calorosa mas natural**\\n   - ✅ \\\"Oi! Como posso te ajudar?\\\"\\n   - ❌ \\\"Prezado cliente, em que posso ser útil?\\\"\\n\\n2. **Use emojis com moderação** (1-2 por mensagem)\\n   - ✅ \\\"Perfeito! Agendado para amanhã 😊\\\"\\n   - ❌ \\\"Perfeito!!! 🎉🎊✨💫 Agendado!!! 😊😄🥳\\\"\\n\\n3. **Mostre que você entendeu**\\n   - ✅ \\\"Entendi! Você quer agendar um corte, certo?\\\"\\n   - ❌ \\\"Processando solicitação...\\\"\\n\\n4. **Normalize datas relativas:**\\n   - \\\"amanhã\\\" → calcule a data exata (YYYY-MM-DD)\\n   - \\\"segunda\\\" → próxima segunda-feira\\n   - \\\"daqui a 3 dias\\\" → calcule\\n   - \\\"hoje à tarde\\\" → data de hoje + horário estimado\\n\\n5. **Se faltar informação, pergunte gentilmente:**\\n   ```\\n   {\\n     \\\"intencao\\\": \\\"agendar\\\",\\n     \\\"servico\\\": \\\"Corte\\\",\\n     \\\"pergunta\\\": \\\"Que ótimo! Para quando você gostaria de agendar? Temos horários disponíveis amanhã e depois de amanhã 😊\\\"\\n   }\\n   ```\\n\\n6. **Se o cliente NÃO mencionar profissional:**\\n   - Deixe `\\\"profissional\\\": null`\\n   - O sistema escolherá automaticamente quem está disponível\\n\\n7. **Seja empática com problemas:**\\n   - Se horário indisponível: \\\"Que pena, esse horário já está ocupado. Que tal às 15h ou 16h?\\\"\\n   - Se dia fechado: \\\"Infelizmente não abrimos nesse dia, mas posso te oferecer outro? 😊\\\"\\n\\n8. **NUNCA invente informações**\\n   - ❌ Não invente preços\\n   - ❌ Não invente profissionais\\n   - ❌ Não confirme horários sem ter certeza\\n\\n## 💡 EXEMPLOS DE BOA COMUNICAÇÃO\\n\\n### Exemplo 1: Cliente vago\\n**Cliente:** \\\"oi\\\"\\n**Você:**\\n```json\\n{\\n  \\\"intencao\\\": \\\"duvida\\\",\\n  \\\"resposta_amigavel\\\": \\\"Olá! Sou a Luna, assistente virtual. Posso te ajudar a agendar um horário ou tirar alguma dúvida? 😊\\\"\\n}\\n```\\n\\n### Exemplo 2: Agendamento incompleto\\n**Cliente:** \\\"quero cortar cabelo\\\"\\n**Você:**\\n```json\\n{\\n  \\\"intencao\\\": \\\"agendar\\\",\\n  \\\"servico\\\": \\\"Corte de Cabelo\\\",\\n  \\\"pergunta\\\": \\\"Que legal! Para quando você quer agendar o corte? Temos disponibilidade amanhã e nos próximos dias 😊\\\"\\n}\\n```\\n\\n### Exemplo 3: Agendamento completo\\n**Cliente:** \\\"quero agendar barba com o João amanhã 14h\\\"\\n**Você:**\\n```json\\n{\\n  \\\"intencao\\\": \\\"agendar\\\",\\n  \\\"servico\\\": \\\"Barba\\\",\\n  \\\"profissional\\\": \\\"João\\\",\\n  \\\"data\\\": \\\"2025-12-27\\\",\\n  \\\"hora\\\": \\\"14:00\\\",\\n  \\\"resposta_amigavel\\\": \\\"Maravilha! Agendado: Barba com o João amanhã às 14h. Te aguardamos! 💈\\\"\\n}\\n```\\n\\nRetorne SEMPRE e APENAS o JSON, sem ```json ao redor, sem explicações extras.\\nO campo \\\"resposta_amigavel\\\" é onde você coloca a mensagem que será enviada ao cliente.\\n\\nVamos lá! 💪\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.mensagem }}\"\n    }\n  ],\n  \"temperature\": 0.8\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "id": "openai-request",
+      "name": "🌙 Luna IA"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrai resposta do OpenAI\nconst response = $json;\nconst content = response.choices[0].message.content;\n\n// Remove markdown se houver\nlet jsonStr = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\n// Parse JSON\nlet dados;\ntry {\n  dados = JSON.parse(jsonStr);\n} catch (err) {\n  // Se não conseguiu parsear, retorna erro humanizado\n  return [{\n    json: {\n      erro: true,\n      intencao: 'duvida',\n      mensagem: 'Desculpa, não consegui entender. Pode reformular? 😊',\n      resposta_amigavel: 'Desculpa, não consegui entender. Pode reformular? 😊',\n      content_original: content,\n      parse_error: err.message\n    }\n  }];\n}\n\n// Pega dados do contexto anterior\nconst contexto = $('Consolidar Contexto').item.json;\n\n// Match de profissional (se mencionado)\nlet profissional_id = null;\nlet profissional_nome = null;\n\nif (dados.profissional) {\n  const normalizar = (texto) => texto\n    .toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .trim();\n\n  const nomeNormalizado = normalizar(dados.profissional);\n  \n  // Busca match fuzzy\n  const match = contexto.profissionais.find(p =>\n    normalizar(p.nome).includes(nomeNormalizado) ||\n    nomeNormalizado.includes(normalizar(p.nome))\n  );\n\n  if (match) {\n    profissional_id = match.id;\n    profissional_nome = match.nome;\n  }\n}\n\n// Se não encontrou profissional mas tem na lista, pega o primeiro disponível\nif (!profissional_id && contexto.profissionais.length > 0) {\n  profissional_id = contexto.profissionais[0].id;\n  profissional_nome = contexto.profissionais[0].nome;\n}\n\n// Match de serviço\nlet servico_id = null;\nlet servico_nome = null;\nlet servico_preco = null;\n\nif (dados.servico) {\n  const normalizar = (texto) => texto.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n  const servicoNormalizado = normalizar(dados.servico);\n  \n  const match = contexto.servicos.find(s =>\n    normalizar(s.nome).includes(servicoNormalizado) ||\n    servicoNormalizado.includes(normalizar(s.nome))\n  );\n\n  if (match) {\n    servico_id = match.id;\n    servico_nome = match.nome;\n    servico_preco = match.preco;\n  }\n}\n\nreturn [{\n  json: {\n    // Configurações (para nodes seguintes)\n    config_django_url: contexto.config_django_url,\n    config_django_key: contexto.config_django_key,\n    config_evolution_url: contexto.config_evolution_url,\n    config_evolution_key: contexto.config_evolution_key,\n    \n    // Dados originais\n    empresa_id: contexto.empresa_id,\n    telefone: contexto.telefone,\n    instance_name: contexto.instance_name,\n    \n    // Dados extraídos pela IA\n    intencao: dados.intencao,\n    nome_cliente: dados.nome_cliente || contexto.nome_cliente,\n    \n    // Serviço\n    servico: dados.servico,\n    servico_id: servico_id,\n    servico_nome: servico_nome,\n    servico_preco: servico_preco,\n    \n    // Profissional\n    profissional: dados.profissional,\n    profissional_id: profissional_id,\n    profissional_nome: profissional_nome,\n    \n    // Data/hora\n    data: dados.data,\n    hora: dados.hora,\n    \n    // Outros\n    observacoes: dados.observacoes || '',\n    pergunta: dados.pergunta || '',\n    resposta_amigavel: dados.resposta_amigavel || '',\n    \n    // Flags\n    dados_completos: !!(dados.intencao && servico_id && dados.data && dados.hora),\n    precisa_responder: !!(dados.pergunta || dados.resposta_amigavel)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "id": "processar-output",
+      "name": "Processar Output IA"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "intencao-agendar",
+                    "leftValue": "={{ $json.intencao }}",
+                    "rightValue": "agendar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "dados-completos",
+                    "leftValue": "={{ $json.dados_completos }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Agendar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "intencao-consultar",
+                    "leftValue": "={{ $json.intencao }}",
+                    "rightValue": "consultar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Consultar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "tem-pergunta",
+                    "leftValue": "={{ $json.pergunta }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Responder Diretamente"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [1560, 300],
+      "id": "router-intencao",
+      "name": "Router por Intenção"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.config_django_url }}/api/bot/processar/",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.config_django_key }}"
+            },
+            {
+              "name": "empresa_id",
+              "value": "={{ $json.empresa_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $json.telefone }}\",\n  \"mensagem_original\": \"{{ $('Consolidar Contexto').item.json.mensagem }}\",\n  \"intencao\": \"agendar\",\n  \"dados\": {\n    \"nome_cliente\": \"{{ $json.nome_cliente }}\",\n    \"servico\": \"{{ $json.servico }}\",\n    \"profissional_id\": {{ $json.profissional_id }},\n    \"data\": \"{{ $json.data }}\",\n    \"hora\": \"{{ $json.hora }}\",\n    \"observacoes\": \"{{ $json.observacoes }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 180],
+      "id": "criar-agendamento",
+      "name": "Criar Agendamento"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega resposta do Django\nconst responseDjango = $json;\n\n// Pega dados do processamento\nconst dados = $('Processar Output IA').item.json;\n\n// Se Django retornou sucesso, monta mensagem de confirmação\nif (responseDjango.success) {\n  const agendamento = responseDjango.agendamento;\n  \n  const mensagem = `✅ Agendamento confirmado!\n\n📅 Serviço: ${dados.servico_nome}\n👤 Profissional: ${dados.profissional_nome}\n🕐 Data: ${dados.data} às ${dados.hora}\n${dados.servico_preco ? `💰 Valor: R$ ${dados.servico_preco}` : ''}\n\n${agendamento.codigo ? `📝 Código: ${agendamento.codigo}` : ''}\n\n${dados.resposta_amigavel || 'Qualquer dúvida, estou por aqui! 😊'}`;\n  \n  return [{\n    json: {\n      telefone: dados.telefone,\n      mensagem: mensagem.trim()\n    }\n  }];\n} else {\n  // Se deu erro, responde com a mensagem de erro de forma amigável\n  const mensagemErro = `😔 Ops! ${responseDjango.mensagem || 'Não consegui processar seu agendamento.'}\n\nQue tal tentarmos outro horário? Estou aqui pra te ajudar! 😊`;\n  \n  return [{\n    json: {\n      telefone: dados.telefone,\n      mensagem: mensagemErro\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 180],
+      "id": "formatar-resposta-agendamento",
+      "name": "Formatar Confirmação"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Responde diretamente sem criar agendamento\nconst dados = $json;\n\nconst mensagem = dados.resposta_amigavel || dados.pergunta || 'Como posso te ajudar? 😊';\n\nreturn [{\n  json: {\n    telefone: dados.telefone,\n    mensagem: mensagem\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 420],
+      "id": "formatar-resposta-direta",
+      "name": "Formatar Resposta Direta"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Processar Output IA').item.json.config_evolution_url }}/message/sendText/{{ $('Processar Output IA').item.json.instance_name }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Processar Output IA').item.json.config_evolution_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": \"{{ $json.mensagem }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 300],
+      "id": "enviar-resposta",
+      "name": "Enviar Resposta WhatsApp"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Processado com sucesso' } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2420, 300],
+      "id": "response-webhook",
+      "name": "Response OK"
+    }
+  ],
+  "connections": {
+    "Webhook - Recebe Mensagem": {
+      "main": [[{ "node": "⚙️ Configurações + Dados", "type": "main", "index": 0 }]]
+    },
+    "⚙️ Configurações + Dados": {
+      "main": [[
+        { "node": "Buscar Profissionais", "type": "main", "index": 0 },
+        { "node": "Buscar Servicos", "type": "main", "index": 0 },
+        { "node": "Buscar Horarios", "type": "main", "index": 0 }
+      ]]
+    },
+    "Buscar Profissionais": {
+      "main": [[{ "node": "Consolidar Contexto", "type": "main", "index": 0 }]]
+    },
+    "Buscar Servicos": {
+      "main": [[{ "node": "Consolidar Contexto", "type": "main", "index": 0 }]]
+    },
+    "Buscar Horarios": {
+      "main": [[{ "node": "Consolidar Contexto", "type": "main", "index": 0 }]]
+    },
+    "Consolidar Contexto": {
+      "main": [[{ "node": "🌙 Luna IA", "type": "main", "index": 0 }]]
+    },
+    "🌙 Luna IA": {
+      "main": [[{ "node": "Processar Output IA", "type": "main", "index": 0 }]]
+    },
+    "Processar Output IA": {
+      "main": [[{ "node": "Router por Intenção", "type": "main", "index": 0 }]]
+    },
+    "Router por Intenção": {
+      "main": [
+        [{ "node": "Criar Agendamento", "type": "main", "index": 0 }],
+        [],
+        [{ "node": "Formatar Resposta Direta", "type": "main", "index": 0 }]
+      ]
+    },
+    "Criar Agendamento": {
+      "main": [[{ "node": "Formatar Confirmação", "type": "main", "index": 0 }]]
+    },
+    "Formatar Confirmação": {
+      "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Formatar Resposta Direta": {
+      "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Enviar Resposta WhatsApp": {
+      "main": [[{ "node": "Response OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "vps-simplificado-v1",
+  "meta": {
+    "instanceId": "axio-gestto-vps-simplificado"
+  },
+  "id": "bot-universal-vps-simplificado",
+  "tags": ["humanizado", "vps", "config-facil", "recomendado"]
+}
