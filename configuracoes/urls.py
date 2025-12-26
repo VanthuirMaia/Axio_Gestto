@@ -36,4 +36,6 @@ urlpatterns = [
     path('whatsapp/status/', views.whatsapp_verificar_status, name='whatsapp_verificar_status'),
     path('whatsapp/desconectar/', views.whatsapp_desconectar, name='whatsapp_desconectar'),
     path('whatsapp/deletar/', views.whatsapp_deletar_instancia, name='whatsapp_deletar'),
+    path('whatsapp/reconfigurar/', views.whatsapp_reconfigurar, name='whatsapp_reconfigurar'),
+    path('whatsapp/sincronizar/', views.whatsapp_sincronizar, name='whatsapp_sincronizar'),
 ]

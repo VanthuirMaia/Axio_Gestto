@@ -120,11 +120,6 @@ class EvolutionAPIService:
             "qrcode": True,  # Retornar QR code
             "integration": "WHATSAPP-BAILEYS",  # Tipo de integração
 
-            # Webhook configuration
-            "webhookUrl": webhook_url,  # URL do webhook
-            "webhookByEvents": True,  # Receber webhooks por evento
-            "webhookBase64": True,  # Retornar dados em base64 (imagens, áudios, etc)
-
             # Settings/Configurations
             "rejectCall": True,  # Rejeitar chamadas automaticamente
             "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",  # Mensagem ao rejeitar
@@ -133,14 +128,24 @@ class EvolutionAPIService:
             "readMessages": False,  # Não marcar mensagens como lidas automaticamente
             "readStatus": False,  # Não enviar status de leitura
 
-            # Events to receive via webhook
-            "events": [
-                "QRCODE_UPDATED",  # QR Code atualizado
-                "MESSAGES_UPSERT",  # Nova mensagem recebida/enviada
-                "MESSAGES_UPDATE",  # Mensagem atualizada
-                "CONNECTION_UPDATE",  # Mudança de status de conexão
-            ]
+            # Webhook configuration (formato correto da Evolution API v2)
+            "webhook": {
+                "url": webhook_url,  # URL do webhook
+                "byEvents": True,  # Receber webhooks separados por evento
+                "base64": True,  # Retornar dados em base64 (imagens, áudios, etc)
+                "events": [
+                    "QRCODE_UPDATED",  # QR Code atualizado
+                    "MESSAGES_UPSERT",  # Nova mensagem recebida/enviada
+                    "MESSAGES_UPDATE",  # Mensagem atualizada
+                    "SEND_MESSAGE",  # Mensagem enviada
+                    "CONNECTION_UPDATE",  # Mudança de status de conexão
+                ]
+            }
         }
+
+        # Log da configuração para debug
+        logger.info(f"Criando instância {instance_name} com webhook: {webhook_url}")
+        logger.debug(f"Payload de criação: {data}")
 
         result = self._request('POST', 'instance/create', data=data)
 
@@ -156,6 +161,17 @@ class EvolutionAPIService:
             self.config.save()
 
             logger.info(f"Instância criada: {instance_name}")
+
+            # Reconfigurar webhook e settings como backup
+            # (já foram enviados na criação, mas reenviar garante que estão aplicados)
+            webhook_config_result = self.configurar_webhook()
+            if not webhook_config_result['success']:
+                logger.warning(f"Erro ao reconfigurar webhook: {webhook_config_result.get('error')}")
+
+            settings_result = self.configurar_settings()
+            if not settings_result['success']:
+                logger.warning(f"Erro ao reconfigurar settings: {settings_result.get('error')}")
+
         else:
             self.config.status = 'erro'
             self.config.ultimo_erro = result.get('error', 'Erro desconhecido')
@@ -296,6 +312,165 @@ class EvolutionAPIService:
             logger.info(f"Instância deletada")
 
         return result
+
+    def configurar_webhook(self):
+        """
+        Configura webhook da instância (chamado após criar)
+
+        Returns:
+            dict: {'success': bool}
+        """
+        if not self.config.instance_name:
+            return {'success': False, 'error': 'Instância não configurada'}
+
+        endpoint = f"webhook/set/{self.config.instance_name}"
+
+        data = {
+            "enabled": True,  # Habilitar webhook
+            "url": self.config.webhook_url,
+            "webhook_by_events": True,  # Webhook por eventos (snake_case para este endpoint)
+            "webhook_base64": True,  # Retornar base64 (snake_case para este endpoint)
+            "events": [
+                "QRCODE_UPDATED",
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "SEND_MESSAGE",
+                "CONNECTION_UPDATE"
+            ]
+        }
+
+        result = self._request('POST', endpoint, data=data)
+
+        if result['success']:
+            logger.info(f"Webhook configurado para: {self.config.instance_name}")
+        else:
+            logger.warning(f"Erro ao configurar webhook: {result.get('error')}")
+
+        return result
+
+    def configurar_settings(self):
+        """
+        Configura settings da instância (rejeitar chamadas, ignorar grupos)
+
+        Returns:
+            dict: {'success': bool}
+        """
+        if not self.config.instance_name:
+            return {'success': False, 'error': 'Instância não configurada'}
+
+        endpoint = f"settings/set/{self.config.instance_name}"
+
+        data = {
+            "rejectCall": True,
+            "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",
+            "groupsIgnore": True,
+            "alwaysOnline": False,
+            "readMessages": False,
+            "readStatus": False
+        }
+
+        result = self._request('POST', endpoint, data=data)
+
+        if result['success']:
+            logger.info(f"Settings configurados para: {self.config.instance_name}")
+        else:
+            logger.warning(f"Erro ao configurar settings: {result.get('error')}")
+
+        return result
+
+    def verificar_existencia_instancia(self):
+        """
+        Verifica se a instância ainda existe na Evolution API
+        Útil para detectar se foi deletada externamente
+
+        Returns:
+            dict: {'success': bool, 'exists': bool, 'error': str}
+        """
+        if not self.config.instance_name:
+            return {'success': True, 'exists': False, 'error': 'Instância não configurada'}
+
+        endpoint = f"instance/fetchInstances"
+        result = self._request('GET', endpoint)
+
+        if result['success']:
+            instances = result['data']
+
+            # Verificar se nossa instância está na lista
+            instance_exists = False
+            for inst in instances:
+                if isinstance(inst, dict):
+                    inst_name = inst.get('instance', {}).get('instanceName', '')
+                    if inst_name == self.config.instance_name:
+                        instance_exists = True
+                        break
+
+            return {
+                'success': True,
+                'exists': instance_exists,
+                'data': result['data']
+            }
+        else:
+            # Se houve erro na requisição, não podemos determinar
+            return {
+                'success': False,
+                'exists': None,
+                'error': result.get('error', 'Erro ao verificar instâncias')
+            }
+
+    def sincronizar_status(self):
+        """
+        Sincroniza o status local com a Evolution API
+        - Verifica se instância ainda existe
+        - Atualiza status de conexão
+        - Detecta se foi deletada externamente
+
+        Returns:
+            dict: {'success': bool, 'action': str, 'message': str}
+        """
+        # Verificar se instância existe
+        existe_result = self.verificar_existencia_instancia()
+
+        # Se a instância não existe mais na Evolution API
+        if existe_result['success'] and existe_result['exists'] is False:
+            logger.warning(f"Instância {self.config.instance_name} foi deletada externamente")
+
+            # Resetar configuração local
+            self.config.instance_name = ''
+            self.config.instance_token = ''
+            self.config.status = 'nao_configurado'
+            self.config.qr_code = ''
+            self.config.numero_conectado = ''
+            self.config.nome_perfil = ''
+            self.config.foto_perfil_url = ''
+            self.config.webhook_url = ''
+            self.config.ultimo_erro = 'Instância foi deletada externamente'
+            self.config.save()
+
+            return {
+                'success': True,
+                'action': 'deleted_externally',
+                'message': 'Instância foi deletada externamente e configuração foi resetada'
+            }
+
+        # Se instância existe, atualizar status de conexão
+        elif existe_result['success'] and existe_result['exists'] is True:
+            status_result = self.obter_status_conexao()
+
+            return {
+                'success': True,
+                'action': 'status_updated',
+                'message': f'Status atualizado para: {self.config.status}',
+                'status': self.config.status
+            }
+
+        # Se não conseguiu verificar
+        else:
+            return {
+                'success': False,
+                'action': 'error',
+                'message': existe_result.get('error', 'Não foi possível sincronizar'),
+                'error': existe_result.get('error')
+            }
 
     # ==========================================
     # ENVIO DE MENSAGENS

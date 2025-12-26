@@ -420,6 +420,8 @@ def whatsapp_dashboard(request):
 
     # Criar ou buscar configuração
     from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
     config, created = ConfiguracaoWhatsApp.objects.get_or_create(
         empresa=empresa,
         defaults={
@@ -432,6 +434,20 @@ def whatsapp_dashboard(request):
     if created:
         config.gerar_instance_name()
         config.gerar_webhook_secret()
+
+    # Se já tem instância configurada, sincronizar com Evolution API
+    # para detectar se foi deletada externamente
+    if config.instance_name and not created:
+        service = EvolutionAPIService(config)
+        sync_result = service.sincronizar_status()
+
+        # Se foi deletada externamente, mostrar mensagem ao usuário
+        if sync_result.get('action') == 'deleted_externally':
+            messages.warning(
+                request,
+                'A instância do WhatsApp foi removida externamente. '
+                'É necessário criar uma nova conexão.'
+            )
 
     context = {
         'empresa': empresa,
@@ -627,4 +643,103 @@ def whatsapp_deletar_instancia(request):
         return JsonResponse({
             'success': False,
             'error': result.get('error', 'Erro ao deletar')
+        })
+
+
+@login_required
+def whatsapp_reconfigurar(request):
+    """
+    Reconfigura webhook e settings de uma instância existente (AJAX)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    service = EvolutionAPIService(config)
+
+    # Reconfigurar webhook
+    webhook_result = service.configurar_webhook()
+    settings_result = service.configurar_settings()
+
+    if webhook_result['success'] and settings_result['success']:
+        messages.success(request, 'Configurações aplicadas com sucesso!')
+        return JsonResponse({
+            'success': True,
+            'message': 'Webhook e Settings reconfigurados'
+        })
+    else:
+        errors = []
+        if not webhook_result['success']:
+            errors.append(f"Webhook: {webhook_result.get('error')}")
+        if not settings_result['success']:
+            errors.append(f"Settings: {settings_result.get('error')}")
+
+        return JsonResponse({
+            'success': False,
+            'error': ' | '.join(errors)
+        })
+
+
+@login_required
+def whatsapp_sincronizar(request):
+    """
+    Sincroniza status da instância com Evolution API (AJAX)
+    Detecta se a instância foi deletada externamente
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    # Se não tem instância configurada, não precisa sincronizar
+    if not config.instance_name:
+        return JsonResponse({
+            'success': True,
+            'action': 'no_instance',
+            'message': 'Nenhuma instância configurada'
+        })
+
+    service = EvolutionAPIService(config)
+    result = service.sincronizar_status()
+
+    if result['success']:
+        # Mensagens personalizadas baseadas na ação
+        if result['action'] == 'deleted_externally':
+            messages.warning(
+                request,
+                'A instância foi removida externamente. Configuração foi resetada.'
+            )
+        elif result['action'] == 'status_updated':
+            messages.success(request, 'Status sincronizado com sucesso!')
+
+        return JsonResponse({
+            'success': True,
+            'action': result['action'],
+            'message': result['message'],
+            'status': config.status,
+            'conectado': config.esta_conectado()
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': result.get('message', 'Erro ao sincronizar')
         })
