@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.timezone import now
+from django.conf import settings
 from datetime import timedelta
 
 from empresas.models import Empresa, Servico, Profissional
@@ -404,3 +405,226 @@ def assinatura_gerenciar(request):
     }
 
     return render(request, 'configuracoes/assinatura.html', context)
+
+
+# ==========================================
+# WHATSAPP / EVOLUTION API
+# ==========================================
+
+@login_required
+def whatsapp_dashboard(request):
+    """
+    Dashboard de configuração do WhatsApp
+    """
+    empresa = request.user.empresa
+
+    # Criar ou buscar configuração
+    from empresas.models import ConfiguracaoWhatsApp
+    config, created = ConfiguracaoWhatsApp.objects.get_or_create(
+        empresa=empresa,
+        defaults={
+            'evolution_api_url': getattr(settings, 'EVOLUTION_API_URL', ''),
+            'evolution_api_key': getattr(settings, 'EVOLUTION_API_KEY', ''),
+        }
+    )
+
+    # Se acabou de criar, gerar nome da instância
+    if created:
+        config.gerar_instance_name()
+        config.gerar_webhook_secret()
+
+    context = {
+        'empresa': empresa,
+        'config': config,
+        'conectado': config.esta_conectado(),
+        'pode_criar': config.status in ['nao_configurado', 'desconectado', 'erro'],
+    }
+
+    return render(request, 'configuracoes/whatsapp.html', context)
+
+
+@login_required
+def whatsapp_criar_instancia(request):
+    """
+    Cria instância e retorna QR Code (AJAX)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+    config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+
+    # Criar service
+    service = EvolutionAPIService(config)
+
+    # Criar instância
+    result = service.criar_instancia()
+
+    if not result['success']:
+        return JsonResponse({
+            'success': False,
+            'error': result.get('error', 'Erro ao criar instância')
+        })
+
+    # Obter QR Code
+    qr_result = service.obter_qrcode()
+
+    if qr_result['success']:
+        return JsonResponse({
+            'success': True,
+            'qrcode': qr_result['qrcode'],
+            'status': config.status,
+            'instance_name': config.instance_name
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Instância criada mas QR Code não disponível. Tente novamente.'
+        })
+
+
+@login_required
+def whatsapp_obter_qr(request):
+    """
+    Obtém QR Code atualizado (AJAX polling)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    service = EvolutionAPIService(config)
+
+    # Verificar status primeiro
+    status_result = service.obter_status_conexao()
+
+    # Se já está conectado, retornar sucesso
+    if config.esta_conectado():
+        return JsonResponse({
+            'success': True,
+            'conectado': True,
+            'status': config.status,
+            'numero': config.numero_conectado,
+            'nome': config.nome_perfil
+        })
+
+    # Se aguardando QR, tentar obter novo
+    if config.status == 'aguardando_qr':
+        qr_result = service.obter_qrcode()
+
+        return JsonResponse({
+            'success': True,
+            'conectado': False,
+            'qrcode': qr_result.get('qrcode', config.qr_code),
+            'status': config.status
+        })
+
+    return JsonResponse({
+        'success': True,
+        'conectado': False,
+        'status': config.status,
+        'qrcode': config.qr_code
+    })
+
+
+@login_required
+def whatsapp_verificar_status(request):
+    """
+    Verifica status da conexão (AJAX)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    service = EvolutionAPIService(config)
+    result = service.obter_status_conexao()
+
+    return JsonResponse({
+        'success': result['success'],
+        'status': config.status,
+        'conectado': config.esta_conectado(),
+        'numero': config.numero_conectado,
+        'nome': config.nome_perfil,
+        'foto': config.foto_perfil_url
+    })
+
+
+@login_required
+def whatsapp_desconectar(request):
+    """
+    Desconecta WhatsApp (logout)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    service = EvolutionAPIService(config)
+    result = service.desconectar_instancia()
+
+    if result['success']:
+        messages.success(request, 'WhatsApp desconectado com sucesso!')
+        return JsonResponse({'success': True, 'message': 'Desconectado com sucesso'})
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': result.get('error', 'Erro ao desconectar')
+        })
+
+
+@login_required
+def whatsapp_deletar_instancia(request):
+    """
+    Deleta instância completamente (CUIDADO: Irreversível)
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuração não encontrada'})
+
+    service = EvolutionAPIService(config)
+    result = service.deletar_instancia()
+
+    if result['success']:
+        messages.success(request, 'Instância deletada. Você pode criar uma nova.')
+        return JsonResponse({'success': True, 'message': 'Instância deletada'})
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': result.get('error', 'Erro ao deletar')
+        })

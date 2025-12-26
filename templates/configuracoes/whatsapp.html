@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+
+{% block title %}WhatsApp - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="fw-bold mb-1">
+        <i class="bi bi-whatsapp me-2"></i>
+        Configuração WhatsApp
+      </h2>
+      <p class="text-muted mb-0">Conecte seu WhatsApp e automatize o atendimento</p>
+    </div>
+  </div>
+
+  <!-- Status Card -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-2">
+                Status da Conexão
+                <span id="status-badge" class="badge {% if conectado %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                  {{ config.get_status_display }}
+                </span>
+              </h5>
+
+              {% if conectado %}
+                <div id="conexao-info">
+                  <p class="mb-1">
+                    <i class="bi bi-telephone me-2"></i>
+                    <strong>Número:</strong> <span id="numero-conectado">{{ config.numero_conectado|default:"Carregando..." }}</span>
+                  </p>
+                  <p class="mb-0">
+                    <i class="bi bi-person me-2"></i>
+                    <strong>Perfil:</strong> <span id="nome-perfil">{{ config.nome_perfil|default:"Carregando..." }}</span>
+                  </p>
+                </div>
+              {% else %}
+                <p class="text-muted mb-0">
+                  Conecte seu WhatsApp para começar a enviar mensagens automáticas
+                </p>
+              {% endif %}
+            </div>
+
+            <div class="col-md-4 text-end">
+              {% if conectado %}
+                <button class="btn btn-outline-danger" onclick="desconectarWhatsApp()">
+                  <i class="bi bi-box-arrow-right me-2"></i>
+                  Desconectar
+                </button>
+              {% elif config.status == 'aguardando_qr' %}
+                <button class="btn btn-secondary" disabled>
+                  <i class="bi bi-qr-code me-2"></i>
+                  Aguardando QR Code...
+                </button>
+              {% else %}
+                <button class="btn btn-success btn-lg" onclick="conectarWhatsApp()" id="btn-conectar">
+                  <i class="bi bi-whatsapp me-2"></i>
+                  Conectar WhatsApp
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Section (Oculto por padrão) -->
+  <div class="row mb-4" id="qrcode-section" style="display: none;">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-qr-code me-2"></i>
+            Escanear QR Code
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <div class="row justify-content-center">
+            <div class="col-md-6">
+              <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Como conectar:
+                </h6>
+                <ol class="text-start mb-0 ps-3">
+                  <li>Abra o WhatsApp no seu celular</li>
+                  <li>Toque em <strong>Mais opções</strong> > <strong>Aparelhos conectados</strong></li>
+                  <li>Toque em <strong>Conectar um aparelho</strong></li>
+                  <li>Aponte seu celular para esta tela para escanear o código</li>
+                </ol>
+              </div>
+
+              <!-- Loading -->
+              <div id="qr-loading" class="mb-3">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2 text-muted">Gerando QR Code...</p>
+              </div>
+
+              <!-- QR Code Image -->
+              <div id="qr-container" style="display: none;">
+                <img id="qr-code-img" src="" alt="QR Code WhatsApp" class="img-fluid mb-3" style="max-width: 300px; border: 3px solid #25D366; border-radius: 12px; padding: 10px; background: white;">
+                <p class="text-muted small">
+                  <i class="bi bi-clock me-1"></i>
+                  O código expira em 2 minutos
+                </p>
+              </div>
+
+              <!-- Erro -->
+              <div id="qr-error" class="alert alert-danger" style="display: none;">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span id="qr-error-message"></span>
+              </div>
+
+              <!-- Sucesso -->
+              <div id="qr-success" class="alert alert-success" style="display: none;">
+                <i class="bi bi-check-circle me-2"></i>
+                WhatsApp conectado com sucesso!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Informações Técnicas (Admin) -->
+  {% if user.is_superuser %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-gear me-2"></i>
+            Informações Técnicas (Admin)
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="text-muted small">Evolution API URL</label>
+              <p class="fw-semibold mb-0 font-monospace">{{ config.evolution_api_url|default:"Não configurado" }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="text-muted small">Nome da Instância</label>
+              <p class="fw-semibold mb-0 font-monospace">{{ config.instance_name|default:"Não criado" }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="text-muted small">Webhook URL</label>
+              <p class="fw-semibold mb-0 font-monospace small">{{ config.webhook_url|default:"Não configurado" }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="text-muted small">Última Sincronização</label>
+              <p class="fw-semibold mb-0">{{ config.ultima_sincronizacao|date:"d/m/Y H:i"|default:"Nunca" }}</p>
+            </div>
+
+            {% if config.ultimo_erro %}
+            <div class="col-12">
+              <div class="alert alert-danger mb-0">
+                <strong>Último Erro:</strong><br>
+                {{ config.ultimo_erro }}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <hr>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="verificarStatus()">
+              <i class="bi bi-arrow-repeat me-1"></i>
+              Atualizar Status
+            </button>
+
+            {% if config.instance_name %}
+            <button class="btn btn-sm btn-outline-danger" onclick="deletarInstancia()">
+              <i class="bi bi-trash me-1"></i>
+              Deletar Instância
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .font-monospace {
+    font-family: 'Courier New', monospace;
+  }
+
+  #qr-code-img {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let pollingInterval = null;
+  let pollingAttempts = 0;
+  const MAX_POLLING_ATTEMPTS = 60; // 60 * 3 segundos = 3 minutos
+
+  // Função para conectar WhatsApp
+  async function conectarWhatsApp() {
+    const btn = document.getElementById('btn-conectar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Criando instância...';
+
+    try {
+      const response = await fetch('{% url "whatsapp_criar_instancia" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Mostrar seção QR Code
+        document.getElementById('qrcode-section').style.display = 'block';
+        document.getElementById('qr-loading').style.display = 'none';
+        document.getElementById('qr-container').style.display = 'block';
+        document.getElementById('qr-code-img').src = data.qrcode;
+
+        // Iniciar polling para verificar conexão
+        iniciarPolling();
+
+        // Esconder botão conectar
+        btn.style.display = 'none';
+      } else {
+        alert('Erro ao criar instância: ' + data.error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-whatsapp me-2"></i>Conectar WhatsApp';
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao conectar: ' + error.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-whatsapp me-2"></i>Conectar WhatsApp';
+    }
+  }
+
+  // Polling para verificar status e atualizar QR Code
+  function iniciarPolling() {
+    pollingAttempts = 0;
+
+    pollingInterval = setInterval(async () => {
+      pollingAttempts++;
+
+      // Parar após MAX_POLLING_ATTEMPTS
+      if (pollingAttempts > MAX_POLLING_ATTEMPTS) {
+        pararPolling();
+        document.getElementById('qr-error').style.display = 'block';
+        document.getElementById('qr-error-message').textContent = 'Tempo limite excedido. Recarregue a página e tente novamente.';
+        return;
+      }
+
+      try {
+        const response = await fetch('{% url "whatsapp_obter_qr" %}');
+        const data = await response.json();
+
+        if (data.conectado) {
+          // WhatsApp conectado!
+          pararPolling();
+          mostrarSucesso(data);
+        } else if (data.qrcode) {
+          // Atualizar QR Code se mudou
+          document.getElementById('qr-code-img').src = data.qrcode;
+        }
+      } catch (error) {
+        console.error('Erro no polling:', error);
+      }
+    }, 3000); // A cada 3 segundos
+  }
+
+  function pararPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  }
+
+  function mostrarSucesso(data) {
+    // Esconder QR Code
+    document.getElementById('qr-container').style.display = 'none';
+    document.getElementById('qr-loading').style.display = 'none';
+
+    // Mostrar mensagem de sucesso
+    document.getElementById('qr-success').style.display = 'block';
+
+    // Atualizar status na página
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  }
+
+  // Desconectar WhatsApp
+  async function desconectarWhatsApp() {
+    if (!confirm('Deseja realmente desconectar o WhatsApp? Você precisará escanear o QR Code novamente.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('{% url "whatsapp_desconectar" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.location.reload();
+      } else {
+        alert('Erro ao desconectar: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao desconectar: ' + error.message);
+    }
+  }
+
+  // Verificar status (Admin)
+  async function verificarStatus() {
+    try {
+      const response = await fetch('{% url "whatsapp_verificar_status" %}');
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Status: ${data.status}\nConectado: ${data.conectado}\nNúmero: ${data.numero || 'N/A'}`);
+
+        if (data.conectado) {
+          document.getElementById('numero-conectado').textContent = data.numero;
+          document.getElementById('nome-perfil').textContent = data.nome || 'N/A';
+        }
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao verificar status');
+    }
+  }
+
+  // Deletar instância (Admin)
+  async function deletarInstancia() {
+    if (!confirm('ATENÇÃO: Isso deletará completamente a instância WhatsApp. Esta ação é IRREVERSÍVEL. Deseja continuar?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('{% url "whatsapp_deletar" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Instância deletada com sucesso!');
+        window.location.reload();
+      } else {
+        alert('Erro ao deletar: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao deletar instância');
+    }
+  }
+
+  // Limpar polling ao sair da página
+  window.addEventListener('beforeunload', () => {
+    pararPolling();
+  });
+</script>
+{% endblock %}

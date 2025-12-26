@@ -84,6 +84,64 @@
       </a>
     </div>
 
+    <!-- Assinatura -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <a href="{% url 'configuracoes_assinatura' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100 border-0 hover-card">
+          <div class="card-body text-center">
+            <div class="mb-3">
+              <i class="bi bi-star-fill text-warning" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="card-title fw-bold">Assinatura</h5>
+            <p class="text-muted mb-2">Gerenciar plano</p>
+            <h3 class="text-warning fw-bold">
+              {% if empresa.assinatura %}
+                {{ empresa.assinatura.plano.get_nome_display|truncatechars:8 }}
+              {% else %}
+                -
+              {% endif %}
+            </h3>
+            <small class="text-muted">
+              {% if empresa.assinatura %}
+                {{ empresa.assinatura.get_status_display }}
+              {% else %}
+                sem assinatura
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- WhatsApp -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <a href="{% url 'whatsapp_dashboard' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100 border-0 hover-card">
+          <div class="card-body text-center">
+            <div class="mb-3">
+              <i class="bi bi-whatsapp text-success" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="card-title fw-bold">WhatsApp</h5>
+            <p class="text-muted mb-2">Integração</p>
+            <h3 class="text-success fw-bold">
+              {% if empresa.config_whatsapp.esta_conectado %}
+                <i class="bi bi-check-circle-fill"></i>
+              {% else %}
+                <i class="bi bi-x-circle-fill text-secondary"></i>
+              {% endif %}
+            </h3>
+            <small class="text-muted">
+              {% if empresa.config_whatsapp %}
+                {{ empresa.config_whatsapp.get_status_display }}
+              {% else %}
+                não configurado
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      </a>
+    </div>
+
   </div>
 
   <!-- Dados da Empresa -->

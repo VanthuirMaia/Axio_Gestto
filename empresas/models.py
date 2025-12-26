@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.conf import settings
 from PIL import Image
+import secrets
 
 class Empresa(models.Model):
     # Dados básicos
@@ -201,3 +203,150 @@ class DataEspecial(models.Model):
             return f"{self.empresa.nome} - {self.data.strftime('%d/%m/%Y')} - {self.descricao} (FECHADO)"
         else:
             return f"{self.empresa.nome} - {self.data.strftime('%d/%m/%Y')} - {self.descricao} ({self.hora_abertura.strftime('%H:%M')} às {self.hora_fechamento.strftime('%H:%M')})"
+
+
+class ConfiguracaoWhatsApp(models.Model):
+    """
+    Configuração completa de integração com Evolution API
+    OneToOne com Empresa
+    """
+    STATUS_CHOICES = [
+        ('nao_configurado', 'Não Configurado'),
+        ('aguardando_qr', 'Aguardando QR Code'),
+        ('conectando', 'Conectando'),
+        ('conectado', 'Conectado'),
+        ('desconectado', 'Desconectado'),
+        ('erro', 'Erro na Conexão'),
+    ]
+
+    empresa = models.OneToOneField(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name='config_whatsapp',
+        help_text="Empresa dona desta configuração"
+    )
+
+    # Configuração da Evolution API
+    evolution_api_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="URL base da Evolution API (ex: https://evolution.seuservidor.com)"
+    )
+    evolution_api_key = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="API Key global da Evolution API"
+    )
+
+    # Instância
+    instance_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nome único da instância (slug da empresa ou personalizado)"
+    )
+    instance_token = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Token específico da instância (gerado pela Evolution)"
+    )
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='nao_configurado',
+        help_text="Status atual da conexão WhatsApp"
+    )
+
+    # QR Code
+    qr_code = models.TextField(
+        blank=True,
+        help_text="QR Code em base64 para conectar WhatsApp"
+    )
+    qr_code_expira_em = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data de expiração do QR Code"
+    )
+
+    # Webhook
+    webhook_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="URL do webhook configurado na Evolution API"
+    )
+    webhook_secret = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Secret para validar webhooks recebidos"
+    )
+
+    # Dados da conexão
+    numero_conectado = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Número WhatsApp conectado (com DDI)"
+    )
+    nome_perfil = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nome do perfil WhatsApp conectado"
+    )
+    foto_perfil_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="URL da foto de perfil do WhatsApp"
+    )
+
+    # Controle
+    ativo = models.BooleanField(
+        default=True,
+        help_text="Se a integração está ativa"
+    )
+    ultima_sincronizacao = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Última vez que sincronizou status com Evolution API"
+    )
+    ultimo_erro = models.TextField(
+        blank=True,
+        help_text="Último erro ocorrido na integração"
+    )
+
+    # Metadados
+    metadados = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dados extras da Evolution API"
+    )
+
+    # Timestamps
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuração WhatsApp'
+        verbose_name_plural = 'Configurações WhatsApp'
+        ordering = ['-criado_em']
+
+    def __str__(self):
+        return f"{self.empresa.nome} - {self.get_status_display()}"
+
+    def gerar_webhook_secret(self):
+        """Gera um secret aleatório para validar webhooks"""
+        if not self.webhook_secret:
+            self.webhook_secret = secrets.token_urlsafe(32)
+            self.save()
+        return self.webhook_secret
+
+    def gerar_instance_name(self):
+        """Gera nome da instância baseado no slug da empresa"""
+        if not self.instance_name:
+            # Remove caracteres especiais e usa slug da empresa
+            self.instance_name = f"{self.empresa.slug}_{self.empresa.id}"
+            self.save()
+        return self.instance_name
+
+    def esta_conectado(self):
+        """Verifica se WhatsApp está conectado"""
+        return self.status == 'conectado'

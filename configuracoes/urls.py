@@ -28,4 +28,12 @@ urlpatterns = [
     path('formas-pagamento/', views.formas_pagamento_lista, name='formas_pagamento_lista'),
     path('formas-pagamento/nova/', views.forma_pagamento_criar, name='forma_pagamento_criar'),
     path('formas-pagamento/<int:pk>/editar/', views.forma_pagamento_editar, name='forma_pagamento_editar'),
+
+    # WhatsApp / Evolution API
+    path('whatsapp/', views.whatsapp_dashboard, name='whatsapp_dashboard'),
+    path('whatsapp/criar-instancia/', views.whatsapp_criar_instancia, name='whatsapp_criar_instancia'),
+    path('whatsapp/obter-qr/', views.whatsapp_obter_qr, name='whatsapp_obter_qr'),
+    path('whatsapp/status/', views.whatsapp_verificar_status, name='whatsapp_verificar_status'),
+    path('whatsapp/desconectar/', views.whatsapp_desconectar, name='whatsapp_desconectar'),
+    path('whatsapp/deletar/', views.whatsapp_deletar_instancia, name='whatsapp_deletar'),
 ]

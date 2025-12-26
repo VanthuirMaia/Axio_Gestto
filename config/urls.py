@@ -16,6 +16,7 @@ from agendamentos.api_n8n import (
     consultar_datas_especiais,
     consultar_horarios_disponiveis
 )
+from empresas.api_views import whatsapp_webhook
 
 urlpatterns = [
     # ==========================================
@@ -30,6 +31,9 @@ urlpatterns = [
     path('api/', include('assinaturas.urls')),  # create-tenant, webhooks
     path('api/whatsapp-webhook/', whatsapp_webhook_saas, name='whatsapp_webhook_saas'),
     path('api/bot/processar/', processar_comando_bot, name='api_bot_processar'),
+
+    # Evolution API - Webhook WhatsApp
+    path('api/webhooks/whatsapp/<int:empresa_id>/<str:secret>/', whatsapp_webhook, name='whatsapp_webhook_evolution'),
 
     # APIs n8n - Consultas
     path('api/n8n/servicos/', listar_servicos, name='api_n8n_servicos'),
