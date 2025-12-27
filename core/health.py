@@ -4,10 +4,12 @@ Health check endpoint para monitoramento de infraestrutura.
 from django.http import JsonResponse
 from django.db import connection
 from django.core.cache import cache
+from django.views.decorators.csrf import csrf_exempt
 import redis
 from django.conf import settings
 
 
+@csrf_exempt
 def health_check(request):
     """
     Endpoint de health check para Docker healthcheck e monitoramento.
