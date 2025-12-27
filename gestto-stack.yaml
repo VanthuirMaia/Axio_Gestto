@@ -93,13 +93,13 @@ services:
         # Habilitar Traefik
         - "traefik.enable=true"
 
-        # Roteamento HTTP → HTTPS
-        - "traefik.http.routers.gestto-http.rule=Host(`app.gestto.app.br`)"
+        # Roteamento HTTP → HTTPS (aceita www.gestto.app.br e gestto.app.br)
+        - "traefik.http.routers.gestto-http.rule=Host(`www.gestto.app.br`) || Host(`gestto.app.br`)"
         - "traefik.http.routers.gestto-http.entrypoints=web"
         - "traefik.http.routers.gestto-http.middlewares=redirect-https@docker"
 
-        # Roteamento HTTPS
-        - "traefik.http.routers.gestto-https.rule=Host(`app.gestto.app.br`)"
+        # Roteamento HTTPS (aceita www.gestto.app.br e gestto.app.br)
+        - "traefik.http.routers.gestto-https.rule=Host(`www.gestto.app.br`) || Host(`gestto.app.br`)"
         - "traefik.http.routers.gestto-https.entrypoints=websecure"
         - "traefik.http.routers.gestto-https.tls=true"
         - "traefik.http.routers.gestto-https.tls.certresolver=letsencryptresolver"
