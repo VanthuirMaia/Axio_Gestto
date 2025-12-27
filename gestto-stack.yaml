@@ -1,0 +1,191 @@
+version: "3.8"
+
+# ============================================================================
+# GESTTO STACK - Docker Swarm
+# Integra com Traefik existente + Redis + PostgreSQL
+# ============================================================================
+
+services:
+  # Django Web Application (Gunicorn)
+  gestto_web:
+    image: ${DOCKER_IMAGE:-gestto-app:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        python manage.py createsuperuser --noinput || true &&
+        gunicorn config.wsgi:application
+          --bind 0.0.0.0:8000
+          --workers 3
+          --timeout 120
+          --access-logfile -
+          --error-logfile -
+      "
+
+    environment:
+      # Variáveis do .env.production
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
+
+      # Database - Supabase OU PostgreSQL local (escolher no .env)
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_ENGINE=${DB_ENGINE}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+
+      # Redis (usar o existente)
+      - REDIS_URL=redis://redis_redis:6379/2
+      - CELERY_BROKER_URL=redis://redis_redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis_redis:6379/2
+
+      # Email - Brevo
+      - EMAIL_BACKEND=${EMAIL_BACKEND}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+
+      # Integrações
+      - N8N_API_KEY=${N8N_API_KEY}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - SITE_URL=${SITE_URL}
+
+      # Stripe
+      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_ESSENCIAL=${STRIPE_PRICE_ESSENCIAL}
+      - STRIPE_PRICE_PROFISSIONAL=${STRIPE_PRICE_PROFISSIONAL}
+      - STRIPE_PRICE_EMPRESARIAL=${STRIPE_PRICE_EMPRESARIAL}
+
+      # Superuser
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+
+    volumes:
+      - gestto_static:/app/staticfiles
+      - gestto_media:/app/media
+
+    networks:
+      - redeaxio  # Rede principal do Traefik
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        # Habilitar Traefik
+        - "traefik.enable=true"
+
+        # Roteamento HTTP → HTTPS
+        - "traefik.http.routers.gestto-http.rule=Host(`app.gestto.app.br`)"
+        - "traefik.http.routers.gestto-http.entrypoints=web"
+        - "traefik.http.routers.gestto-http.middlewares=redirect-https@docker"
+
+        # Roteamento HTTPS
+        - "traefik.http.routers.gestto-https.rule=Host(`app.gestto.app.br`)"
+        - "traefik.http.routers.gestto-https.entrypoints=websecure"
+        - "traefik.http.routers.gestto-https.tls=true"
+        - "traefik.http.routers.gestto-https.tls.certresolver=letsencryptresolver"
+
+        # Serviço (porta interna do Django)
+        - "traefik.http.services.gestto-service.loadbalancer.server.port=8000"
+
+        # Associar serviço ao roteador HTTPS
+        - "traefik.http.routers.gestto-https.service=gestto-service"
+
+        # Health check
+        - "traefik.http.services.gestto-service.loadbalancer.healthcheck.path=/health/"
+        - "traefik.http.services.gestto-service.loadbalancer.healthcheck.interval=30s"
+
+  # Celery Worker (processar tarefas assíncronas)
+  gestto_celery:
+    image: ${DOCKER_IMAGE:-gestto-app:latest}
+
+    command: celery -A config worker -l info
+
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_ENGINE=${DB_ENGINE}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - REDIS_URL=redis://redis_redis:6379/2
+      - CELERY_BROKER_URL=redis://redis_redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis_redis:6379/2
+      - EMAIL_BACKEND=${EMAIL_BACKEND}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+
+    volumes:
+      - gestto_media:/app/media
+
+    networks:
+      - redeaxio
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  # Celery Beat (tarefas agendadas)
+  gestto_celery_beat:
+    image: ${DOCKER_IMAGE:-gestto-app:latest}
+
+    command: celery -A config beat -l info
+
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis_redis:6379/2
+      - CELERY_BROKER_URL=redis://redis_redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis_redis:6379/2
+
+    networks:
+      - redeaxio
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+# Volumes persistentes
+volumes:
+  gestto_static:
+    driver: local
+  gestto_media:
+    driver: local
+
+# Rede externa (já existe no servidor)
+networks:
+  redeaxio:
+    external: true
+    name: redeaxio

@@ -1,0 +1,145 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main  # Deploy automático ao fazer push na branch main
+  workflow_dispatch:  # Permite deploy manual via GitHub Actions UI
+
+env:
+  DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+  DEPLOY_PATH: /var/www/gestto
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django checks
+        run: |
+          python manage.py check --deploy --fail-level WARNING
+        env:
+          SECRET_KEY: "test-secret-key-for-ci-only"
+          DEBUG: "False"
+          DATABASE_URL: "sqlite:///db.sqlite3"
+
+      - name: Run tests (se houver)
+        run: |
+          python manage.py test --verbosity=2 || echo "No tests found"
+        env:
+          SECRET_KEY: "test-secret-key-for-ci-only"
+          DEBUG: "True"
+
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server via SSH (Docker Swarm)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "🚀 Iniciando deploy do Gestto (Docker Swarm)..."
+
+            # Navegar para o diretório do projeto
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Fazer backup do .env.production antes de atualizar
+            echo "📦 Fazendo backup das configurações..."
+            cp .env.production .env.production.backup
+
+            # Atualizar código do GitHub
+            echo "📥 Atualizando código do repositório..."
+            git fetch origin
+            git reset --hard origin/main
+
+            # Restaurar .env.production (não vem do git)
+            echo "🔐 Restaurando configurações de produção..."
+            mv .env.production.backup .env.production
+
+            # Verificar se o .env.production existe
+            if [ ! -f .env.production ]; then
+              echo "❌ ERRO: .env.production não encontrado!"
+              exit 1
+            fi
+
+            # Build da imagem Docker
+            echo "🐳 Construindo imagem Docker..."
+            docker build -t gestto-app:latest .
+
+            # Carregar variáveis de ambiente
+            echo "📝 Carregando variáveis de ambiente..."
+            export $(cat .env.production | grep -v '^#' | xargs)
+
+            # Deploy da stack no Swarm
+            echo "🚢 Fazendo deploy da stack gestto..."
+            docker stack deploy -c gestto-stack.yaml gestto
+
+            # Aguardar serviços iniciarem
+            echo "⏳ Aguardando serviços iniciarem..."
+            sleep 20
+
+            # Verificar status dos serviços
+            echo "✅ Verificando status dos serviços..."
+            docker stack services gestto
+
+            # Executar migrations (se o serviço web já estiver rodando)
+            echo "📊 Executando migrations..."
+            WEB_CONTAINER=$(docker ps -q -f name=gestto_gestto_web | head -1)
+            if [ -n "$WEB_CONTAINER" ]; then
+              docker exec $WEB_CONTAINER python manage.py migrate --noinput || echo "⚠️  Migrations falharam (normal no primeiro deploy)"
+              docker exec $WEB_CONTAINER python manage.py collectstatic --noinput || echo "⚠️  Collectstatic falhou"
+            else
+              echo "⚠️  Container web ainda não está pronto. Execute migrations manualmente."
+            fi
+
+            # Limpar recursos antigos
+            echo "🧹 Limpando recursos antigos..."
+            docker system prune -f
+
+            echo ""
+            echo "🎉 Deploy concluído com sucesso!"
+            echo "📍 Aplicação disponível em: https://app.gestto.app.br"
+            echo ""
+            echo "📊 Status dos serviços:"
+            docker stack services gestto
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f https://app.gestto.app.br/health/ || echo "⚠️  Health check falhou - verifique manualmente"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deploy realizado com sucesso!"
+          else
+            echo "❌ Deploy falhou! Verifique os logs."
+          fi

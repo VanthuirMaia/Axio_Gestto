@@ -1,0 +1,113 @@
+version: '3.9'
+
+# Docker Compose para PRODUÇÃO
+# Usa Supabase (PostgreSQL Cloud) - SEM banco local
+# Apenas: Redis + Django (Gunicorn) + Celery + Nginx
+
+services:
+  # Redis para cache e Celery
+  redis:
+    image: redis:7-alpine
+    container_name: gestto_redis
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gestto-network
+
+  # Django Web (Gunicorn)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gestto_web
+    restart: always
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        python manage.py createsuperuser --noinput || true &&
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -
+      "
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    expose:
+      - "8000"
+    env_file:
+      - .env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - gestto-network
+
+  # Celery Worker
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gestto_celery
+    restart: always
+    command: celery -A config worker -l info
+    volumes:
+      - media_volume:/app/media
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+      - web
+    networks:
+      - gestto-network
+
+  # Celery Beat (tarefas agendadas)
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gestto_celery_beat
+    restart: always
+    command: celery -A config beat -l info
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+      - web
+    networks:
+      - gestto-network
+
+  # Nginx (proxy reverso + HTTPS)
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: gestto_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro  # Certificados SSL/TLS
+    depends_on:
+      - web
+    networks:
+      - gestto-network
+
+networks:
+  gestto-network:
+    driver: bridge
+
+volumes:
+  static_volume:
+  media_volume:
