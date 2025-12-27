@@ -46,14 +46,14 @@ echo -e "${GREEN}✓ Imagem buildada${NC}"
 echo -e "${YELLOW}[5/5] Fazendo deploy no Docker Swarm...${NC}"
 # Exportar variáveis do .env.production de forma segura (protegendo caracteres especiais)
 while IFS='=' read -r key value; do
-    # Ignorar comentários e linhas vazias
-    if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+    # Só exportar se a linha começar com letra/número (não com # ou espaço)
+    if [[ "$key" =~ ^[A-Za-z0-9_] ]]; then
         # Remover aspas se houver
         value="${value%\"}"
         value="${value#\"}"
         export "$key=$value"
     fi
-done < <(grep -v '^#' /var/www/gestto/.env.production | grep -v '^$')
+done < /var/www/gestto/.env.production
 
 docker stack deploy -c /var/www/gestto/gestto-stack.yaml gestto
 echo -e "${GREEN}✓ Stack deployed${NC}"
