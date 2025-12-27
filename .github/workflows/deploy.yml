@@ -1,10 +1,10 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main  # Deploy automático ao fazer push na branch main
-  workflow_dispatch:  # Permite deploy manual via GitHub Actions UI
+  # push:
+  #   branches:
+  #     - main  # Deploy automático DESABILITADO temporariamente
+  workflow_dispatch:  # Deploy apenas manual via GitHub Actions UI
 
 env:
   DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
