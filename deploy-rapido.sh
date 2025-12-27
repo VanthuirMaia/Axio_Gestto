@@ -44,10 +44,17 @@ docker build -t gestto-app:latest .
 echo -e "${GREEN}✓ Imagem buildada${NC}"
 
 echo -e "${YELLOW}[5/5] Fazendo deploy no Docker Swarm...${NC}"
-# Exportar variáveis (ignorando comentários e linhas vazias)
-set -a
-source <(cat /var/www/gestto/.env.production | grep -v '^#' | grep -v '^$' | grep '=')
-set +a
+# Exportar variáveis do .env.production de forma segura (protegendo caracteres especiais)
+while IFS='=' read -r key value; do
+    # Ignorar comentários e linhas vazias
+    if [[ ! "$key" =~ ^# && -n "$key" ]]; then
+        # Remover aspas se houver
+        value="${value%\"}"
+        value="${value#\"}"
+        export "$key=$value"
+    fi
+done < <(grep -v '^#' /var/www/gestto/.env.production | grep -v '^$')
+
 docker stack deploy -c /var/www/gestto/gestto-stack.yaml gestto
 echo -e "${GREEN}✓ Stack deployed${NC}"
 
