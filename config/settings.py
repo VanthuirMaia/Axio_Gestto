@@ -247,3 +247,11 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 """
+
+# Security Settings
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # Permite healthcheck em HTTP (vem de 127.0.0.1 interno)
+    SECURE_REDIRECT_EXEMPT = [r'^health/$']
