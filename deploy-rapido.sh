@@ -44,7 +44,10 @@ docker build -t gestto-app:latest .
 echo -e "${GREEN}✓ Imagem buildada${NC}"
 
 echo -e "${YELLOW}[5/5] Fazendo deploy no Docker Swarm...${NC}"
-export $(cat /var/www/gestto/.env.production | grep -v '^#' | xargs)
+# Exportar variáveis (ignorando comentários e linhas vazias)
+set -a
+source <(cat /var/www/gestto/.env.production | grep -v '^#' | grep -v '^$' | grep '=')
+set +a
 docker stack deploy -c /var/www/gestto/gestto-stack.yaml gestto
 echo -e "${GREEN}✓ Stack deployed${NC}"
 
