@@ -46,7 +46,10 @@ echo -e "${GREEN}✓ Imagem buildada${NC}"
 echo -e "${YELLOW}[5/5] Fazendo deploy no Docker Swarm...${NC}"
 # Exportar variáveis do .env.production de forma segura (protegendo caracteres especiais)
 while IFS='=' read -r key value; do
-    # Só exportar se a linha começar com letra/número (não com # ou espaço)
+    # Remover espaços em branco do início da key
+    key=$(echo "$key" | sed 's/^[[:space:]]*//')
+
+    # Só exportar se a linha começar com letra/número (não com # ou vazio)
     if [[ "$key" =~ ^[A-Za-z0-9_] ]]; then
         # Remover aspas se houver
         value="${value%\"}"
