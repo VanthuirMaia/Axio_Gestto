@@ -1,5 +1,15 @@
 # ⚡ Quick Start - Ambientes Dev/Prod
 
+## 📁 Estrutura de .env (Simplificada)
+
+```
+.env.dev              # Template dev (NÃO commitar)
+.env.prod.example     # Template prod (OK commitar)
+.env                  # Ativo (gerado automaticamente)
+```
+
+---
+
 ## 🚀 Desenvolvimento (Local)
 
 ```bash
@@ -11,6 +21,12 @@ run_dev.bat
 ```
 
 Acesse: `http://localhost:8000`
+
+**O que acontece:**
+1. Copia `.env.dev` → `.env` automaticamente
+2. Ativa ambiente virtual
+3. Aplica migrações
+4. Inicia servidor
 
 ---
 
@@ -36,6 +52,12 @@ nano .env.prod
 # 4. Rode
 ./run_prod.sh
 ```
+
+**O que acontece:**
+1. Valida SECRET_KEY e DEBUG
+2. Copia `.env.prod` → `.env` automaticamente
+3. Aplica migrações
+4. Inicia Gunicorn
 
 ### Gerar SECRET_KEY segura:
 
