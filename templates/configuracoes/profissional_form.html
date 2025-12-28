@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{# URL Fix: Force template recompile - configuracoes_dashboard should resolve to /app/configuracoes/ #}
 {% block title %}{% if editando %}Editar{% else %}Novo{% endif %} Profissional – {{ empresa.nome }}{% endblock %}
 
 {% block content %}
