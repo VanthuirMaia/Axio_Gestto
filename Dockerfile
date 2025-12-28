@@ -25,8 +25,8 @@ RUN pip install --upgrade pip && \
 # Copiar código da aplicação
 COPY . .
 
-# Criar diretórios para static e media
-RUN mkdir -p /app/staticfiles /app/media
+# Criar diretórios para static, media e logs
+RUN mkdir -p /app/staticfiles /app/media /app/logs
 
 # Coletar arquivos estáticos (será refeito no entrypoint, mas garante que funcione)
 RUN python manage.py collectstatic --noinput || true
