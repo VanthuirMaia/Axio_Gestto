@@ -1,8 +1,8 @@
 version: '3.9'
 
 # Docker Compose para PRODUÇÃO
-# Usa Supabase (PostgreSQL Cloud) - SEM banco local
-# Apenas: Redis + Django (Gunicorn) + Celery + Nginx
+# Usa Traefik para proxy reverso com SSL automático via Let's Encrypt
+# Apenas: Redis + Traefik + Django (Gunicorn) + Celery
 
 services:
   # Redis para cache e Celery
@@ -15,6 +15,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - gestto-network
+
+  # Traefik - Proxy reverso com SSL automático
+  traefik:
+    image: traefik:v3.4.0
+    container_name: gestto_traefik
+    restart: always
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=contato@gestto.app.br"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
     networks:
       - gestto-network
 
@@ -48,6 +73,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gestto.rule=Host(`gestto.app.br`) || Host(`www.gestto.app.br`)"
+      - "traefik.http.routers.gestto.entrypoints=websecure"
+      - "traefik.http.routers.gestto.tls.certresolver=letsencrypt"
+      - "traefik.http.services.gestto.loadbalancer.server.port=8000"
     networks:
       - gestto-network
 
@@ -81,25 +112,6 @@ services:
       - .env.production
     depends_on:
       - redis
-      - web
-    networks:
-      - gestto-network
-
-  # Nginx (proxy reverso + HTTPS)
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: gestto_nginx
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - static_volume:/app/staticfiles:ro
-      - media_volume:/app/media:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro  # Certificados SSL/TLS
-    depends_on:
       - web
     networks:
       - gestto-network
