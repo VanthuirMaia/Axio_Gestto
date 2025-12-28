@@ -8,6 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# Django Environment (pode ser sobrescrito por .env)
+ENV DJANGO_ENV=production
+
 # Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
     postgresql-client \
