@@ -131,20 +131,38 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# ============================================
+# ENVIRONMENT FILES - PROTEÇÃO DE CREDENCIAIS
+# ============================================
+# CRÍTICO: Nunca commitar arquivos com credenciais reais!
+
+# Arquivos ativos (nunca commitar)
 .env
 .env.local
-.env.production
-.env.production.local
-.env.*.local
-.env.deploy-rapido
 
-# Ambientes específicos (CRÍTICO: nunca commitar .env.prod!)
+# Ambientes específicos (nunca commitar)
 .env.dev
 .env.prod
 .env.staging
+.env.test
 
-# Virtual environments
+# Nomenclaturas antigas (manter proteção)
+.env.production
+.env.production.local
+.env.deploy-rapido
+
+# Variações locais (nunca commitar)
+.env.*.local
+.env.*.backup
+
+# ✅ Permitido commitar (templates sem credenciais):
+# - .env.dev.example
+# - .env.prod.example
+# - .env.example
+
+# ============================================
+# VIRTUAL ENVIRONMENTS
+# ============================================
 .venv
 env/
 venv/
