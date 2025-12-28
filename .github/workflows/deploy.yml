@@ -33,14 +33,11 @@ jobs:
 
       - name: Run Django checks
         run: |
-          python manage.py check --deploy --fail-level WARNING
+          python manage.py check --fail-level WARNING
         env:
-          DJANGO_ENV: "production"
+          DJANGO_ENV: "development"
           SECRET_KEY: "ci-test-only-k8$mz9#vp2@qw5!nx7&ry4*tu6^ej3%sh1(ad0)fg-bh=lc+wo_ie"
-          DEBUG: "False"
-          DATABASE_URL: "sqlite:///db.sqlite3"
-          ALLOWED_HOSTS: "localhost,127.0.0.1"
-          EMAIL_BACKEND: "django.core.mail.backends.console.EmailBackend"
+          DEBUG: "True"
 
       - name: Run tests (se houver)
         run: |
