@@ -35,7 +35,7 @@ jobs:
         run: |
           python manage.py check --deploy --fail-level WARNING
         env:
-          SECRET_KEY: "django-insecure-test-ci-cd-only-do-not-use-in-production-this-is-a-very-long-secret-key-for-testing-purposes-only-12345"
+          SECRET_KEY: "ci-test-only-k8$mz9#vp2@qw5!nx7&ry4*tu6^ej3%sh1(ad0)fg-bh=lc+wo_ie"
           DEBUG: "False"
           DATABASE_URL: "sqlite:///db.sqlite3"
 
@@ -43,7 +43,7 @@ jobs:
         run: |
           python manage.py test --verbosity=2 || echo "No tests found"
         env:
-          SECRET_KEY: "django-insecure-test-ci-cd-only-do-not-use-in-production-this-is-a-very-long-secret-key-for-testing-purposes-only-12345"
+          SECRET_KEY: "ci-test-only-k8$mz9#vp2@qw5!nx7&ry4*tu6^ej3%sh1(ad0)fg-bh=lc+wo_ie"
           DEBUG: "True"
 
   deploy:
