@@ -80,13 +80,14 @@ class AssinaturaAdmin(admin.ModelAdmin):
         'atualizado_em',
         'data_inicio',
         'subscription_id_externo',
-        'customer_id_externo'
+        'customer_id_externo',
+        'helper_info'
     ]
     date_hierarchy = 'data_inicio'
 
     fieldsets = (
         ('Assinatura', {
-            'fields': ('empresa', 'plano', 'status')
+            'fields': ('helper_info', 'empresa', 'plano', 'status')
         }),
         ('Datas e Trial', {
             'fields': (
@@ -95,7 +96,8 @@ class AssinaturaAdmin(admin.ModelAdmin):
                 'trial_ativo',
                 'ultimo_pagamento',
                 'proximo_vencimento'
-            )
+            ),
+            'description': 'DICA: Se trial_ativo=True, a data_expiracao será automaticamente calculada com base no trial_dias do plano.'
         }),
         ('Gateway de Pagamento', {
             'fields': (
@@ -117,6 +119,34 @@ class AssinaturaAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def helper_info(self, obj):
+        """Mostra informações úteis ao criar assinatura"""
+        if obj and obj.pk:
+            return format_html(
+                '<div style="background: #dbeafe; padding: 10px; border-radius: 5px; border-left: 4px solid #3b82f6;">'
+                '<strong>ℹ️ Informação:</strong><br>'
+                'Status: {}<br>'
+                'Dias restantes: {}<br>'
+                'Plano: {} (R$ {}/mês)'
+                '</div>',
+                obj.get_status_display(),
+                obj.dias_restantes(),
+                obj.plano.get_nome_display(),
+                obj.plano.preco_mensal
+            )
+        else:
+            return format_html(
+                '<div style="background: #fef3c7; padding: 10px; border-radius: 5px; border-left: 4px solid #f59e0b;">'
+                '<strong>⚠️ Criando Nova Assinatura:</strong><br>'
+                '1. Selecione a empresa<br>'
+                '2. Escolha o plano<br>'
+                '3. Marque trial_ativo se for trial<br>'
+                '4. Defina data_expiracao (ex: hoje + 7 dias para trial)<br>'
+                '5. Gateway = "manual" se for criação manual'
+                '</div>'
+            )
+    helper_info.short_description = 'Guia Rápido'
 
     actions = ['renovar_assinaturas', 'suspender_assinaturas', 'reativar_assinaturas']
 

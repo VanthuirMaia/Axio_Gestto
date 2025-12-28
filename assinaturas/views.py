@@ -9,6 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.text import slugify
 from django.utils.timezone import now, timedelta
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 from django.conf import settings
 import secrets
 import string
@@ -317,7 +319,7 @@ def _gerar_senha_temporaria(length=12):
 
 def _enviar_email_boas_vindas(usuario, empresa, senha, plano):
     """
-    Envia email com credenciais de acesso ao novo tenant
+    Envia email HTML com credenciais de acesso ao novo tenant
 
     Args:
         usuario: Instância de Usuario
@@ -325,79 +327,33 @@ def _enviar_email_boas_vindas(usuario, empresa, senha, plano):
         senha: Senha temporária gerada
         plano: Instância de Plano
     """
-    assunto = f'Bem-vindo ao Gestto - {empresa.nome}! 🎉'
-
-    mensagem = f"""
-Olá, {empresa.nome}!
-
-Sua conta no Gestto foi criada com sucesso! 🎉
-
-╔══════════════════════════════════════════╗
-║        INFORMAÇÕES DA SUA CONTA          ║
-╚══════════════════════════════════════════╝
-
-Empresa: {empresa.nome}
-Plano: {plano.get_nome_display()}
-Trial: {plano.trial_dias} dias grátis (até {empresa.assinatura.data_expiracao.strftime('%d/%m/%Y')})
-
-╔══════════════════════════════════════════╗
-║           ACESSE AGORA MESMO             ║
-╚══════════════════════════════════════════╝
-
-URL: {settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000'}/onboarding/
-
-📧 Email: {usuario.email}
-🔑 Senha temporária: {senha}
-
-⚠️ IMPORTANTE: Altere sua senha no primeiro acesso!
-
-╔══════════════════════════════════════════╗
-║         PRÓXIMOS PASSOS (5 MIN)          ║
-╚══════════════════════════════════════════╝
-
-1️⃣ Faça login com as credenciais acima
-2️⃣ Configure seus serviços (corte, barba, etc)
-3️⃣ Cadastre seus profissionais
-4️⃣ Conecte seu WhatsApp
-5️⃣ Pronto! Comece a receber agendamentos automáticos 🚀
-
-╔══════════════════════════════════════════╗
-║          O QUE ESTÁ INCLUÍDO             ║
-╚══════════════════════════════════════════╝
-
-✅ Agendamentos via WhatsApp (bot com IA)
-✅ Calendário interativo
-✅ Gestão de clientes
-✅ Relatórios de faturamento
-✅ {plano.max_profissionais} profissional(is)
-✅ Até {plano.max_agendamentos_mes} agendamentos/mês
-✅ {plano.trial_dias} dias grátis para testar
-
-╔══════════════════════════════════════════╗
-║            PRECISA DE AJUDA?             ║
-╚══════════════════════════════════════════╝
-
-📧 Email: suporte@gestto.com.br
-📱 WhatsApp: (11) 99999-9999
-📚 Central de Ajuda: gestto.com.br/ajuda
-
-Estamos aqui para ajudar você a crescer! 💪
-
----
-Equipe Gestto
-Transformando agendamentos em experiências! ✨
-    """
-
     try:
+        # Contexto para o template
+        context = {
+            'usuario': usuario,
+            'empresa': empresa,
+            'senha_temporaria': senha,
+            'plano': plano,
+            'trial_expira_em': empresa.assinatura.data_expiracao if hasattr(empresa, 'assinatura') else None,
+            'site_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000',
+        }
+
+        # Renderiza o template HTML
+        html_message = render_to_string('emails/boas_vindas_com_senha.html', context)
+        # Versão texto puro (fallback)
+        plain_message = strip_tags(html_message)
+
+        # Envia o email
         send_mail(
-            assunto,
-            mensagem,
-            settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@gestto.com.br',
-            [usuario.email],
+            subject=f'Bem-vindo ao Gestto - {empresa.nome}! 🎉',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@gestto.com.br',
+            recipient_list=[usuario.email],
+            html_message=html_message,
             fail_silently=False,
         )
 
-        logger.info(f'Email de boas-vindas enviado para {usuario.email}')
+        logger.info(f'Email de boas-vindas (HTML) enviado para {usuario.email}')
 
     except Exception as e:
         logger.error(f'Erro ao enviar email de boas-vindas: {str(e)}')

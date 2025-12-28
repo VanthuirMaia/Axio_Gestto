@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empresa Criada - Axio Gestto</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .email-header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-body p {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            color: #4b5563;
+        }
+        .email-body .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .success-message {
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            text-align: center;
+        }
+        .success-message h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #065f46;
+        }
+        .success-message p {
+            margin: 0;
+            color: #064e3b;
+            font-size: 16px;
+        }
+        .company-info {
+            margin: 30px 0;
+            padding: 25px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            border-left: 4px solid #1e3a8a;
+        }
+        .company-info h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #1e3a8a;
+        }
+        .company-info p {
+            margin: 8px 0;
+            color: #4b5563;
+        }
+        .company-info strong {
+            color: #1f2937;
+        }
+        .action-button {
+            display: inline-block;
+            margin: 30px 0;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+        }
+        .action-button:hover {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        .next-steps {
+            margin: 30px 0;
+            padding: 0;
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        .next-steps li {
+            padding: 15px 0 15px 45px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #4b5563;
+            position: relative;
+            counter-increment: step-counter;
+        }
+        .next-steps li:last-child {
+            border-bottom: none;
+        }
+        .next-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 12px;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .highlight-box {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #dbeafe;
+            border-radius: 8px;
+            border-left: 4px solid #1e40af;
+        }
+        .highlight-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #1e3a8a;
+        }
+        .email-footer {
+            padding: 30px;
+            background-color: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .email-footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Gestto</h1>
+            <p>Sistema de Gestão</p>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">Parabéns!</p>
+
+            <div class="success-message">
+                <h2>Empresa cadastrada com sucesso!</h2>
+                <p>Sua empresa já está pronta para começar a operar.</p>
+            </div>
+
+            <div class="company-info">
+                <h3>Dados da Empresa</h3>
+                <p><strong>Nome:</strong> {{ empresa.nome }}</p>
+                <p><strong>CNPJ:</strong> {{ empresa.cnpj }}</p>
+                <p><strong>Email:</strong> {{ empresa.email }}</p>
+                <p><strong>Telefone:</strong> {{ empresa.telefone }}</p>
+                {% if empresa.endereco %}
+                <p><strong>Endereço:</strong> {{ empresa.endereco }}, {{ empresa.cidade }}/{{ empresa.estado }}</p>
+                {% endif %}
+            </div>
+
+            <h3 style="color: #1e3a8a; margin: 30px 0 15px 0;">Próximos Passos:</h3>
+            <ul class="next-steps">
+                <li><strong>Configure seus serviços:</strong> Adicione os serviços que sua empresa oferece</li>
+                <li><strong>Cadastre profissionais:</strong> Adicione sua equipe ao sistema</li>
+                <li><strong>Defina horários:</strong> Configure os horários de funcionamento</li>
+                <li><strong>Conecte o WhatsApp:</strong> Ative o envio automático de mensagens</li>
+                <li><strong>Comece a agendar:</strong> Cadastre clientes e crie agendamentos</li>
+            </ul>
+
+            <div style="text-align: center;">
+                <a href="{{ site_url }}/app/dashboard/" class="action-button">
+                    Acessar o Dashboard
+                </a>
+            </div>
+
+            <div class="highlight-box">
+                <p>
+                    <strong>Dica:</strong> Complete o processo de onboarding para aproveitar ao máximo todas as funcionalidades do sistema!
+                </p>
+            </div>
+
+            <p style="margin-top: 30px;">
+                Estamos aqui para ajudar no que você precisar. Seja bem-vindo ao Axio Gestto!
+            </p>
+        </div>
+
+        <div class="email-footer">
+            <p><strong>Axio Gestto</strong> - Sistema de Gestão</p>
+            <p>Este é um email automático. Por favor, não responda.</p>
+        </div>
+    </div>
+</body>
+</html>

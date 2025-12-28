@@ -138,6 +138,13 @@ celerybeat.pid
 .env.production.local
 .env.*.local
 .env.deploy-rapido
+
+# Ambientes específicos (CRÍTICO: nunca commitar .env.prod!)
+.env.dev
+.env.prod
+.env.staging
+
+# Virtual environments
 .venv
 env/
 venv/
@@ -281,4 +288,24 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/django,python
 
-rules.md 
+# ============================================
+# CUSTOM PROJECT IGNORES
+# ============================================
+
+# Logs directory (criado em produção)
+logs/
+*.log
+
+# Static files coletados (gerados por collectstatic)
+staticfiles/
+
+# Settings antigo (após migração para settings/)
+config/settings.py
+
+# Media files (uploads de usuários - opcional)
+# Descomente se não quiser versionar uploads:
+# media/
+
+# Documentação privada
+rules.md
+

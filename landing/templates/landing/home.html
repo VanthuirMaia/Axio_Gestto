@@ -97,6 +97,128 @@
         margin-bottom: 2rem;
         color: #666;
     }
+
+    /* RESPONSIVIDADE MELHORADA */
+    @media (max-width: 992px) {
+        .hero {
+            padding: 4rem 0;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+        }
+
+        .features h2,
+        .cta h2 {
+            font-size: 2rem;
+        }
+
+        .features-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero {
+            padding: 3rem 0;
+        }
+
+        .hero h1 {
+            font-size: 1.875rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .hero-buttons .btn {
+            width: 100%;
+            text-align: center;
+        }
+
+        .features,
+        .cta {
+            padding: 3rem 0;
+        }
+
+        .features h2,
+        .cta h2 {
+            font-size: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta p {
+            font-size: 1.125rem;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        .feature-card {
+            padding: 1.5rem 1.25rem;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+        }
+
+        .container {
+            padding: 0 1.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .hero h1 {
+            font-size: 1.625rem;
+        }
+
+        .hero p {
+            font-size: 0.9375rem;
+        }
+
+        .btn {
+            padding: 0.875rem 1.5rem;
+            font-size: 0.9375rem;
+        }
+
+        .features h2,
+        .cta h2 {
+            font-size: 1.5rem;
+        }
+
+        .cta p {
+            font-size: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.125rem;
+        }
+
+        .feature-card p {
+            font-size: 0.9375rem;
+        }
+
+        .container {
+            padding: 0 1rem;
+        }
+    }
 </style>
 
 <section class="hero">

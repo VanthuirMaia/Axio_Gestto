@@ -1,446 +1,402 @@
-# 🚀 Guia de Deploy - Axio Gestto
+# 🚀 Guia de Deploy - Gestto em Produção
 
-## 📋 Pré-requisitos
-
-- Servidor com Ubuntu 22.04+ / Debian 11+
-- Docker e Docker Compose instalados
-- Domínio configurado apontando para o servidor
-- Portas 80, 443, 22 abertas no firewall
-- Mínimo 2GB RAM, 2 vCPUs, 20GB storage
+Documentação completa para deploy do **Gestto** em produção no VPS Hostinger + Supabase + Brevo.
 
 ---
 
-## 🔧 Instalação do Docker
+## 📋 Pré-requisitos
+
+### 1️⃣ Infraestrutura Necessária
+
+- ✅ **VPS Hostinger** (Ubuntu 20.04+)
+  - IP: `72.61.56.252`
+  - Usuário SSH com permissões sudo
+
+- ✅ **Supabase (PostgreSQL Cloud)**
+  - Connection String já configurada
+  - Connection Pooler habilitado (porta 6543)
+
+- ✅ **Brevo (SMTP Email)**
+  - SMTP configurado: `smtp-relay.brevo.com`
+  - Credenciais já obtidas
+
+- ✅ **Domínio configurado**
+  - `app.gestto.app.br` → IP do VPS
+  - `gestto.app.br` → IP do VPS
+  - Certificado SSL (Let's Encrypt ou Cloudflare)
+
+---
+
+## 🔧 Configuração Inicial do Servidor VPS
+
+### 1. Acessar o servidor via SSH
 
 ```bash
-# Atualizar sistema
-sudo apt update && sudo apt upgrade -y
+ssh usuario@72.61.56.252
+```
 
+### 2. Atualizar sistema e instalar dependências
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl wget build-essential
+```
+
+### 3. Instalar Docker e Docker Compose
+
+```bash
 # Instalar Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
-# Instalar Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
 # Adicionar usuário ao grupo docker
 sudo usermod -aG docker $USER
-newgrp docker
+
+# Instalar Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
 # Verificar instalação
 docker --version
 docker-compose --version
 ```
 
+### 4. Clonar o repositório
+
+```bash
+# Criar diretório para o projeto
+sudo mkdir -p /var/www/gestto
+sudo chown -R $USER:$USER /var/www/gestto
+
+# Clonar repositório
+cd /var/www/gestto
+git clone https://github.com/SEU_USUARIO/SEU_REPO.git .
+```
+
+### 5. Criar arquivo `.env.production` no servidor
+
+```bash
+cd /var/www/gestto
+nano .env.production
+```
+
+**Cole o conteúdo do `.env.production` local** (que já está configurado com Supabase, Brevo, etc.)
+
 ---
 
-## 📦 Deploy Passo a Passo
+## 🔐 Configurar GitHub Secrets (para CI/CD)
 
-### 1. Clonar Repositório
+Vá em: **GitHub Repository → Settings → Secrets and variables → Actions**
 
-```bash
-# SSH (recomendado)
-git clone git@github.com:seu-usuario/axio_gestto.git
-cd axio_gestto
+Adicione os seguintes secrets:
 
-# OU HTTPS
-git clone https://github.com/seu-usuario/axio_gestto.git
-cd axio_gestto
-```
+| Secret Name       | Valor                              | Descrição                          |
+|-------------------|------------------------------------|------------------------------------|
+| `DEPLOY_HOST`     | `72.61.56.252`                     | IP do servidor VPS                 |
+| `DEPLOY_USER`     | `seu_usuario_ssh`                  | Usuário SSH do servidor            |
+| `DEPLOY_SSH_KEY`  | Conteúdo da chave privada SSH      | Chave privada para autenticação    |
 
-### 2. Configurar Variáveis de Ambiente
+### Como gerar chave SSH (se não tiver)
 
-```bash
-# Copiar exemplo
-cp .env.example .env
-
-# Editar com suas configurações
-nano .env
-```
-
-**Configurações OBRIGATÓRIAS no `.env`:**
-
-```env
-# Django
-SECRET_KEY=<gerar com: python -c "import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)))">
-DEBUG=False
-ALLOWED_HOSTS=seu-dominio.com,www.seu-dominio.com
-
-# Database
-DB_PASSWORD=<gerar com: python -c "import secrets; print(secrets.token_urlsafe(24))">
-
-# API
-N8N_API_KEY=<gerar com: python -c "import secrets; print(secrets.token_urlsafe(32))">
-
-# CORS
-CORS_ALLOWED_ORIGINS=https://seu-dominio.com,https://www.seu-dominio.com
-
-# Email (opcional, mas recomendado)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST_USER=seu-email@gmail.com
-EMAIL_HOST_PASSWORD=sua-senha-app-gmail
-DEFAULT_FROM_EMAIL=noreply@seu-dominio.com
-
-# Superuser inicial
-DJANGO_SUPERUSER_USERNAME=admin
-DJANGO_SUPERUSER_EMAIL=admin@seu-dominio.com
-DJANGO_SUPERUSER_PASSWORD=SenhaForte@2025!
-```
-
-### 3. Configurar SSL (Let's Encrypt)
-
-**Opção A: Certificado Let's Encrypt (Produção)**
+**No seu computador local:**
 
 ```bash
-# Criar diretório para certificados
-mkdir -p certbot/conf certbot/www
-
-# Obter certificado
-docker run -it --rm \
-  -v $(pwd)/certbot/conf:/etc/letsencrypt \
-  -v $(pwd)/certbot/www:/var/www/certbot \
-  -p 80:80 \
-  certbot/certbot certonly --standalone \
-  --email seu-email@gmail.com \
-  --agree-tos \
-  --no-eff-email \
-  -d seu-dominio.com \
-  -d www.seu-dominio.com
-
-# Copiar certificados para nginx
-sudo cp certbot/conf/live/seu-dominio.com/fullchain.pem nginx/certs/cert.pem
-sudo cp certbot/conf/live/seu-dominio.com/privkey.pem nginx/certs/key.pem
-
-# Editar docker-compose.yml (linha 120)
-# Descomentar:
-# - ./certbot/conf:/etc/nginx/certs:ro
+ssh-keygen -t ed25519 -C "deploy@gestto"
+# Salvar em: ~/.ssh/gestto_deploy
 ```
 
-**Opção B: Certificado Auto-Assinado (Desenvolvimento)**
-
-O Nginx já gera automaticamente no build. Apenas para testes locais!
-
-### 4. Build e Start dos Containers
+**Copiar chave pública para o servidor:**
 
 ```bash
-# Build das imagens
-docker-compose build
+ssh-copy-id -i ~/.ssh/gestto_deploy.pub usuario@72.61.56.252
+```
 
-# Subir todos os serviços
-docker-compose up -d
+**Adicionar chave privada no GitHub:**
+
+```bash
+cat ~/.ssh/gestto_deploy
+# Copiar TODO o conteúdo e colar no GitHub Secret DEPLOY_SSH_KEY
+```
+
+---
+
+## 🐳 Primeiro Deploy Manual
+
+Execute no servidor VPS:
+
+```bash
+cd /var/www/gestto
+
+# Build inicial dos containers
+docker-compose -f docker-compose.prod.yml build
+
+# Subir containers
+docker-compose -f docker-compose.prod.yml up -d
 
 # Verificar logs
-docker-compose logs -f
-
-# Verificar status
-docker-compose ps
+docker-compose -f docker-compose.prod.yml logs -f
 ```
 
-**Saída esperada:**
-```
-NAME                IMAGE                COMMAND              STATUS
-gestao_db           postgres:15          "docker-entrypoint"  Up (healthy)
-gestao_redis        redis:7-alpine       "docker-entrypoint"  Up (healthy)
-gestao_web          axio_gestto-web      "sh -c python..."    Up (healthy)
-gestao_celery       axio_gestto-celery   "celery -A config"   Up
-gestao_nginx        axio_gestto-nginx    "nginx -g 'daemon"   Up
-```
-
-### 5. Verificar Deploy
+### Comandos úteis:
 
 ```bash
-# Health check
-curl http://localhost/health/
-
-# Deve retornar:
-# {"status":"healthy","checks":{"database":"ok","redis":"ok"}}
-
-# Verificar SSL
-curl -I https://seu-dominio.com/
-
-# Acessar admin
-# https://seu-dominio.com/admin/
-# User: admin
-# Pass: <DJANGO_SUPERUSER_PASSWORD do .env>
-```
-
-### 6. Configurar Renovação Automática SSL
-
-```bash
-# Criar cron job
-crontab -e
-
-# Adicionar linha (renova a cada 12h):
-0 */12 * * * docker run --rm -v $(pwd)/certbot/conf:/etc/letsencrypt -v $(pwd)/certbot/www:/var/www/certbot certbot/certbot renew && docker-compose restart nginx
-```
-
----
-
-## 🔄 Atualizações e Manutenção
-
-### Deploy de Atualizações
-
-```bash
-# 1. Pull do código mais recente
-git pull origin main
-
-# 2. Rebuild e restart
-docker-compose down
-docker-compose build
-docker-compose up -d
-
-# 3. Verificar logs
-docker-compose logs -f web
-```
-
-### Backup do Banco de Dados
-
-```bash
-# Backup manual
-docker exec gestao_db pg_dump -U postgres gestao_negocios > backup_$(date +%Y%m%d_%H%M%S).sql
-
-# Restaurar backup
-cat backup_20251221_120000.sql | docker exec -i gestao_db psql -U postgres gestao_negocios
-```
-
-### Backup Automático (Cron)
-
-```bash
-# Criar script de backup
-cat > backup.sh << 'EOF'
-#!/bin/bash
-BACKUP_DIR="/var/backups/axio_gestto"
-mkdir -p $BACKUP_DIR
-docker exec gestao_db pg_dump -U postgres gestao_negocios | gzip > $BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).sql.gz
-
-# Manter apenas últimos 30 dias
-find $BACKUP_DIR -name "backup_*.sql.gz" -mtime +30 -delete
-EOF
-
-chmod +x backup.sh
-
-# Adicionar ao cron (diariamente às 2h)
-crontab -e
-0 2 * * * /caminho/para/backup.sh
-```
-
-### Logs
-
-```bash
-# Ver logs de todos os serviços
-docker-compose logs -f
+# Ver status dos containers
+docker-compose -f docker-compose.prod.yml ps
 
 # Ver logs de um serviço específico
-docker-compose logs -f web
-docker-compose logs -f nginx
-docker-compose logs -f celery
+docker-compose -f docker-compose.prod.yml logs -f web
 
-# Últimas 100 linhas
-docker-compose logs --tail=100 web
-```
+# Executar migrations manualmente
+docker-compose -f docker-compose.prod.yml exec web python manage.py migrate
 
-### Reiniciar Serviços
+# Criar superuser manualmente
+docker-compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
 
-```bash
-# Reiniciar todos
-docker-compose restart
+# Reiniciar todos os serviços
+docker-compose -f docker-compose.prod.yml restart
 
-# Reiniciar um serviço
-docker-compose restart web
-docker-compose restart nginx
-docker-compose restart celery
+# Parar todos os serviços
+docker-compose -f docker-compose.prod.yml down
+
+# Rebuild completo
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## 🚀 Deploy Automático via CI/CD
 
-### Erro: "Connection refused" no banco de dados
+Após configurar GitHub Secrets, **qualquer commit na branch `main` dispara deploy automático!**
+
+### Como fazer deploy:
 
 ```bash
-# Verificar se PostgreSQL está rodando
-docker-compose ps db
+# 1. Fazer suas alterações localmente
+git add .
+git commit -m "feat: nova funcionalidade"
 
-# Verificar logs do PostgreSQL
-docker-compose logs db
+# 2. Enviar para o GitHub
+git push origin main
 
-# Restart do banco
-docker-compose restart db
-
-# Aguardar healthcheck
-docker-compose ps
+# 3. GitHub Actions faz o resto automaticamente! 🎉
 ```
 
-### Erro: "Bad Gateway 502" no Nginx
+### Acompanhar o deploy:
+
+1. Acesse: **GitHub → Actions**
+2. Veja o workflow "Deploy to Production" rodando
+3. Aguarde conclusão (verde ✅ = sucesso)
+
+---
+
+## 🔒 Configurar Certificado SSL (HTTPS)
+
+### Opção 1: Cloudflare (Recomendado - Mais Fácil)
+
+1. Adicionar domínio no Cloudflare
+2. Apontar DNS para o IP do VPS
+3. Habilitar SSL/TLS "Full (strict)" ou "Flexible"
+4. Cloudflare gerencia automaticamente os certificados
+
+### Opção 2: Let's Encrypt (Certbot)
 
 ```bash
-# Verificar se web está rodando
-docker-compose ps web
+# Instalar Certbot
+sudo apt install -y certbot python3-certbot-nginx
 
-# Verificar logs do Django
-docker-compose logs web
+# Gerar certificado
+sudo certbot certonly --standalone -d app.gestto.app.br -d gestto.app.br
 
-# Verificar se gunicorn está ouvindo
-docker exec gestao_web netstat -tuln | grep 8000
+# Certificados serão salvos em:
+# /etc/letsencrypt/live/app.gestto.app.br/fullchain.pem
+# /etc/letsencrypt/live/app.gestto.app.br/privkey.pem
+
+# Copiar para o diretório do Nginx
+sudo mkdir -p /var/www/gestto/nginx/ssl
+sudo cp /etc/letsencrypt/live/app.gestto.app.br/fullchain.pem /var/www/gestto/nginx/ssl/cert.pem
+sudo cp /etc/letsencrypt/live/app.gestto.app.br/privkey.pem /var/www/gestto/nginx/ssl/key.pem
+
+# Reiniciar Nginx
+docker-compose -f docker-compose.prod.yml restart nginx
 ```
 
-### Erro: Migrações pendentes
+**Renovação automática:**
 
 ```bash
-# Aplicar migrações manualmente
-docker exec -it gestao_web python manage.py migrate
+# Adicionar cronjob para renovar automaticamente
+sudo crontab -e
 
-# Verificar status das migrações
-docker exec -it gestao_web python manage.py showmigrations
+# Adicionar esta linha:
+0 3 * * * certbot renew --quiet && docker-compose -f /var/www/gestto/docker-compose.prod.yml restart nginx
 ```
 
-### Erro: Static files não aparecem
+---
+
+## 🧪 Testar Aplicação
+
+### 1. Health Check
 
 ```bash
-# Coletar static files
-docker exec -it gestao_web python manage.py collectstatic --noinput
-
-# Verificar permissões
-docker exec -it gestao_web ls -la /app/staticfiles/
+curl https://app.gestto.app.br/health/
+# Deve retornar: {"status": "ok"}
 ```
 
-### Performance lenta
+### 2. Acessar Admin Django
+
+```
+https://app.gestto.app.br/admin/
+```
+
+**Credenciais (definidas em `.env.production`):**
+- Usuário: `admin`
+- Email: `contato@gestto.app.br`
+- Senha: `Admin@Gestto2025!Secure`
+
+### 3. Testar API do Bot
 
 ```bash
-# Verificar uso de recursos
+curl -X POST https://app.gestto.app.br/api/bot/processar/ \
+  -H "X-API-Key: SEU_N8N_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"mensagem": "Olá", "telefone": "11999999999"}'
+```
+
+---
+
+## 📊 Monitoramento e Logs
+
+### Ver logs em tempo real:
+
+```bash
+# Todos os serviços
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Apenas Django
+docker-compose -f docker-compose.prod.yml logs -f web
+
+# Apenas Celery
+docker-compose -f docker-compose.prod.yml logs -f celery
+
+# Apenas Nginx
+docker-compose -f docker-compose.prod.yml logs -f nginx
+```
+
+### Monitorar recursos do servidor:
+
+```bash
+# CPU e memória
 docker stats
 
-# Aumentar workers do Gunicorn (editar docker-compose.yml)
-# linha 41: --workers 5 (ao invés de 3)
+# Espaço em disco
+df -h
 
-# Restart
-docker-compose restart web
+# Verificar containers rodando
+docker ps
 ```
 
 ---
 
-## 🔒 Hardening de Segurança Pós-Deploy
+## 🛠️ Troubleshooting
 
-### 1. Firewall UFW
-
-```bash
-# Instalar UFW
-sudo apt install ufw
-
-# Configurar regras
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow 22/tcp      # SSH
-sudo ufw allow 80/tcp      # HTTP
-sudo ufw allow 443/tcp     # HTTPS
-
-# Ativar
-sudo ufw enable
-
-# Verificar status
-sudo ufw status
-```
-
-### 2. Fail2Ban (proteção SSH)
+### Problema: Container não inicia
 
 ```bash
-# Instalar
-sudo apt install fail2ban
+# Ver logs detalhados
+docker-compose -f docker-compose.prod.yml logs web
 
-# Configurar
-sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-sudo nano /etc/fail2ban/jail.local
-
-# Ativar
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
+# Reconstruir container
+docker-compose -f docker-compose.prod.yml build --no-cache web
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-### 3. Whitelist de IPs para Admin
-
-Edite `nginx/nginx.conf`, adicione dentro de `location /admin/`:
-
-```nginx
-location /admin/ {
-    # Permitir apenas IPs específicos
-    allow 203.0.113.0/24;  # Seu IP de escritório
-    allow 198.51.100.50;    # Seu IP VPN
-    deny all;
-
-    # ... resto da configuração
-}
-```
-
-Depois: `docker-compose restart nginx`
-
----
-
-## 📊 Monitoramento
-
-### Health Check
+### Problema: Migrations não rodam
 
 ```bash
-# Criar script de monitoramento
-cat > monitor.sh << 'EOF'
-#!/bin/bash
-HEALTH_URL="https://seu-dominio.com/health/"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
-
-if [ $STATUS -ne 200 ]; then
-  echo "ALERT: Health check failed with status $STATUS"
-  # Enviar email/Slack/etc
-fi
-EOF
-
-chmod +x monitor.sh
-
-# Executar a cada 5 minutos
-crontab -e
-*/5 * * * * /caminho/para/monitor.sh
+# Executar manualmente
+docker-compose -f docker-compose.prod.yml exec web python manage.py migrate --fake-initial
 ```
 
-### Integração com Sentry (opcional)
+### Problema: Erro 502 Bad Gateway
 
 ```bash
-# Adicionar ao requirements.txt
-echo "sentry-sdk[django]==1.40.0" >> requirements.txt
+# Verificar se Django está respondendo
+docker-compose -f docker-compose.prod.yml exec web curl http://localhost:8000/health/
 
-# Adicionar ao settings.py
-# import sentry_sdk
-# sentry_sdk.init(
-#     dsn="https://seu-dsn@sentry.io/projeto",
-#     environment="production",
-# )
+# Reiniciar web + nginx
+docker-compose -f docker-compose.prod.yml restart web nginx
+```
+
+### Problema: Banco de dados não conecta
+
+```bash
+# Testar conexão com Supabase
+docker-compose -f docker-compose.prod.yml exec web python manage.py dbshell
+
+# Verificar variáveis de ambiente
+docker-compose -f docker-compose.prod.yml exec web env | grep DB_
 ```
 
 ---
 
-## 🎯 Checklist Final
+## 🔄 Backup e Restore
 
-Antes de considerar o deploy completo:
+### Backup do Supabase (PostgreSQL)
 
-- [ ] `.env` configurado com valores de produção
-- [ ] Certificado SSL válido instalado
-- [ ] HTTPS funcionando (redirect HTTP→HTTPS)
-- [ ] Health check retornando 200 OK
-- [ ] Admin acessível via HTTPS
-- [ ] Login funcionando
-- [ ] API bot testada
-- [ ] Backup automático configurado
-- [ ] Firewall configurado
-- [ ] Domínio resolvendo corretamente
-- [ ] Logs sendo gerados
-- [ ] Monitoramento configurado
+O Supabase já faz backups automáticos, mas você pode fazer backups manuais:
+
+```bash
+# Backup via pg_dump (acesse Supabase Dashboard → Database → Backups)
+# Ou use a CLI do Supabase:
+supabase db dump -f backup.sql
+```
+
+### Backup dos arquivos de mídia
+
+```bash
+# Criar backup dos volumes Docker
+docker run --rm \
+  -v gestto_media_volume:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/media-backup-$(date +%Y%m%d).tar.gz /data
+```
+
+---
+
+## 📝 Checklist Pós-Deploy
+
+- [ ] ✅ Aplicação acessível via HTTPS
+- [ ] ✅ Health check retorna `{"status": "ok"}`
+- [ ] ✅ Admin Django acessível
+- [ ] ✅ Emails sendo enviados (teste de recuperação de senha)
+- [ ] ✅ API do bot funcionando
+- [ ] ✅ Integração n8n ativa
+- [ ] ✅ Webhooks Evolution API configurados
+- [ ] ✅ Celery processando tarefas
+- [ ] ✅ Logs sem erros críticos
+- [ ] ✅ Certificado SSL válido
+- [ ] ✅ DNS apontando corretamente
+
+---
+
+## 🎯 Próximos Passos
+
+1. **Configurar domínio personalizado** (se ainda não estiver)
+2. **Ativar Cloudflare** para proteção DDoS e CDN
+3. **Configurar monitoramento** (Sentry, UptimeRobot, etc.)
+4. **Configurar backups automáticos** dos volumes Docker
+5. **Adicionar testes automatizados** no CI/CD
+6. **Configurar rate limiting** no Nginx
 
 ---
 
 ## 📞 Suporte
 
-- Email: suporte@axiogesto.com
-- Documentação: https://docs.axiogesto.com
-- Issues: https://github.com/seu-usuario/axio_gestto/issues
+- **Documentação Django:** https://docs.djangoproject.com
+- **Documentação Supabase:** https://supabase.com/docs
+- **Documentação Docker:** https://docs.docker.com
 
 ---
 
-**Boa sorte com seu deploy! 🚀**
+**🎉 Deploy concluído! Sua aplicação está no ar em produção!**

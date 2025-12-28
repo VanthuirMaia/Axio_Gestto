@@ -119,16 +119,135 @@
             border-left: 4px solid #ef4444;
         }
 
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.75rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: transform 0.3s;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Navigation Items */
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            transition: all 0.3s ease;
+        }
+
         /* Responsive */
-        @media (max-width: 768px) {
-            nav ul {
-                flex-direction: column;
-                gap: 1rem;
+        @media (max-width: 992px) {
+            .mobile-menu-btn {
+                display: block;
             }
 
             nav {
+                position: relative;
+            }
+
+            nav ul {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                height: 100vh;
+                width: 80%;
+                max-width: 300px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 flex-direction: column;
+                padding: 5rem 2rem 2rem;
                 gap: 1rem;
+                box-shadow: -2px 0 20px rgba(0,0,0,0.2);
+                transition: right 0.3s ease;
+                z-index: 2000;
+            }
+
+            nav ul.show {
+                right: 0;
+            }
+
+            nav ul li {
+                width: 100%;
+            }
+
+            nav ul a {
+                display: block;
+                padding: 0.875rem 1rem;
+                border-radius: 8px;
+                transition: background 0.2s;
+            }
+
+            nav ul a:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .btn-primary {
+                width: 100%;
+                text-align: center;
+            }
+
+            /* Close button in mobile menu */
+            nav ul::before {
+                content: '✕';
+                position: absolute;
+                top: 1.5rem;
+                right: 1.5rem;
+                font-size: 2rem;
+                color: white;
+                cursor: pointer;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background 0.2s;
+            }
+
+            nav ul::before:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            /* Overlay */
+            .menu-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(2px);
+                z-index: 1999;
+            }
+
+            .menu-overlay.show {
+                display: block;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            nav {
+                padding: 0 1rem;
+            }
+
+            nav ul {
+                width: 85%;
+            }
+
+            .logo {
+                font-size: 1.125rem;
             }
         }
     </style>
@@ -138,15 +257,21 @@
     <header>
         <nav>
             <div class="logo">📅 Gestto</div>
-            <ul>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menu">
+                ☰
+            </button>
+            <ul id="mobileMenu">
                 <li><a href="{% url 'landing:home' %}">Início</a></li>
                 <li><a href="{% url 'landing:precos' %}">Preços</a></li>
                 <li><a href="{% url 'landing:sobre' %}">Sobre</a></li>
                 <li><a href="{% url 'landing:contato' %}">Contato</a></li>
+                <li><a href="{% url 'landing:cadastro' %}" class="btn-primary">Começar Grátis</a></li>
             </ul>
-            <a href="{% url 'landing:cadastro' %}" class="btn-primary">Começar Grátis</a>
         </nav>
     </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay"></div>
 
     {% if messages %}
     <div class="messages">
@@ -172,6 +297,47 @@
             <p style="font-size: 0.9rem; margin-top: 0.5rem;">Desenvolvido por Axio Dev</p>
         </div>
     </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('show');
+            menuOverlay.classList.toggle('show');
+            document.body.style.overflow = mobileMenu.classList.contains('show') ? 'hidden' : '';
+        }
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        }
+
+        if (menuOverlay) {
+            menuOverlay.addEventListener('click', toggleMobileMenu);
+        }
+
+        // Close menu on link click
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    toggleMobileMenu();
+                }
+                // Close button (::before pseudo-element click)
+                if (e.target === mobileMenu && e.offsetX > mobileMenu.offsetWidth - 80 && e.offsetY < 80) {
+                    toggleMobileMenu();
+                }
+            });
+        }
+
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('show')) {
+                toggleMobileMenu();
+            }
+        });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

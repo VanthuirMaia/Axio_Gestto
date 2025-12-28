@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo ao Axio Gestto</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .email-header .emoji {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .email-header p {
+            margin: 10px 0 0 0;
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-body p {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            color: #4b5563;
+        }
+        .welcome-box {
+            margin: 30px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+            text-align: center;
+        }
+        .welcome-box h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #065f46;
+        }
+        .welcome-box p {
+            margin: 5px 0;
+            color: #064e3b;
+            font-size: 16px;
+        }
+        .credentials-box {
+            margin: 30px 0;
+            padding: 25px;
+            background-color: #1f2937;
+            border-radius: 10px;
+            color: #ffffff;
+        }
+        .credentials-box h3 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            color: #10b981;
+            text-align: center;
+        }
+        .credential-item {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #374151;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .credential-label {
+            display: block;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .credential-value {
+            display: block;
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: 600;
+            word-break: break-all;
+        }
+        .warning-box {
+            margin: 20px 0;
+            padding: 15px 20px;
+            background-color: #fef3c7;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+        .warning-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #92400e;
+        }
+        .warning-box strong {
+            color: #78350f;
+        }
+        .action-button {
+            display: inline-block;
+            margin: 30px 0;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 18px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .action-button:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        .features-grid {
+            display: table;
+            width: 100%;
+            margin: 30px 0;
+        }
+        .feature-item {
+            display: table-row;
+            padding: 12px 0;
+        }
+        .feature-icon {
+            display: table-cell;
+            width: 30px;
+            font-size: 20px;
+            vertical-align: middle;
+        }
+        .feature-text {
+            display: table-cell;
+            padding: 10px 0;
+            color: #4b5563;
+            font-size: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .trial-info {
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3b82f6;
+        }
+        .trial-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            color: #1e40af;
+        }
+        .trial-info p {
+            margin: 5px 0;
+            color: #1e3a8a;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .steps-box {
+            margin: 30px 0;
+        }
+        .steps-box h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px 15px 15px 50px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            position: relative;
+            border-left: 3px solid #10b981;
+        }
+        .step-number {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .step-text {
+            color: #4b5563;
+            font-size: 15px;
+            margin: 0;
+        }
+        .email-footer {
+            padding: 30px;
+            background-color: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .email-footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .support-box {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+        }
+        .support-box h4 {
+            margin: 0 0 15px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .support-box p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <div class="emoji">🎉</div>
+            <h1>Bem-vindo ao Gestto!</h1>
+            <p>Sua conta foi criada com sucesso</p>
+        </div>
+
+        <div class="email-body">
+            <div class="welcome-box">
+                <h2>Olá, {{ empresa.nome }}!</h2>
+                <p>Estamos muito felizes em tê-lo conosco!</p>
+            </div>
+
+            <p>
+                Sua conta no <strong>Axio Gestto</strong> está pronta para uso. Agora você pode começar a gerenciar seus agendamentos de forma automática e profissional.
+            </p>
+
+            <div class="credentials-box">
+                <h3>🔐 Suas Credenciais de Acesso</h3>
+
+                <div class="credential-item">
+                    <span class="credential-label">Email / Usuário</span>
+                    <span class="credential-value">{{ usuario.email }}</span>
+                </div>
+
+                <div class="credential-item">
+                    <span class="credential-label">Senha Temporária</span>
+                    <span class="credential-value">{{ senha_temporaria }}</span>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <p>
+                    <strong>⚠️ IMPORTANTE:</strong> Altere sua senha no primeiro acesso por questões de segurança!
+                </p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{ site_url }}/app/login/" class="action-button">
+                    Acessar o Sistema Agora
+                </a>
+            </div>
+
+            {% if plano %}
+            <div class="trial-info">
+                <h3>🎁 Período de Teste Grátis</h3>
+                <p>{{ plano.nome }}: {{ plano.trial_dias }} dias grátis</p>
+                <p style="font-size: 14px; font-weight: normal;">Válido até {{ trial_expira_em|date:"d/m/Y" }}</p>
+            </div>
+            {% endif %}
+
+            <div class="steps-box">
+                <h3>📋 Próximos Passos (5 minutos)</h3>
+
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <p class="step-text">Faça login com suas credenciais</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <p class="step-text">Configure seus serviços (corte, barba, etc.)</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <p class="step-text">Cadastre seus profissionais</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <p class="step-text">Conecte seu WhatsApp para agendamentos automáticos</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <p class="step-text">Pronto! Comece a receber agendamentos 🚀</p>
+                </div>
+            </div>
+
+            {% if plano %}
+            <h3 style="color: #1e3a8a; margin: 30px 0 15px 0;">✨ O que está incluído no seu plano:</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Agendamentos via WhatsApp (bot com IA)</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Calendário interativo e intuitivo</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Gestão completa de clientes</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Relatórios de faturamento detalhados</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Até {{ plano.max_profissionais }} profissional(is)</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-text">Até {{ plano.max_agendamentos_mes }} agendamentos/mês</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="support-box">
+                <h4>💬 Precisa de Ajuda?</h4>
+                <p><strong>Email:</strong> suporte@gestto.com.br</p>
+                <p><strong>WhatsApp:</strong> (11) 99999-9999</p>
+                <p><strong>Central de Ajuda:</strong> gestto.com.br/ajuda</p>
+            </div>
+
+            <p style="margin-top: 30px; text-align: center; color: #6b7280;">
+                Estamos aqui para ajudar você a crescer! 💪
+            </p>
+        </div>
+
+        <div class="email-footer">
+            <p><strong>Axio Gestto</strong> - Sistema de Gestão</p>
+            <p>Transformando agendamentos em experiências! ✨</p>
+            <p style="margin-top: 10px; font-size: 12px;">Este é um email automático. Por favor, não responda.</p>
+        </div>
+    </div>
+</body>
+</html>

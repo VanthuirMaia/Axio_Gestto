@@ -53,11 +53,13 @@ class LimitesPlanoMiddleware:
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
 
-            # Pular verificação se não tem assinatura (admin, etc)
-            if not hasattr(empresa, 'assinatura'):
+            # Pular verificação se não tem assinatura (admin, empresa sem assinatura, etc)
+            try:
+                assinatura = empresa.assinatura
+            except Exception:
+                # Empresa não tem assinatura - permitir acesso (admin pode estar criando)
                 return self.get_response(request)
 
-            assinatura = empresa.assinatura
             plano = assinatura.plano
 
             # Verificar se a rota precisa de validação
@@ -168,8 +170,13 @@ class AssinaturaExpiracaoMiddleware:
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
 
-            if hasattr(empresa, 'assinatura'):
+            try:
                 assinatura = empresa.assinatura
+            except Exception:
+                # Empresa não tem assinatura - não mostrar avisos
+                return self.get_response(request)
+
+            if assinatura:
 
                 # Apenas para assinaturas ativas
                 if assinatura.status in ['ativa', 'trial'] and assinatura.data_expiracao:
@@ -225,8 +232,11 @@ class UsageTrackingMiddleware:
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             # Aqui você pode salvar métricas em um model futuro
             # Por enquanto, apenas adicionar header de debug
-            if hasattr(request.user.empresa, 'assinatura'):
+            try:
                 response['X-Plan'] = request.user.empresa.assinatura.plano.nome
                 response['X-Response-Time'] = f'{duration:.3f}s'
+            except Exception:
+                # Empresa sem assinatura - skip headers
+                pass
 
         return response
