@@ -33,9 +33,7 @@ def onboarding_wizard(request):
         return redirect('onboarding_step_1')
     elif etapa == 1:
         return redirect('onboarding_step_2')
-    elif etapa == 2:
-        return redirect('onboarding_step_3')
-    elif etapa == 3:
+    elif etapa >= 2:  # Pula WhatsApp, vai direto para conclusão
         return redirect('onboarding_step_4')
     else:
         return redirect('onboarding_step_1')
@@ -95,8 +93,8 @@ def onboarding_step_1_servicos(request):
         'empresa': empresa,
         'servicos': servicos_existentes,
         'etapa_atual': 1,
-        'total_etapas': 4,
-        'progresso': 25,  # 25% = 1/4
+        'total_etapas': 3,
+        'progresso': 33,  # 33% = 1/3
     }
 
     return render(request, 'onboarding/step_1_servicos.html', context)
@@ -144,12 +142,12 @@ def onboarding_step_2_profissional(request):
             # Associar serviços
             profissional.servicos.set(servicos_ids)
 
-            # Avançar para próxima etapa
-            empresa.onboarding_etapa = 2
+            # Avançar para próxima etapa (pula WhatsApp)
+            empresa.onboarding_etapa = 3
             empresa.save()
 
             messages.success(request, f'Profissional {nome} cadastrado com sucesso!')
-            return redirect('onboarding_step_3')
+            return redirect('onboarding_step_4')
 
         except Exception as e:
             messages.error(request, f'Erro ao cadastrar profissional: {str(e)}')
@@ -168,8 +166,8 @@ def onboarding_step_2_profissional(request):
         'servicos': servicos,
         'profissionais': profissionais_existentes,
         'etapa_atual': 2,
-        'total_etapas': 4,
-        'progresso': 50,  # 50% = 2/4
+        'total_etapas': 3,
+        'progresso': 66,  # 66% = 2/3
     }
 
     return render(request, 'onboarding/step_2_profissional.html', context)
@@ -267,8 +265,8 @@ def onboarding_step_4_pronto(request):
         'total_profissionais': total_profissionais,
         'whatsapp_configurado': whatsapp_configurado,
         'link_agendamento': f'/agendar/{empresa.slug}/',  # Link público de agendamento
-        'etapa_atual': 4,
-        'total_etapas': 4,
+        'etapa_atual': 3,
+        'total_etapas': 3,
         'progresso': 100,
     }
 

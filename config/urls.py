@@ -18,12 +18,26 @@ from agendamentos.api_n8n import (
 )
 from empresas.api_views import whatsapp_webhook
 from configuracoes.views import whatsapp_webhook_n8n
+from agendamentos.public_views import (
+    agendamento_publico,
+    api_profissionais_por_servico,
+    api_horarios_disponiveis,
+    confirmar_agendamento
+)
 
 urlpatterns = [
     # ==========================================
     # PÚBLICO - Landing Page
     # ==========================================
     path('', include('landing.urls')),  # Landing na raiz
+
+    # ==========================================
+    # PÚBLICO - Agendamento Online
+    # ==========================================
+    path('agendar/<slug:slug>/', agendamento_publico, name='agendamento_publico'),
+    path('agendar/<slug:slug>/api/profissionais/', api_profissionais_por_servico, name='api_profissionais_servico'),
+    path('agendar/<slug:slug>/api/horarios-disponiveis/', api_horarios_disponiveis, name='api_horarios_disponiveis_public'),
+    path('agendar/<slug:slug>/confirmar/', confirmar_agendamento, name='confirmar_agendamento_publico'),
 
     # ==========================================
     # PÚBLICO - APIs (webhooks, create-tenant)

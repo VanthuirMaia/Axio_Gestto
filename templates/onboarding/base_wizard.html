@@ -249,7 +249,7 @@
         <!-- Header -->
         <div class="header">
             <h1>Bem-vindo ao Gestto, {{ empresa.nome }}!</h1>
-            <p>Vamos configurar sua conta em apenas 4 passos rápidos</p>
+            <p>Vamos configurar sua conta em apenas 3 passos rápidos</p>
         </div>
 
         <!-- Progress Bar -->
@@ -265,10 +265,6 @@
                 </div>
                 <div class="step {% if etapa_atual >= 3 %}{% if etapa_atual == 3 %}active{% else %}completed{% endif %}{% endif %}">
                     <div class="step-number">3</div>
-                    <div class="step-label">WhatsApp</div>
-                </div>
-                <div class="step {% if etapa_atual >= 4 %}{% if etapa_atual == 4 %}active{% else %}completed{% endif %}{% endif %}">
-                    <div class="step-number">4</div>
                     <div class="step-label">Pronto!</div>
                 </div>
             </div>

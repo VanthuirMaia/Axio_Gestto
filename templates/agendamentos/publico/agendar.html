@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar - {{ empresa.nome }}</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            opacity: 1;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .service-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .service-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .service-card.selected {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .service-card h3 {
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .service-info {
+            display: flex;
+            justify-content: space-between;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .price {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .horario-btn {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .horario-btn:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .horario-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            margin-right: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .resumo {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .resumo-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .resumo-item:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+            color: #10b981;
+        }
+
+        @media (max-width: 640px) {
+            .horarios-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>{{ empresa.nome }}</h1>
+            <p>Escolha o serviço e horário desejado</p>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step active" id="step-indicator-1">
+                <div class="step-number">1</div>
+                <div>Serviço</div>
+            </div>
+            <div class="step" id="step-indicator-2">
+                <div class="step-number">2</div>
+                <div>Profissional</div>
+            </div>
+            <div class="step" id="step-indicator-3">
+                <div class="step-number">3</div>
+                <div>Data & Hora</div>
+            </div>
+            <div class="step" id="step-indicator-4">
+                <div class="step-number">4</div>
+                <div>Confirmar</div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div id="alert-container"></div>
+
+            <!-- Passo 1: Escolher Serviço -->
+            <div class="step-content active" id="step-1">
+                <h2 style="margin-bottom: 20px;">Escolha o serviço</h2>
+
+                {% for servico in servicos %}
+                <div class="service-card" onclick="selectService({{ servico.id }}, '{{ servico.nome }}', {{ servico.preco }}, {{ servico.duracao_minutos }})">
+                    <h3>{{ servico.nome }}</h3>
+                    <div class="service-info">
+                        <span>⏱️ {{ servico.duracao_minutos }} min</span>
+                        <span class="price">R$ {{ servico.preco }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Passo 2: Escolher Profissional -->
+            <div class="step-content" id="step-2">
+                <h2 style="margin-bottom: 20px;">Escolha o profissional</h2>
+                <div id="profissionais-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Carregando profissionais...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passo 3: Escolher Data e Hora -->
+            <div class="step-content" id="step-3">
+                <h2 style="margin-bottom: 20px;">Escolha a data e horário</h2>
+
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="data-agendamento" min="{{ hoje }}" onchange="loadHorarios()">
+                </div>
+
+                <div id="horarios-container">
+                    <p style="color: #6b7280;">Selecione uma data para ver os horários disponíveis</p>
+                </div>
+
+                <button class="btn" onclick="nextStep()" id="btn-confirmar-horario" style="display: none; margin-top: 20px;">
+                    Continuar →
+                </button>
+            </div>
+
+            <!-- Passo 4: Dados do Cliente -->
+            <div class="step-content" id="step-4">
+                <h2 style="margin-bottom: 20px;">Confirme seus dados</h2>
+
+                <!-- Resumo do agendamento -->
+                <div class="resumo">
+                    <div class="resumo-item">
+                        <span>Serviço:</span>
+                        <strong id="resumo-servico"></strong>
+                    </div>
+                    <div class="resumo-item">
+                        <span>Profissional:</span>
+                        <strong id="resumo-profissional"></strong>
+                    </div>
+                    <div class="resumo-item">
+                        <span>Data e Hora:</span>
+                        <strong id="resumo-data-hora"></strong>
+                    </div>
+                    <div class="resumo-item">
+                        <span>Valor:</span>
+                        <strong id="resumo-valor"></strong>
+                    </div>
+                </div>
+
+                <!-- Formulário do cliente -->
+                <form id="form-cliente" onsubmit="confirmarAgendamento(event)">
+                    <div class="form-group">
+                        <label>Seu nome *</label>
+                        <input type="text" id="cliente-nome" required placeholder="Ex: João Silva">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telefone (WhatsApp) *</label>
+                        <input type="tel" id="cliente-telefone" required placeholder="(11) 99999-9999">
+                    </div>
+
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="cliente-email" placeholder="seu@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="cliente-notas" rows="3" placeholder="Alguma informação adicional?"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()" style="flex: 1;">
+                            ← Voltar
+                        </button>
+                        <button type="submit" class="btn" style="flex: 2;" id="btn-finalizar">
+                            ✓ Confirmar Agendamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado do agendamento
+        const booking = {
+            servicoId: null,
+            servicoNome: null,
+            servicoPreco: null,
+            servicoDuracao: null,
+            profissionalId: null,
+            profissionalNome: null,
+            data: null,
+            hora: null,
+            dataHora: null
+        };
+
+        let currentStep = 1;
+
+        // Definir data mínima (hoje)
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('data-agendamento').value = hoje;
+
+        function selectService(id, nome, preco, duracao) {
+            booking.servicoId = id;
+            booking.servicoNome = nome;
+            booking.servicoPreco = preco;
+            booking.servicoDuracao = duracao;
+
+            // Visual feedback
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Aguardar um pouco e avançar
+            setTimeout(() => {
+                loadProfissionais();
+                nextStep();
+            }, 300);
+        }
+
+        function loadProfissionais() {
+            const container = document.getElementById('profissionais-container');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Carregando profissionais...</div>';
+
+            fetch(`/agendar/{{ empresa.slug }}/api/profissionais/?servico_id=${booking.servicoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.profissionais.length === 0) {
+                        container.innerHTML = '<p style="color: #991b1b;">Nenhum profissional disponível para este serviço.</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    data.profissionais.forEach(prof => {
+                        html += `
+                            <div class="service-card" onclick="selectProfissional(${prof.id}, '${prof.nome}')">
+                                <h3>👤 ${prof.nome}</h3>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    container.innerHTML = '<p style="color: #991b1b;">Erro ao carregar profissionais.</p>';
+                    console.error(error);
+                });
+        }
+
+        function selectProfissional(id, nome) {
+            booking.profissionalId = id;
+            booking.profissionalNome = nome;
+
+            document.querySelectorAll('#step-2 .service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            setTimeout(() => {
+                nextStep();
+                loadHorarios();
+            }, 300);
+        }
+
+        function loadHorarios() {
+            const dataInput = document.getElementById('data-agendamento');
+            const data = dataInput.value;
+
+            if (!data) return;
+
+            booking.data = data;
+            const container = document.getElementById('horarios-container');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Buscando horários...</div>';
+
+            fetch(`/agendar/{{ empresa.slug }}/api/horarios-disponiveis/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    servico_id: booking.servicoId,
+                    profissional_id: booking.profissionalId,
+                    data: data
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.horarios.length === 0) {
+                        container.innerHTML = '<p style="color: #991b1b;">Nenhum horário disponível para esta data.</p>';
+                        return;
+                    }
+
+                    let html = '<div class="horarios-grid">';
+                    data.horarios.forEach(h => {
+                        html += `
+                            <button type="button" class="horario-btn" onclick="selectHorario('${h.hora}', '${h.datetime}')">
+                                ${h.hora}
+                            </button>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    container.innerHTML = '<p style="color: #991b1b;">Erro ao carregar horários.</p>';
+                    console.error(error);
+                });
+        }
+
+        function selectHorario(hora, datetime) {
+            booking.hora = hora;
+            booking.dataHora = datetime;
+
+            document.querySelectorAll('.horario-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            document.getElementById('btn-confirmar-horario').style.display = 'block';
+        }
+
+        function nextStep() {
+            if (currentStep < 4) {
+                // Esconder step atual
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.getElementById(`step-indicator-${currentStep}`).classList.remove('active');
+
+                // Mostrar próximo step
+                currentStep++;
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.getElementById(`step-indicator-${currentStep}`).classList.add('active');
+
+                // Se chegou no último step, preencher resumo
+                if (currentStep === 4) {
+                    preencherResumo();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.getElementById(`step-indicator-${currentStep}`).classList.remove('active');
+
+                currentStep--;
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.getElementById(`step-indicator-${currentStep}`).classList.add('active');
+            }
+        }
+
+        function preencherResumo() {
+            document.getElementById('resumo-servico').textContent = booking.servicoNome;
+            document.getElementById('resumo-profissional').textContent = booking.profissionalNome;
+
+            const dataFormatada = new Date(booking.data + 'T00:00:00').toLocaleDateString('pt-BR');
+            document.getElementById('resumo-data-hora').textContent = `${dataFormatada} às ${booking.hora}`;
+            document.getElementById('resumo-valor').textContent = `R$ ${booking.servicoPreco}`;
+        }
+
+        function confirmarAgendamento(event) {
+            event.preventDefault();
+
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            btnFinalizar.disabled = true;
+            btnFinalizar.textContent = 'Confirmando...';
+
+            const dados = {
+                servico_id: booking.servicoId,
+                profissional_id: booking.profissionalId,
+                data_hora: booking.dataHora,
+                cliente_nome: document.getElementById('cliente-nome').value,
+                cliente_telefone: document.getElementById('cliente-telefone').value,
+                cliente_email: document.getElementById('cliente-email').value,
+                notas: document.getElementById('cliente-notas').value
+            };
+
+            fetch(`/agendar/{{ empresa.slug }}/confirmar/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dados)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', `✅ ${data.mensagem}<br><br>Você receberá uma confirmação em breve.`);
+                        document.getElementById('form-cliente').reset();
+
+                        // Resetar após 3 segundos
+                        setTimeout(() => {
+                            location.reload();
+                        }, 3000);
+                    } else {
+                        showAlert('error', data.error);
+                        btnFinalizar.disabled = false;
+                        btnFinalizar.textContent = '✓ Confirmar Agendamento';
+                    }
+                })
+                .catch(error => {
+                    showAlert('error', 'Erro ao confirmar agendamento. Tente novamente.');
+                    btnFinalizar.disabled = false;
+                    btnFinalizar.textContent = '✓ Confirmar Agendamento';
+                    console.error(error);
+                });
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
