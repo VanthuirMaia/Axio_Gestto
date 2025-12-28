@@ -184,6 +184,8 @@ ADMIN_URL = config('ADMIN_URL', default='admin/')
 # ============================================
 
 # Template caching
+# IMPORTANTE: Quando loaders é definido, APP_DIRS deve ser False
+TEMPLATES[0]['APP_DIRS'] = False
 TEMPLATES[0]['OPTIONS']['loaders'] = [
     ('django.template.loaders.cached.Loader', [
         'django.template.loaders.filesystem.Loader',
