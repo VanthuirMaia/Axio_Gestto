@@ -93,9 +93,9 @@ jobs:
             echo "🐳 Construindo imagem Docker..."
             docker build -t gestto-app:latest .
 
-            # Carregar variáveis de ambiente
+            # Carregar variáveis de ambiente (remove comentários e linhas vazias)
             echo "📝 Carregando variáveis de ambiente..."
-            export $(cat .env.production | grep -v '^#' | xargs)
+            export $(cat .env.production | grep -v '^#' | grep -v '^$' | sed 's/#.*//' | sed 's/ *= */=/g' | xargs)
 
             # Deploy da stack no Swarm
             echo "🚢 Fazendo deploy da stack gestto..."
