@@ -35,14 +35,18 @@ jobs:
         run: |
           python manage.py check --deploy --fail-level WARNING
         env:
+          DJANGO_ENV: "production"
           SECRET_KEY: "ci-test-only-k8$mz9#vp2@qw5!nx7&ry4*tu6^ej3%sh1(ad0)fg-bh=lc+wo_ie"
           DEBUG: "False"
           DATABASE_URL: "sqlite:///db.sqlite3"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+          EMAIL_BACKEND: "django.core.mail.backends.console.EmailBackend"
 
       - name: Run tests (se houver)
         run: |
           python manage.py test --verbosity=2 || echo "No tests found"
         env:
+          DJANGO_ENV: "development"
           SECRET_KEY: "ci-test-only-k8$mz9#vp2@qw5!nx7&ry4*tu6^ej3%sh1(ad0)fg-bh=lc+wo_ie"
           DEBUG: "True"
 
@@ -70,24 +74,30 @@ jobs:
             # Navegar para o diretório do projeto
             cd ${{ env.DEPLOY_PATH }}
 
-            # Fazer backup do .env.production antes de atualizar
+            # Fazer backup do .env.prod antes de atualizar
             echo "📦 Fazendo backup das configurações..."
-            cp .env.production .env.production.backup
+            cp .env.prod .env.prod.backup || echo "⚠️  .env.prod não existe ainda"
 
             # Atualizar código do GitHub
             echo "📥 Atualizando código do repositório..."
             git fetch origin
             git reset --hard origin/main
 
-            # Restaurar .env.production (não vem do git)
+            # Restaurar .env.prod (não vem do git)
             echo "🔐 Restaurando configurações de produção..."
-            mv .env.production.backup .env.production
+            mv .env.prod.backup .env.prod || echo "⚠️  Backup não existe"
 
-            # Verificar se o .env.production existe
-            if [ ! -f .env.production ]; then
-              echo "❌ ERRO: .env.production não encontrado!"
+            # Verificar se o .env.prod existe (se não, cria do exemplo)
+            if [ ! -f .env.prod ]; then
+              echo "⚠️  .env.prod não encontrado, criando do exemplo..."
+              cp .env.prod.example .env.prod
+              echo "❌ ERRO: Configure o .env.prod no servidor antes de continuar!"
               exit 1
             fi
+
+            # Copiar .env.prod para .env (usado pelo Django)
+            echo "📝 Copiando .env.prod para .env..."
+            cp .env.prod .env
 
             # Build da imagem Docker
             echo "🐳 Construindo imagem Docker..."
