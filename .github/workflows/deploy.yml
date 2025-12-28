@@ -91,27 +91,23 @@ jobs:
 
             # Build da imagem Docker
             echo "🐳 Construindo imagem Docker..."
-            docker build -t gestto-app:latest .
+            docker build -t gestto-web .
 
-            # Carregar variáveis de ambiente (remove comentários e linhas vazias)
-            echo "📝 Carregando variáveis de ambiente..."
-            export $(cat .env.production | grep -v '^#' | grep -v '^$' | sed 's/#.*//' | sed 's/ *= */=/g' | xargs)
+            # Deploy com docker-compose
+            echo "🚢 Fazendo deploy com docker-compose..."
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps web
 
-            # Deploy da stack no Swarm
-            echo "🚢 Fazendo deploy da stack gestto..."
-            docker stack deploy -c gestto-stack.yaml gestto
-
-            # Aguardar serviços iniciarem
-            echo "⏳ Aguardando serviços iniciarem..."
-            sleep 20
+            # Aguardar container iniciar
+            echo "⏳ Aguardando container iniciar..."
+            sleep 15
 
             # Verificar status dos serviços
             echo "✅ Verificando status dos serviços..."
-            docker stack services gestto
+            docker compose -f docker-compose.prod.yml ps
 
-            # Executar migrations (se o serviço web já estiver rodando)
+            # Executar migrations (se o container web já estiver rodando)
             echo "📊 Executando migrations..."
-            WEB_CONTAINER=$(docker ps -q -f name=gestto_gestto_web | head -1)
+            WEB_CONTAINER=$(docker ps -q -f name=gestto_web | head -1)
             if [ -n "$WEB_CONTAINER" ]; then
               docker exec $WEB_CONTAINER python manage.py migrate --noinput || echo "⚠️  Migrations falharam (normal no primeiro deploy)"
               docker exec $WEB_CONTAINER python manage.py collectstatic --noinput || echo "⚠️  Collectstatic falhou"
@@ -125,15 +121,15 @@ jobs:
 
             echo ""
             echo "🎉 Deploy concluído com sucesso!"
-            echo "📍 Aplicação disponível em: https://app.gestto.app.br"
+            echo "📍 Aplicação disponível em: https://gestto.app.br"
             echo ""
             echo "📊 Status dos serviços:"
-            docker stack services gestto
+            docker compose -f docker-compose.prod.yml ps
 
       - name: Health check
         run: |
           sleep 10
-          curl -f https://app.gestto.app.br/health/ || echo "⚠️  Health check falhou - verifique manualmente"
+          curl -f https://gestto.app.br/health/ || echo "⚠️  Health check falhou - verifique manualmente"
 
       - name: Notify deployment
         if: always()
