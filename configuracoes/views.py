@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.urls import reverse
 from django.utils.timezone import now
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -256,7 +257,7 @@ def profissionais_lista(request):
     
     # Breadcrumb
     breadcrumb_items = [
-        {'label': 'Configurações', 'url': '/configuracoes/', 'icon': 'gear-fill'},
+        {'label': 'Configurações', 'url': reverse('configuracoes_dashboard'), 'icon': 'gear-fill'},
         {'label': 'Profissionais', 'url': '#'},
     ]
     
