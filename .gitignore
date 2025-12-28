@@ -131,13 +131,38 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# ============================================
+# ENVIRONMENT FILES - PROTEÇÃO DE CREDENCIAIS
+# ============================================
+# CRÍTICO: Nunca commitar arquivos com credenciais reais!
+
+# Arquivos ativos (nunca commitar)
 .env
 .env.local
+
+# Ambientes específicos (nunca commitar)
+.env.dev
+.env.prod
+.env.staging
+.env.test
+
+# Nomenclaturas antigas (manter proteção)
 .env.production
 .env.production.local
-.env.*.local
 .env.deploy-rapido
+
+# Variações locais (nunca commitar)
+.env.*.local
+.env.*.backup
+
+# ✅ Permitido commitar (templates sem credenciais):
+# - .env.dev.example
+# - .env.prod.example
+# - .env.example
+
+# ============================================
+# VIRTUAL ENVIRONMENTS
+# ============================================
 .venv
 env/
 venv/
@@ -281,4 +306,24 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/django,python
 
-rules.md 
+# ============================================
+# CUSTOM PROJECT IGNORES
+# ============================================
+
+# Logs directory (criado em produção)
+logs/
+*.log
+
+# Static files coletados (gerados por collectstatic)
+staticfiles/
+
+# Settings antigo (após migração para settings/)
+config/settings.py
+
+# Media files (uploads de usuários - opcional)
+# Descomente se não quiser versionar uploads:
+# media/
+
+# Documentação privada
+rules.md
+
