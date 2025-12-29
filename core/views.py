@@ -386,3 +386,72 @@ def password_reset_confirm(request, uidb64, token):
 def password_reset_complete(request):
     """Página final confirmando sucesso"""
     return render(request, 'password_reset_complete.html')
+
+
+# ==========================================
+# PWA - Service Worker e Offline
+# ==========================================
+
+from django.http import HttpResponse
+from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_GET
+import os
+
+
+@require_GET
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+def service_worker(request):
+    """Serve o service worker com headers corretos"""
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'service-worker.js')
+
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        return HttpResponse(
+            content,
+            content_type='application/javascript; charset=utf-8',
+            headers={
+                'Service-Worker-Allowed': '/',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+            }
+        )
+    except FileNotFoundError:
+        return HttpResponse(
+            '// Service worker file not found',
+            content_type='application/javascript',
+            status=404
+        )
+
+
+@require_GET
+def offline_view(request):
+    """Página exibida quando o usuário está offline"""
+    return render(request, 'offline.html')
+
+
+@require_GET
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+def manifest_json(request):
+    """Serve o manifest.json com headers corretos"""
+    import json
+
+    manifest_path = os.path.join(settings.BASE_DIR, 'static', 'manifest.json')
+
+    try:
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            manifest_data = json.load(f)
+
+        return HttpResponse(
+            json.dumps(manifest_data, indent=2),
+            content_type='application/manifest+json',
+            headers={
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+            }
+        )
+    except FileNotFoundError:
+        return HttpResponse(
+            json.dumps({"name": "Gestto", "short_name": "Gestto"}),
+            content_type='application/manifest+json',
+            status=404
+        )

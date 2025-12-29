@@ -182,8 +182,11 @@ class AssinaturaExpiracaoMiddleware:
                 if assinatura.status in ['ativa', 'trial'] and assinatura.data_expiracao:
                     dias_restantes = (assinatura.data_expiracao - now()).days
 
-                    # Mostrar aviso apenas no dashboard e páginas principais
-                    if request.path in ['/dashboard/', '/']:
+                    # Mostrar aviso apenas no dashboard (não em páginas públicas/landing)
+                    # Excluir rotas da landing page e páginas públicas
+                    is_landing_page = request.path.startswith('/landing/') or request.path in ['/', '/login/', '/cadastro/']
+
+                    if request.path == '/dashboard/' and not is_landing_page:
                         if dias_restantes <= 0:
                             messages.error(
                                 request,

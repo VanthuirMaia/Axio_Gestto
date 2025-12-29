@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Test - Gestto</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Sistema de gestão de atendimentos">
+  <meta name="theme-color" content="#667eea">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/service-worker.js')
+          .then((registration) => {
+            console.log('✅ Service Worker registrado:', registration.scope);
+          })
+          .catch((error) => {
+            console.error('❌ Erro ao registrar Service Worker:', error);
+          });
+      });
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #667eea; }
+    .status { margin: 20px 0; padding: 15px; border-radius: 5px; }
+    .success { background: #d1fae5; color: #065f46; }
+    .error { background: #fee2e2; color: #991b1b; }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover { background: #5568d3; }
+    pre {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 Teste PWA - Gestto</h1>
+
+    <div id="status"></div>
+
+    <h2>Testes:</h2>
+    <button onclick="testManifest()">1. Testar Manifest</button>
+    <button onclick="testServiceWorker()">2. Testar Service Worker</button>
+    <button onclick="testInstallable()">3. Verificar Instalável</button>
+    <button onclick="runAllTests()">Executar Todos</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const results = document.getElementById('results');
+    const status = document.getElementById('status');
+
+    function log(message, isError = false) {
+      const div = document.createElement('div');
+      div.className = 'status ' + (isError ? 'error' : 'success');
+      div.textContent = message;
+      results.appendChild(div);
+    }
+
+    async function testManifest() {
+      results.innerHTML = '<h3>Testando Manifest...</h3>';
+      try {
+        const response = await fetch('/manifest.json');
+        const contentType = response.headers.get('content-type');
+
+        log(`✅ Manifest acessível: ${response.status}`);
+        log(`✅ Content-Type: ${contentType}`);
+
+        const manifest = await response.json();
+        log(`✅ Nome: ${manifest.name}`);
+        log(`✅ Ícones: ${manifest.icons.length} encontrados`);
+
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(manifest, null, 2);
+        results.appendChild(pre);
+      } catch (error) {
+        log(`❌ Erro: ${error.message}`, true);
+      }
+    }
+
+    async function testServiceWorker() {
+      results.innerHTML = '<h3>Testando Service Worker...</h3>';
+      if ('serviceWorker' in navigator) {
+        log('✅ Service Worker suportado');
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (registrations.length > 0) {
+            log(`✅ ${registrations.length} Service Worker(s) registrado(s)`);
+            registrations.forEach(reg => {
+              log(`   - Scope: ${reg.scope}`);
+              log(`   - Estado: ${reg.active ? 'Ativo' : 'Inativo'}`);
+            });
+          } else {
+            log('⚠️ Nenhum Service Worker registrado ainda', true);
+          }
+        } catch (error) {
+          log(`❌ Erro: ${error.message}`, true);
+        }
+      } else {
+        log('❌ Service Worker não suportado', true);
+      }
+    }
+
+    async function testInstallable() {
+      results.innerHTML = '<h3>Verificando se é Instalável...</h3>';
+
+      // Verificar critérios PWA
+      const checks = {
+        'HTTPS ou localhost': window.location.protocol === 'https:' || window.location.hostname === 'localhost',
+        'Manifest presente': document.querySelector('link[rel="manifest"]') !== null,
+        'Service Worker API': 'serviceWorker' in navigator,
+        'Modo standalone': window.matchMedia('(display-mode: standalone)').matches
+      };
+
+      for (const [check, passed] of Object.entries(checks)) {
+        log(`${passed ? '✅' : '❌'} ${check}`, !passed);
+      }
+
+      // Verificar link do manifest
+      const manifestLink = document.querySelector('link[rel="manifest"]');
+      if (manifestLink) {
+        log(`ℹ️ Manifest URL: ${manifestLink.href}`);
+      }
+    }
+
+    async function runAllTests() {
+      await testManifest();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await testServiceWorker();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await testInstallable();
+    }
+
+    // Listener para evento de instalação
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      status.innerHTML = '<div class="status success">🎉 PWA Instalável Detectado! Botão de instalação disponível.</div>';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      status.innerHTML = '<div class="status success">✅ PWA Instalado com Sucesso!</div>';
+    });
+
+    // Auto-run ao carregar
+    window.addEventListener('load', () => {
+      runAllTests();
+    });
+  </script>
+</body>
+</html>

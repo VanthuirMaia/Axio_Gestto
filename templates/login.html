@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Login - Axio Gestto{% endblock %}
 
@@ -49,22 +50,40 @@
         }
       }
       .login-header {
-        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-        padding: 40px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 50px 30px;
         text-align: center;
         color: white;
       }
-      .login-header h1 {
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 8px;
+      .login-logo {
+        max-width: 450px;
+        width: 90%;
+        height: auto;
+        margin-bottom: 16px;
+        filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0,0,0,0.3));
       }
       .login-header p {
         font-size: 14px;
         opacity: 0.95;
       }
+      .login-footer {
+        text-align: center;
+        padding: 16px 30px;
+        background-color: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+      }
+      .login-footer small {
+        color: #6b7280;
+        font-size: 12px;
+      }
+      .login-footer .axio-logo-login {
+        max-height: 20px;
+        vertical-align: middle;
+        margin-left: 4px;
+        opacity: 0.7;
+      }
       .login-body {
-        padding: 40px 30px;
+        padding: 50px 30px;
       }
       .form-group {
         margin-bottom: 24px;
@@ -140,7 +159,7 @@
     <div class="login-container">
       <div class="login-card">
         <div class="login-header">
-          <h1>Gestto</h1>
+          <img src="{% static 'img/logoGestto.png' %}" alt="Gestto" class="login-logo">
           <p>Gestão Inteligente para seu Negócio</p>
         </div>
 
@@ -196,6 +215,13 @@
               <i class="bi bi-lock-fill me-1"></i>Esqueci minha senha
             </a>
           </div>
+        </div>
+
+        <div class="login-footer">
+          <small>
+            Desenvolvido por
+            <img src="{% static 'img/logoAxio.png' %}" alt="Axio" class="axio-logo-login">
+          </small>
         </div>
       </div>
     </div>

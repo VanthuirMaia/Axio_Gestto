@@ -106,6 +106,11 @@ STORAGES = {
     },
 }
 
+# WhiteNoise - Configuração de MIME types para PWA
+WHITENOISE_MIMETYPES = {
+    '.json': 'application/manifest+json',
+}
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

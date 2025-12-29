@@ -1,10 +1,11 @@
+{% load static %}
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
   <!-- Header: Logo -->
   <div class="sidebar-header">
     <div class="text-center">
-      <h5 class="mb-0">GESTTO</h5>
-      <small>{{ empresa.nome|default:"Axio" }}</small>
+      <img src="{% static 'img/logoGestto.png' %}" alt="Gestto" class="sidebar-logo">
+      <small class="sidebar-empresa-nome">{{ empresa.nome|default:"Sistema" }}</small>
     </div>
     <div class="sidebar-toggle-btn" onclick="toggleSidebar()">
       <i class="bi bi-chevron-left"></i>
@@ -103,6 +104,14 @@
       >
         <i class="bi bi-box-arrow-right"></i>
       </a>
+    </div>
+
+    <!-- Créditos Axio -->
+    <div class="sidebar-credits mt-2">
+      <small class="d-flex align-items-center justify-content-center gap-1">
+        <span class="sidebar-text">Desenvolvido por</span>
+        <img src="{% static 'img/logoAxio.png' %}" alt="Axio" class="axio-logo">
+      </small>
     </div>
   </div>
 </div>

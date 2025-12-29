@@ -2,10 +2,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 from core.views import (
     login_view, logout_view, dashboard_view,
     password_reset_request, password_reset_sent,
-    password_reset_confirm, password_reset_complete
+    password_reset_confirm, password_reset_complete,
+    service_worker, offline_view
 )
 from core.health import health_check
 from agendamentos.bot_api import processar_comando_bot, whatsapp_webhook_saas
@@ -25,7 +27,30 @@ from agendamentos.public_views import (
     confirmar_agendamento
 )
 
+from django.http import JsonResponse, FileResponse
+from django.shortcuts import render
+import os
+
+def manifest_view(request):
+    """Serve manifest.json com Content-Type correto"""
+    manifest_path = os.path.join(settings.BASE_DIR, 'static', 'manifest.json')
+    response = FileResponse(open(manifest_path, 'rb'), content_type='application/manifest+json')
+    response['Cache-Control'] = 'no-cache'
+    return response
+
+def pwa_test_view(request):
+    """Página de teste PWA"""
+    return render(request, 'pwa_test.html')
+
 urlpatterns = [
+    # ==========================================
+    # PWA - Service Worker e Manifest
+    # ==========================================
+    path('manifest.json', manifest_view, name='manifest'),
+    path('service-worker.js', service_worker, name='service_worker'),
+    path('offline/', offline_view, name='offline'),
+    path('pwa-test/', pwa_test_view, name='pwa_test'),
+
     # ==========================================
     # PÚBLICO - Landing Page
     # ==========================================

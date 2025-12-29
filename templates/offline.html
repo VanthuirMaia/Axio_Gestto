@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Gestto</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/ios/32.png' %}">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+
+  <style>
+    body {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .offline-container {
+      text-align: center;
+      color: white;
+      padding: 2rem;
+      max-width: 500px;
+    }
+
+    .offline-icon {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+    }
+
+    .offline-container h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .offline-container p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+      margin-bottom: 2rem;
+    }
+
+    .btn-retry {
+      background-color: white;
+      color: #667eea;
+      font-weight: 600;
+      padding: 0.875rem 2rem;
+      border-radius: 0.5rem;
+      border: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-retry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      background-color: #f8f9fa;
+    }
+
+    .offline-animation {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.9;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <i class="bi bi-wifi-off offline-icon offline-animation"></i>
+    <h1>Você está offline</h1>
+    <p>
+      Parece que você perdeu a conexão com a internet.
+      Verifique sua conexão e tente novamente.
+    </p>
+    <button class="btn btn-retry" onclick="window.location.reload()">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Tentar Novamente
+    </button>
+
+    <div class="mt-4">
+      <small style="opacity: 0.8;">
+        <i class="bi bi-info-circle me-1"></i>
+        Algumas funcionalidades podem estar disponíveis offline
+      </small>
+    </div>
+
+    <div class="mt-5" style="opacity: 0.7;">
+      <small>
+        Desenvolvido por
+        <img src="{% static 'img/logoAxio.png' %}" alt="Axio" style="max-height: 20px; vertical-align: middle; margin-left: 4px;">
+      </small>
+    </div>
+  </div>
+</body>
+</html>
