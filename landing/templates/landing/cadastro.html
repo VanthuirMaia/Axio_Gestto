@@ -111,7 +111,7 @@
 <section class="cadastro-section">
     <div class="cadastro-container">
         <h1>Criar Conta Grátis</h1>
-        <p>Teste grátis por 7 dias. Sem cartão de crédito.</p>
+        <p>Teste grátis sem compromisso. Sem cartão de crédito.</p>
 
         <form method="post">
             {% csrf_token %}
@@ -130,6 +130,9 @@
             <div class="form-group">
                 <label for="telefone">Telefone (WhatsApp) *</label>
                 <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999" required>
+                <small style="color: #d97706; font-weight: 500; display: block; margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border-radius: 4px;">
+                    ⚠️ <strong>Importante:</strong> Use um número exclusivo para o negócio. Evite números pessoais ou compartilhados para garantir o melhor funcionamento do WhatsApp Bot.
+                </small>
             </div>
 
             <div class="form-group">
@@ -157,8 +160,8 @@
 
             <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1.5rem 0;">
                 <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
-                    ⚖️ <strong>Garantia Legal:</strong> Você tem 7 dias de trial grátis + direito de arrependimento
-                    de 7 dias após a primeira cobrança com reembolso total, conforme CDC (Art. 49).
+                    ⚖️ <strong>7 Dias Grátis:</strong> Teste o sistema sem compromisso. Cancele a qualquer momento dentro dos 7 dias de trial e não será cobrado nada.
+                    Se não cancelar, a cobrança será realizada após o término do período de teste.
                     <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #0284c7; text-decoration: underline;">Saiba mais</a>
                 </p>
             </div>

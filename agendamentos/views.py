@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from .models import Agendamento, DisponibilidadeProfissional
 from empresas.models import Servico, Profissional
 from clientes.models import Cliente
+from core.decorators import plano_required
 
 STATUS_COLORS = {
     "pendente": "#facc15",       # amarelo
@@ -136,17 +137,40 @@ def api_agendamentos(request):
     if not empresa:
         return JsonResponse({"error": "Não autorizado"}, status=403)
 
-    mes = request.GET.get("mes")
-    ano = request.GET.get("ano")
+    # Pegar range de datas do FullCalendar
+    start_str = request.GET.get("start")
+    end_str = request.GET.get("end")
 
-    # ------------------------------
-    # 1. Busca dos agendamentos
-    # ------------------------------
-    ags = Agendamento.objects.filter(
-        empresa=empresa,
-        data_hora_inicio__month=mes,
-        data_hora_inicio__year=ano
-    ).select_related("cliente", "servico", "profissional")
+    # Fallback para o método antigo (mes/ano) se não vier start/end
+    if start_str and end_str:
+        try:
+            start_date = parser.parse(start_str).date()
+            end_date = parser.parse(end_str).date()
+
+            # Buscar agendamentos no intervalo
+            ags = Agendamento.objects.filter(
+                empresa=empresa,
+                data_hora_inicio__date__gte=start_date,
+                data_hora_inicio__date__lt=end_date
+            ).select_related("cliente", "servico", "profissional")
+        except:
+            # Se der erro no parse, usar método antigo
+            mes = request.GET.get("mes")
+            ano = request.GET.get("ano")
+            ags = Agendamento.objects.filter(
+                empresa=empresa,
+                data_hora_inicio__month=mes,
+                data_hora_inicio__year=ano
+            ).select_related("cliente", "servico", "profissional")
+    else:
+        # Método antigo para compatibilidade
+        mes = request.GET.get("mes")
+        ano = request.GET.get("ano")
+        ags = Agendamento.objects.filter(
+            empresa=empresa,
+            data_hora_inicio__month=mes,
+            data_hora_inicio__year=ano
+        ).select_related("cliente", "servico", "profissional")
 
     eventos = []
 
@@ -225,6 +249,7 @@ def deletar_agendamento(request, id):
 # ============================================
 
 @login_required
+@plano_required(feature_name='Agendamentos Recorrentes')
 def listar_recorrencias(request):
     """Lista todas as recorrências da empresa"""
     from .models import AgendamentoRecorrente
@@ -245,6 +270,7 @@ def listar_recorrencias(request):
 
 
 @login_required
+@plano_required(feature_name='Agendamentos Recorrentes')
 @require_http_methods(["GET", "POST"])
 def criar_recorrencia(request):
     """Cria nova recorrência"""
@@ -359,6 +385,7 @@ def criar_recorrencia(request):
 
 
 @login_required
+@plano_required(feature_name='Agendamentos Recorrentes')
 @require_http_methods(["POST"])
 def deletar_recorrencia(request, id):
     """Deleta uma recorrência"""
@@ -374,6 +401,7 @@ def deletar_recorrencia(request, id):
 
 
 @login_required
+@plano_required(feature_name='Agendamentos Recorrentes')
 @require_http_methods(["POST"])
 def ativar_desativar_recorrencia(request, id):
     """Ativa ou desativa uma recorrência"""

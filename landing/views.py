@@ -131,5 +131,5 @@ def termos_uso(request):
 
 
 def politica_cancelamento(request):
-    """Página de Política de Cancelamento (CDC)"""
+    """Página de Política de Cancelamento"""
     return render(request, 'landing/politica_cancelamento.html')

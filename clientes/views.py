@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from .models import Cliente
 from agendamentos.models import Agendamento
+from core.decorators import plano_required
 
 
 # ============================================
@@ -14,6 +15,7 @@ from agendamentos.models import Agendamento
 # ============================================
 
 @login_required
+@plano_required(feature_name='Dashboard de Clientes')
 def dashboard_clientes(request):
     """Dashboard principal de clientes com métricas e insights"""
     empresa = request.user.empresa
@@ -182,6 +184,7 @@ def dashboard_clientes(request):
 # ============================================
 
 @login_required
+@plano_required(feature_name='Listagem de Clientes')
 def listar_clientes(request):
     """Lista completa de clientes (renomeado para lista_clientes no template)"""
     empresa = request.user.empresa
@@ -322,6 +325,7 @@ def deletar_cliente(request, id):
 # ============================================
 
 @login_required
+@plano_required(feature_name='Detalhes do Cliente')
 def detalhes_cliente(request, id):
     """Visualiza perfil completo do cliente com histórico"""
     empresa = request.user.empresa
