@@ -694,3 +694,60 @@ class BotAPITest(TestCase):
         # Verificações
         self.assertTrue(resultado['sucesso'])
         self.assertIn('Endereço não cadastrado', resultado['mensagem'])
+
+    def test_endpoint_consultar_informacoes_empresa(self):
+        """Testa endpoint GET /api/bot/empresa/info/"""
+        from rest_framework.test import APIClient
+        from empresas.models import Servico, Profissional
+
+        # Criar serviços e profissionais
+        servico = Servico.objects.create(
+            empresa=self.empresa,
+            nome='Corte Masculino',
+            descricao='Corte básico',
+            preco=30.00,
+            duracao_minutos=30,
+            ativo=True
+        )
+
+        profissional = Profissional.objects.create(
+            empresa=self.empresa,
+            nome='João Barbeiro',
+            email='joao@teste.com',
+            telefone='11999999999',
+            ativo=True
+        )
+
+        # Configurar empresa com endereço
+        self.empresa.endereco = 'Rua Teste, 100'
+        self.empresa.cidade = 'São Paulo'
+        self.empresa.estado = 'SP'
+        self.empresa.cep = '01234-567'
+        self.empresa.google_maps_link = 'https://maps.google.com/test'
+        self.empresa.save()
+
+        # Fazer requisição
+        from django.conf import settings
+        client = APIClient()
+        response = client.get(
+            '/api/bot/empresa/info/',
+            HTTP_X_API_KEY=settings.GESTTO_API_KEY,
+            HTTP_X_EMPRESA_ID=str(self.empresa.id)
+        )
+
+        # Verificações
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertTrue(data['sucesso'])
+        self.assertEqual(data['empresa']['nome'], 'Empresa Teste')
+        self.assertEqual(data['empresa']['endereco'], 'Rua Teste, 100')
+        self.assertEqual(data['empresa']['google_maps_link'], 'https://maps.google.com/test')
+
+        # Verificar serviços
+        self.assertEqual(len(data['servicos']), 1)
+        self.assertEqual(data['servicos'][0]['nome'], 'Corte Masculino')
+
+        # Verificar profissionais
+        self.assertEqual(len(data['profissionais']), 1)
+        self.assertEqual(data['profissionais'][0]['nome'], 'João Barbeiro')

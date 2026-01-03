@@ -15,19 +15,19 @@ def vincular_usuarios_a_empresa(apps, schema_editor):
     usuarios_sem_empresa = Usuario.objects.filter(empresa__isnull=True)
 
     if not usuarios_sem_empresa.exists():
-        print("✓ Todos os usuários já têm empresa vinculada")
+        print("[OK] Todos os usuarios ja tem empresa vinculada")
         return
 
     # Buscar primeira empresa ativa
     empresa = Empresa.objects.filter(ativa=True).first()
 
     if not empresa:
-        print("⚠ Nenhuma empresa ativa encontrada! Pulando correção...")
+        print("[AVISO] Nenhuma empresa ativa encontrada! Pulando correcao...")
         return
 
     # Vincular usuários à empresa
     count = usuarios_sem_empresa.update(empresa=empresa)
-    print(f"✓ {count} usuário(s) vinculado(s) à empresa: {empresa.nome}")
+    print(f"[OK] {count} usuario(s) vinculado(s) a empresa: {empresa.nome}")
 
 
 def reverter_vinculo(apps, schema_editor):

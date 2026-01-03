@@ -10,7 +10,7 @@ from core.views import (
     service_worker, offline_view
 )
 from core.health import health_check
-from agendamentos.bot_api import processar_comando_bot, whatsapp_webhook_saas
+from agendamentos.bot_api import processar_comando_bot, whatsapp_webhook_saas, consultar_informacoes_empresa
 from agendamentos.api_n8n import (
     listar_servicos,
     listar_profissionais,
@@ -79,6 +79,7 @@ urlpatterns = [
     path('api/webhooks/whatsapp-n8n/<int:empresa_id>/<str:secret>/', whatsapp_webhook_n8n, name='whatsapp_webhook_n8n'),
 
     # APIs n8n - Consultas
+    path('api/bot/empresa/info/', consultar_informacoes_empresa, name='api_bot_info_empresa'),
     path('api/n8n/servicos/', listar_servicos, name='api_n8n_servicos'),
     path('api/n8n/profissionais/', listar_profissionais, name='api_n8n_profissionais'),
     path('api/n8n/horarios-funcionamento/', consultar_horarios_funcionamento, name='api_n8n_horarios_funcionamento'),
