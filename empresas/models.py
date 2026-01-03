@@ -22,6 +22,11 @@ class Empresa(models.Model):
     cidade = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=2, blank=True)
     cep = models.CharField(max_length=10, blank=True)
+    google_maps_link = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="Link do Google Maps para localização da empresa"
+    )
     cnpj = models.CharField(max_length=20, unique=True)
 
     # Controle

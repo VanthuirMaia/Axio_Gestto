@@ -480,3 +480,217 @@ class AgendamentoViewTest(TestCase):
         self.assertIn('title', data[0])
         self.assertIn('start', data[0])
         self.assertIn('end', data[0])
+
+
+class BotAPITest(TestCase):
+    """Testes para a API do Bot (bot_api.py)"""
+
+    def setUp(self):
+        """Configuração inicial dos testes"""
+        self.empresa = Empresa.objects.create(
+            nome='Empresa Teste',
+            slug='empresa-teste',
+            telefone='11999999999',
+            email='empresa@teste.com',
+            endereco='Rua Teste, 123',
+            cidade='São Paulo',
+            estado='SP',
+            cep='01234-567',
+            cnpj='12.345.678/0001-90'
+        )
+
+    def test_buscar_ou_criar_cliente_cria_novo(self):
+        """Testa que a função cria um novo cliente quando não existe"""
+        from agendamentos.bot_api import buscar_ou_criar_cliente
+
+        telefone = '5511999998888'
+        dados = {'nome_cliente': 'João Silva'}
+
+        # Não deve existir cliente com esse telefone
+        self.assertEqual(Cliente.objects.filter(empresa=self.empresa).count(), 0)
+
+        # Buscar ou criar
+        cliente = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+
+        # Deve ter criado o cliente
+        self.assertIsNotNone(cliente)
+        self.assertEqual(cliente.nome, 'João Silva')
+        self.assertEqual(cliente.telefone, '11999998888')
+        self.assertEqual(cliente.origem, 'whatsapp')
+        self.assertTrue(cliente.ativo)
+        self.assertEqual(Cliente.objects.filter(empresa=self.empresa).count(), 1)
+
+    def test_buscar_ou_criar_cliente_reutiliza_existente(self):
+        """Testa que a função reutiliza cliente existente (sem duplicação)"""
+        from agendamentos.bot_api import buscar_ou_criar_cliente
+
+        telefone = '5511999998888'
+        telefone_limpo = '11999998888'
+
+        # Criar cliente manualmente
+        cliente_original = Cliente.objects.create(
+            empresa=self.empresa,
+            nome='Maria Santos',
+            telefone=telefone_limpo,
+            origem='manual',
+            ativo=True
+        )
+
+        # Tentar buscar ou criar com mesmo telefone
+        dados = {'nome_cliente': 'João Silva'}
+        cliente = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+
+        # Deve retornar o mesmo cliente (não duplicar)
+        self.assertEqual(cliente.id, cliente_original.id)
+        self.assertEqual(cliente.telefone, telefone_limpo)
+
+        # Nome deve ter sido atualizado
+        cliente.refresh_from_db()
+        self.assertEqual(cliente.nome, 'João Silva')
+
+        # Não deve ter criado novo registro
+        self.assertEqual(Cliente.objects.filter(empresa=self.empresa).count(), 1)
+
+    def test_buscar_ou_criar_cliente_multiplas_chamadas_simultaneas(self):
+        """Testa que múltiplas chamadas simultâneas não causam duplicação"""
+        from agendamentos.bot_api import buscar_ou_criar_cliente
+
+        telefone = '5511999998888'
+        dados = {'nome_cliente': 'Cliente WhatsApp'}
+
+        # Simular múltiplas chamadas (como se fosse race condition)
+        cliente1 = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+        cliente2 = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+        cliente3 = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+
+        # Todos devem retornar o mesmo cliente
+        self.assertEqual(cliente1.id, cliente2.id)
+        self.assertEqual(cliente2.id, cliente3.id)
+
+        # Deve existir apenas 1 cliente
+        self.assertEqual(Cliente.objects.filter(empresa=self.empresa).count(), 1)
+
+    def test_buscar_ou_criar_cliente_empresas_diferentes(self):
+        """Testa que clientes com mesmo telefone em empresas diferentes não conflitam"""
+        from agendamentos.bot_api import buscar_ou_criar_cliente
+
+        empresa2 = Empresa.objects.create(
+            nome='Empresa 2',
+            slug='empresa-2',
+            telefone='11888888888',
+            email='empresa2@teste.com',
+            cnpj='98.765.432/0001-10'
+        )
+
+        telefone = '5511999998888'
+        dados = {'nome_cliente': 'João Silva'}
+
+        # Criar cliente na empresa 1
+        cliente1 = buscar_ou_criar_cliente(self.empresa, telefone, dados)
+
+        # Criar cliente na empresa 2 (mesmo telefone)
+        cliente2 = buscar_ou_criar_cliente(empresa2, telefone, dados)
+
+        # Devem ser clientes diferentes
+        self.assertNotEqual(cliente1.id, cliente2.id)
+        self.assertEqual(cliente1.telefone, cliente2.telefone)
+        self.assertEqual(cliente1.empresa, self.empresa)
+        self.assertEqual(cliente2.empresa, empresa2)
+
+        # Deve ter 2 clientes no total (1 por empresa)
+        self.assertEqual(Cliente.objects.count(), 2)
+
+    def test_processar_consulta_endereco_completo(self):
+        """Testa consulta de endereço quando todos os dados estão preenchidos"""
+        from agendamentos.bot_api import processar_consulta_endereco
+        from agendamentos.models import LogMensagemBot
+
+        # Atualizar empresa com todos os dados
+        self.empresa.endereco = 'Rua das Flores, 123'
+        self.empresa.cidade = 'São Paulo'
+        self.empresa.estado = 'SP'
+        self.empresa.cep = '01234-567'
+        self.empresa.google_maps_link = 'https://maps.google.com/?q=SaoPaulo'
+        self.empresa.save()
+
+        # Criar log
+        log = LogMensagemBot.objects.create(
+            empresa=self.empresa,
+            telefone='5511999999999',
+            mensagem_original='qual o endereço?',
+            intencao_detectada='endereco',
+            status='parcial'
+        )
+
+        # Processar
+        resultado = processar_consulta_endereco(self.empresa, log)
+
+        # Verificações
+        self.assertTrue(resultado['sucesso'])
+        self.assertIn(self.empresa.nome, resultado['mensagem'])
+        self.assertIn('Rua das Flores, 123', resultado['mensagem'])
+        self.assertIn('São Paulo - SP', resultado['mensagem'])
+        self.assertIn('CEP: 01234-567', resultado['mensagem'])
+        self.assertIn('https://maps.google.com/?q=SaoPaulo', resultado['mensagem'])
+        self.assertEqual(resultado['dados']['endereco'], 'Rua das Flores, 123')
+        self.assertEqual(resultado['dados']['google_maps_link'], 'https://maps.google.com/?q=SaoPaulo')
+
+    def test_processar_consulta_endereco_parcial(self):
+        """Testa consulta de endereço quando alguns dados estão vazios"""
+        from agendamentos.bot_api import processar_consulta_endereco
+        from agendamentos.models import LogMensagemBot
+
+        # Empresa com dados mínimos
+        self.empresa.endereco = 'Rua Teste, 456'
+        self.empresa.cidade = ''
+        self.empresa.estado = ''
+        self.empresa.cep = ''
+        self.empresa.google_maps_link = ''
+        self.empresa.save()
+
+        # Criar log
+        log = LogMensagemBot.objects.create(
+            empresa=self.empresa,
+            telefone='5511999999999',
+            mensagem_original='onde fica?',
+            intencao_detectada='endereco',
+            status='parcial'
+        )
+
+        # Processar
+        resultado = processar_consulta_endereco(self.empresa, log)
+
+        # Verificações
+        self.assertTrue(resultado['sucesso'])
+        self.assertIn(self.empresa.nome, resultado['mensagem'])
+        self.assertIn('Rua Teste, 456', resultado['mensagem'])
+        self.assertNotIn('Ver no mapa', resultado['mensagem'])
+
+    def test_processar_consulta_endereco_vazio(self):
+        """Testa consulta de endereço quando nenhum dado está preenchido"""
+        from agendamentos.bot_api import processar_consulta_endereco
+        from agendamentos.models import LogMensagemBot
+
+        # Empresa sem endereço
+        self.empresa.endereco = ''
+        self.empresa.cidade = ''
+        self.empresa.estado = ''
+        self.empresa.cep = ''
+        self.empresa.google_maps_link = ''
+        self.empresa.save()
+
+        # Criar log
+        log = LogMensagemBot.objects.create(
+            empresa=self.empresa,
+            telefone='5511999999999',
+            mensagem_original='endereço?',
+            intencao_detectada='endereco',
+            status='parcial'
+        )
+
+        # Processar
+        resultado = processar_consulta_endereco(self.empresa, log)
+
+        # Verificações
+        self.assertTrue(resultado['sucesso'])
+        self.assertIn('Endereço não cadastrado', resultado['mensagem'])
