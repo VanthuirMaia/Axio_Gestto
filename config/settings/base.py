@@ -154,8 +154,8 @@ REST_FRAMEWORK = {
 # Site URL (para emails e redirects)
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
-# API Configuration (n8n Bot)
-N8N_API_KEY = config('N8N_API_KEY', default='desenvolvimento-inseguro-mudar-em-producao')
+# API Configuration (Gestto API para integrações externas)
+GESTTO_API_KEY = config('GESTTO_API_KEY', default='desenvolvimento-inseguro-mudar-em-producao')
 N8N_WEBHOOK_URL = config('N8N_WEBHOOK_URL', default='')
 
 # Stripe (Cartão de Crédito - Internacional)

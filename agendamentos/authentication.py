@@ -39,7 +39,7 @@ class APIKeyAuthentication(BaseAuthentication):
                 raise AuthenticationFailed('Empresa não encontrada')
 
         # Validar API Key
-        if api_key != settings.N8N_API_KEY:
+        if api_key != settings.GESTTO_API_KEY:
             raise AuthenticationFailed('API Key inválida')
 
         # Anexar empresa ao request (para usar nas views)
