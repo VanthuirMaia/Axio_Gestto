@@ -109,7 +109,7 @@ def criar_agendamento(request):
             )
 
             messages.success(request, "Agendamento criado com sucesso!")
-            return redirect('calendario')
+            return redirect('agendamentos:calendario')
 
         except Exception as e:
             messages.error(request, f"Erro ao criar agendamento: {e}")
@@ -224,7 +224,7 @@ def editar_agendamento(request, id):
         agendamento.notas = request.POST.get('notas', agendamento.notas)
         agendamento.save()
         messages.success(request, 'Agendamento atualizado!')
-        return redirect('calendario')
+        return redirect('agendamentos:calendario')
     
     context = {
         'agendamento': agendamento,
@@ -241,7 +241,7 @@ def deletar_agendamento(request, id):
         agendamento.delete()
         messages.success(request, 'Agendamento deletado!')
 
-    return redirect('calendario')
+    return redirect('agendamentos:calendario')
 
 
 # ============================================
