@@ -17,19 +17,40 @@
 
 /* Container principal */
 #calendar {
-    max-width: 100%;
+    max-width: 900px;
     margin: 0 auto;
+    font-size: 0.8rem;
+}
+
+/* Tornar calendário BEM compacto */
+.fc .fc-toolbar {
+    padding: 0.75rem !important;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.1rem !important;
+}
+
+.fc .fc-daygrid-day {
+    min-height: 60px !important;
+}
+
+.fc .fc-daygrid-day-frame {
+    min-height: 60px !important;
+}
+
+.fc .fc-button {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.85rem !important;
 }
 
 /* Cabeçalho do calendário */
 .fc .fc-toolbar {
-    padding: 1.5rem 1rem;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
 
 .fc .fc-toolbar-title {
-    font-size: 1.5rem;
     font-weight: 700;
     color: #1f2937;
     text-transform: capitalize;
@@ -59,9 +80,9 @@
 
 /* Cabeçalhos dos dias da semana */
 .fc .fc-col-header-cell {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     color: #6b7280;
     background-color: #f9fafb;
@@ -108,12 +129,13 @@
 /* Eventos */
 .fc-event {
     border: none !important;
-    border-radius: 0.375rem !important;
-    padding: 0.25rem 0.5rem !important;
-    margin-bottom: 2px !important;
+    border-radius: 0.25rem !important;
+    padding: 0.15rem 0.4rem !important;
+    margin-bottom: 1px !important;
     cursor: pointer !important;
     transition: all 0.2s !important;
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    font-size: 0.75rem !important;
 }
 
 .fc-event:hover {
@@ -123,12 +145,13 @@
 
 .fc-event-title {
     font-weight: 500 !important;
-    font-size: 0.875rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
 }
 
 .fc-event-time {
     font-weight: 600 !important;
-    font-size: 0.75rem !important;
+    font-size: 0.7rem !important;
     opacity: 0.9;
 }
 
@@ -161,11 +184,61 @@
 /* Vista de semana/dia */
 .fc .fc-timegrid-slot {
     height: 3rem;
+    border-color: #f3f4f6;
 }
 
 .fc .fc-timegrid-slot-label {
     font-size: 0.875rem;
     color: #6b7280;
+    font-weight: 500;
+    padding-right: 0.75rem;
+}
+
+/* Linha de hora atual */
+.fc .fc-timegrid-now-indicator-line {
+    border-color: #ef4444;
+    border-width: 2px;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+    border-color: #ef4444;
+}
+
+/* Eventos na visualização de dia/semana */
+.fc-timegrid-event {
+    border-radius: 4px !important;
+    padding: 4px 6px !important;
+    font-size: 0.875rem !important;
+}
+
+.fc-timegrid-event .fc-event-time {
+    font-weight: 600 !important;
+    margin-bottom: 2px;
+}
+
+.fc-timegrid-event .fc-event-title {
+    font-weight: 500 !important;
+    line-height: 1.3;
+}
+
+/* Colunas de dia */
+.fc .fc-timegrid-col {
+    border-color: #e5e7eb;
+}
+
+.fc .fc-timegrid-col.fc-day-today {
+    background-color: rgba(14, 110, 253, 0.03);
+}
+
+/* Ajustes para visualização de dia única */
+.fc-timeGridDay-view .fc-timegrid-col {
+    min-width: 600px;
+}
+
+/* Melhorar slots vazios para facilitar clique */
+.fc .fc-timegrid-slot:hover {
+    background-color: #f9fafb;
+    cursor: pointer;
 }
 
 /* Responsividade */
@@ -406,7 +479,8 @@ document.addEventListener("DOMContentLoaded", function () {
         timeZone: "local",
         initialView: "dayGridMonth",
         height: "auto",
-        aspectRatio: 1.8,
+        contentHeight: 600,
+        aspectRatio: 2.0,
 
         headerToolbar: {
             left: "prev,next today",
@@ -421,16 +495,39 @@ document.addEventListener("DOMContentLoaded", function () {
             day: "Dia"
         },
 
+        // Configurações da visualização de dia/semana
+        slotMinTime: "06:00:00", // Começar às 6h
+        slotMaxTime: "22:00:00", // Terminar às 22h
+        slotDuration: "00:30:00", // Slots de 30 minutos
+        slotLabelInterval: "01:00", // Mostrar label a cada hora
+        allDaySlot: false, // Não mostrar linha "dia inteiro"
+        nowIndicator: true, // Mostrar linha do horário atual
+        scrollTime: "08:00:00", // Scroll inicial às 8h
+
+        // Formato de hora
+        slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+
         events(info, successCallback, failureCallback) {
-            const center = new Date(info.start);
-            center.setDate(center.getDate() + 15);
+            // Passar o range exato que o FullCalendar está mostrando
+            const startStr = info.start.toISOString().split('T')[0];
+            const endStr = info.end.toISOString().split('T')[0];
 
-            const month = center.getMonth() + 1;
-            const year = center.getFullYear();
+            console.log(`[Calendar] Buscando eventos de ${startStr} até ${endStr}`);
 
-            fetch(`/agendamentos/api/?mes=${month}&ano=${year}`)
+            fetch(`/app/agendamentos/api/?start=${startStr}&end=${endStr}`)
                 .then(r => r.json())
                 .then(lista => {
+                    console.log(`[Calendar] Recebidos ${lista.length} agendamentos:`, lista);
                     const eventos = lista.map(ev => ({
                         id: ev.id,
                         title: ev.title,
@@ -442,9 +539,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     successCallback(eventos);
                 })
                 .catch(err => {
-                    console.error('Erro ao carregar eventos:', err);
+                    console.error('[Calendar] Erro ao carregar eventos:', err);
                     failureCallback(err);
                 });
+        },
+
+        // Clicar em um dia vazio para ver agendamentos daquele dia
+        dateClick(info) {
+            // Mudar para visualização de dia
+            calendar.changeView('timeGridDay', info.dateStr);
         },
 
         eventClick(info) {
@@ -479,13 +582,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("modal-valor").innerText = ag.valor.toFixed(2);
 
             // Botão editar
-            document.getElementById("editBtn").href = `/agendamentos/editar/${ag.id}/`;
+            document.getElementById("editBtn").href = `/app/agendamentos/editar/${ag.id}/`;
 
             // Botão excluir
             document.getElementById("deleteBtn").onclick = function () {
                 if (!confirm("Tem certeza que deseja excluir este agendamento?")) return;
 
-                fetch(`/agendamentos/deletar/${ag.id}/`, {
+                fetch(`/app/agendamentos/deletar/${ag.id}/`, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}"

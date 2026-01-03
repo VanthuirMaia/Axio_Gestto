@@ -72,7 +72,8 @@ def dashboard_view(request):
         return redirect('onboarding')
     
     agora = now()
-    hoje = agora.date()
+    agora_local = localtime(agora)  # Converte para timezone local (America/Recife)
+    hoje = agora_local.date()  # Data local, não UTC
     inicio_mes = hoje.replace(day=1)
     inicio_semana = hoje - timedelta(days=hoje.weekday())
     limite_ativos = agora - timedelta(days=30)
@@ -80,7 +81,7 @@ def dashboard_view(request):
     # ============================================
     # SAUDAÇÃO PERSONALIZADA
     # ============================================
-    agora_local = localtime(now())  # ← Força timezone local
+    # agora_local já foi definido acima
     hora = agora_local.hour
 
     if hora < 12:
@@ -94,7 +95,7 @@ def dashboard_view(request):
     # AGENDAMENTOS (MANTIDO + MELHORADO)
     # ============================================
     
-    # Agendamentos hoje
+    # Agendamentos hoje (contagem)
     agendamentos_hoje = Agendamento.objects.filter(
         empresa=empresa,
         data_hora_inicio__date=hoje
@@ -102,7 +103,15 @@ def dashboard_view(request):
         status__in=["cancelado", "nao_compareceu"]
     ).count()
 
-    # Próximos agendamentos
+    # Agendamentos hoje (lista completa para mostrar no dashboard)
+    agendamentos_hoje_lista = Agendamento.objects.filter(
+        empresa=empresa,
+        data_hora_inicio__date=hoje
+    ).exclude(
+        status__in=["cancelado", "nao_compareceu"]
+    ).select_related('cliente', 'servico', 'profissional').order_by('data_hora_inicio')
+
+    # Próximos agendamentos (futuros, para outra seção se necessário)
     proximos_agendamentos = Agendamento.objects.filter(
         empresa=empresa,
         data_hora_inicio__gte=agora
@@ -258,6 +267,7 @@ def dashboard_view(request):
 
         # Agendamentos
         'agendamentos_hoje': agendamentos_hoje,
+        'agendamentos_hoje_lista': agendamentos_hoje_lista,
         'agendamentos_semana': agendamentos_semana,
         'agendamentos_pendentes': agendamentos_pendentes,
         'proximos_agendamentos': proximos_agendamentos,

@@ -145,7 +145,7 @@
 <section class="pricing-hero">
     <div class="container">
         <h1>Escolha o Plano Ideal</h1>
-        <p>Teste grátis por 7 dias. Cancele quando quiser.</p>
+        <p>Teste grátis. Cancele quando quiser.</p>
     </div>
 </section>
 
@@ -173,9 +173,12 @@
                     <li>{% if plano.max_agendamentos_mes >= 999999 %}Agendamentos ilimitados{% else %}{{ plano.max_agendamentos_mes }} agendamentos/mês{% endif %}</li>
                     <li>Bot WhatsApp automático</li>
                     <li>Agenda inteligente</li>
-                    <li>Gestão financeira</li>
                     {% if plano.permite_relatorios_avancados %}
-                    <li>Relatórios avançados</li>
+                    <li>Gestão financeira completa</li>
+                    <li>Relatórios e análises avançadas</li>
+                    <li>Dashboard de clientes</li>
+                    {% else %}
+                    <li>Gestão básica de agendamentos</li>
                     {% endif %}
                     {% if plano.permite_integracao_contabil %}
                     <li>Integração contábil</li>
@@ -208,11 +211,32 @@
             <p>✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup</p>
         </div>
 
-        <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
-            <h3 style="margin-bottom: 1rem;">Precisa de mais de 6 profissionais?</h3>
-            <p style="margin-bottom: 1.5rem; opacity: 0.9;">Oferecemos ambientes personalizados com infraestrutura dedicada e trabalho exclusivo para sua empresa.</p>
-            <a href="{% url 'landing:contato' %}" style="display: inline-block; background: white; color: #667eea; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                Consultar Disponibilidade
+        <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px;">
+            <h3 style="margin-bottom: 1rem; color: #856404;">⚠️ Importante: Número Exclusivo para o WhatsApp</h3>
+            <p style="color: #856404; margin-bottom: 0; font-size: 1rem; line-height: 1.6;">
+                É <strong>essencial ter um número de telefone exclusivo</strong> para o sistema Gestto.
+                Evite usar números pessoais ou compartilhados, pois isso pode causar uso excessivo de tokens
+                e impactar o funcionamento do WhatsApp Bot. Recomendamos um número comercial dedicado para
+                garantir a melhor experiência.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; padding: 3rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);">
+            <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; margin-bottom: 1rem; font-weight: 600;">
+                💼 PLANO PERSONALIZADO
+            </div>
+            <h2 style="margin-bottom: 1rem; font-size: 2rem;">Mais de 4 profissionais?</h2>
+            <p style="margin-bottom: 0.5rem; opacity: 0.95; font-size: 1.125rem; font-weight: 500;">Oferecemos soluções personalizadas para sua empresa</p>
+            <p style="margin-bottom: 2rem; opacity: 0.85; font-size: 0.95rem;">
+                Infraestrutura dedicada • API customizada • Suporte prioritário • Multi-unidades • Integrações exclusivas
+            </p>
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">A partir de</div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.25rem;">R$ 800</div>
+                <div style="font-size: 0.95rem; opacity: 0.85;">/mês + recursos ilimitados</div>
+            </div>
+            <a href="{% url 'landing:contato' %}" style="display: inline-block; background: white; color: #667eea; padding: 1.25rem 3rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;">
+                Falar com Comercial
             </a>
         </div>
     </div>

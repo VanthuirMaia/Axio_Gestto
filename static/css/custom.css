@@ -495,3 +495,58 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
 }
+
+/* ============================================
+   LINKS BLOQUEADOS (PLANO REQUERIDO)
+   ============================================ */
+
+.nav-link-locked {
+  opacity: 0.6;
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-link-locked:hover {
+  opacity: 0.8;
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.nav-link-locked .badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  margin-left: auto;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Badge PRO no sidebar colapsado */
+.sidebar.collapsed .nav-link-locked .badge {
+  display: none;
+}
+
+/* Tooltip personalizado para planos */
+.nav-link-locked[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  padding: 0.5rem 1rem;
+  background: #212529;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
