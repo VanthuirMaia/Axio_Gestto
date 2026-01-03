@@ -11,7 +11,7 @@ from core.decorators import plano_required
 
 
 @login_required
-@plano_required(feature_name='Dashboard Financeiro')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def financeiro_dashboard(request):
     """Dashboard financeiro com métricas e gráficos"""
     empresa = request.user.empresa
@@ -157,7 +157,7 @@ def financeiro_dashboard(request):
 
 
 @login_required
-@plano_required(feature_name='Lançamentos Financeiros')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def lancamentos_lista(request):
     """Lista todos os lançamentos financeiros"""
     empresa = request.user.empresa
@@ -196,7 +196,7 @@ def lancamentos_lista(request):
 
 
 @login_required
-@plano_required(feature_name='Lançamentos Financeiros')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def lancamento_criar(request):
     """Cria um novo lançamento financeiro"""
     empresa = request.user.empresa
@@ -242,7 +242,7 @@ def lancamento_criar(request):
 
 
 @login_required
-@plano_required(feature_name='Lançamentos Financeiros')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def lancamento_editar(request, pk):
     """Edita um lançamento existente"""
     empresa = request.user.empresa
@@ -277,7 +277,7 @@ def lancamento_editar(request, pk):
 
 
 @login_required
-@plano_required(feature_name='Lançamentos Financeiros')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def lancamento_deletar(request, pk):
     """Deleta um lançamento"""
     empresa = request.user.empresa
@@ -291,7 +291,7 @@ def lancamento_deletar(request, pk):
 
 
 @login_required
-@plano_required(feature_name='Lançamentos Financeiros')
+@plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def marcar_como_pago(request, pk):
     """Marca um lançamento como pago"""
     empresa = request.user.empresa

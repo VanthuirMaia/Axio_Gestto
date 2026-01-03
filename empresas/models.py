@@ -89,6 +89,20 @@ class Empresa(models.Model):
     def __str__(self):
         return self.nome
 
+    @property
+    def assinatura_ativa(self):
+        """
+        Retorna a assinatura da empresa apenas se estiver ativa (trial ou ativa).
+        Usado para verificar permissões por plano.
+        """
+        try:
+            assinatura = self.assinatura
+            if assinatura and assinatura.esta_ativa():
+                return assinatura
+        except Exception:
+            pass
+        return None
+
 
 class Servico(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='servicos')

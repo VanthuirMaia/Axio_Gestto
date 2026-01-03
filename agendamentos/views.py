@@ -253,7 +253,7 @@ def deletar_agendamento(request, id):
 # ============================================
 
 @login_required
-@plano_required(feature_name='Agendamentos Recorrentes')
+@plano_required(feature_flag='permite_recorrencias', feature_name='Agendamentos Recorrentes')
 def listar_recorrencias(request):
     """Lista todas as recorrências da empresa"""
     from .models import AgendamentoRecorrente
@@ -274,7 +274,7 @@ def listar_recorrencias(request):
 
 
 @login_required
-@plano_required(feature_name='Agendamentos Recorrentes')
+@plano_required(feature_flag='permite_recorrencias', feature_name='Agendamentos Recorrentes')
 @require_http_methods(["GET", "POST"])
 def criar_recorrencia(request):
     """Cria nova recorrência"""
@@ -389,7 +389,7 @@ def criar_recorrencia(request):
 
 
 @login_required
-@plano_required(feature_name='Agendamentos Recorrentes')
+@plano_required(feature_flag='permite_recorrencias', feature_name='Agendamentos Recorrentes')
 @require_http_methods(["POST"])
 def deletar_recorrencia(request, id):
     """Deleta uma recorrência"""
@@ -405,7 +405,7 @@ def deletar_recorrencia(request, id):
 
 
 @login_required
-@plano_required(feature_name='Agendamentos Recorrentes')
+@plano_required(feature_flag='permite_recorrencias', feature_name='Agendamentos Recorrentes')
 @require_http_methods(["POST"])
 def ativar_desativar_recorrencia(request, id):
     """Ativa ou desativa uma recorrência"""
