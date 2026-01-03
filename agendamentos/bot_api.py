@@ -741,3 +741,62 @@ def listar_profissionais(empresa):
     """Lista profissionais disponíveis"""
     profissionais = Profissional.objects.filter(empresa=empresa, ativo=True)
     return ', '.join([p.nome for p in profissionais])
+
+
+# ============================================
+# ENDPOINTS REST PARA CONSULTA DO AGENTE
+# ============================================
+
+@api_view(['GET'])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([AllowAny])
+def consultar_informacoes_empresa(request):
+    """
+    Endpoint para o agente n8n consultar informações da empresa
+
+    GET /api/bot/empresa/info/
+
+    Headers:
+        Authorization: Api-Key SUA_CHAVE_AQUI
+
+    Retorna:
+    {
+        "nome": "Barbearia Demonstração",
+        "endereco": "Rua das Flores, 123",
+        "cidade": "São Paulo",
+        "estado": "SP",
+        "cep": "01234-567",
+        "telefone": "(11) 99999-9999",
+        "google_maps_link": "https://maps.google.com/...",
+        "servicos": [...],
+        "profissionais": [...]
+    }
+    """
+    empresa = request.empresa  # Vem do APIKeyAuthentication
+
+    # Buscar serviços ativos
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True).values(
+        'id', 'nome', 'descricao', 'preco', 'duracao_minutos'
+    )
+
+    # Buscar profissionais ativos
+    profissionais = Profissional.objects.filter(empresa=empresa, ativo=True).values(
+        'id', 'nome', 'email', 'telefone'
+    )
+
+    # Montar resposta
+    return Response({
+        'sucesso': True,
+        'empresa': {
+            'nome': empresa.nome,
+            'endereco': empresa.endereco or '',
+            'cidade': empresa.cidade or '',
+            'estado': empresa.estado or '',
+            'cep': empresa.cep or '',
+            'telefone': empresa.telefone or '',
+            'email': empresa.email or '',
+            'google_maps_link': empresa.google_maps_link or '',
+        },
+        'servicos': list(servicos),
+        'profissionais': list(profissionais)
+    })
