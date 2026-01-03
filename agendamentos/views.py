@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.utils import timezone
+from django.db import transaction
 from dateutil import parser
 from datetime import datetime, timedelta
 from .models import Agendamento, DisponibilidadeProfissional
@@ -75,38 +76,41 @@ def criar_agendamento(request):
             data_hora = timezone.make_aware(data_hora, timezone.get_current_timezone())
             data_fim = data_hora + timedelta(minutes=servico.duracao_minutos)
 
-            # 🔥 VERIFICAÇÃO DE CONFLITO
-            conflito = Agendamento.objects.filter(
-                empresa=empresa,
-                profissional=profissional,
-                data_hora_inicio__lt=data_fim,
-                data_hora_fim__gt=data_hora
-            ).exists()
+            # 🔥 VERIFICAÇÃO DE CONFLITO COM PROTEÇÃO CONTRA RACE CONDITION
+            with transaction.atomic():
+                # Lock pessimista: bloqueia outros agendamentos durante a verificação
+                conflito = Agendamento.objects.select_for_update().filter(
+                    empresa=empresa,
+                    profissional=profissional,
+                    data_hora_inicio__lt=data_fim,
+                    data_hora_fim__gt=data_hora,
+                    status__in=['pendente', 'confirmado']
+                ).exists()
 
-            if conflito:
-                messages.error(request, "Este horário já está ocupado para este profissional.")
+                if conflito:
+                    messages.error(request, "Este horário já está ocupado para este profissional.")
 
-                # retorna a mesma página COM TODOS OS VALORES MANTIDOS
-                return render(request, 'agendamentos/criar.html', {
-                    'empresa': empresa,
-                    'clientes': clientes,
-                    'servicos': servicos,
-                    'profissionais': profissionais,
-                    'form_values': request.POST  # 🔥 magic
-                })
+                    # retorna a mesma página COM TODOS OS VALORES MANTIDOS
+                    return render(request, 'agendamentos/criar.html', {
+                        'empresa': empresa,
+                        'clientes': clientes,
+                        'servicos': servicos,
+                        'profissionais': profissionais,
+                        'form_values': request.POST  # 🔥 magic
+                    })
 
-            # cria agendamento
-            Agendamento.objects.create(
-                empresa=empresa,
-                cliente=cliente,
-                servico=servico,
-                profissional=profissional,
-                data_hora_inicio=data_hora,
-                data_hora_fim=data_fim,
-                notas=notas,
-                valor_cobrado=servico.preco,
-                status='confirmado'
-            )
+                # cria agendamento (dentro da transação, lock ainda ativo)
+                Agendamento.objects.create(
+                    empresa=empresa,
+                    cliente=cliente,
+                    servico=servico,
+                    profissional=profissional,
+                    data_hora_inicio=data_hora,
+                    data_hora_fim=data_fim,
+                    notas=notas,
+                    valor_cobrado=servico.preco,
+                    status='confirmado'
+                )
 
             messages.success(request, "Agendamento criado com sucesso!")
             return redirect('agendamentos:calendario')

@@ -62,21 +62,22 @@ def gerar_agendamentos_recorrentes():
                 total_pulados += 1
                 continue
 
-            # Verificar conflito de horário com mesmo profissional
-            conflito = Agendamento.objects.filter(
-                empresa=rec.empresa,
-                profissional=rec.profissional,
-                data_hora_inicio__lt=data_hora_fim,
-                data_hora_fim__gt=data_hora_inicio,
-                status__in=['pendente', 'confirmado']
-            ).exists()
-
-            if conflito:
-                total_pulados += 1
-                continue
-
-            # Criar agendamento
+            # Criar agendamento com proteção contra race condition
             with transaction.atomic():
+                # Lock pessimista: bloqueia outros agendamentos durante a verificação
+                conflito = Agendamento.objects.select_for_update().filter(
+                    empresa=rec.empresa,
+                    profissional=rec.profissional,
+                    data_hora_inicio__lt=data_hora_fim,
+                    data_hora_fim__gt=data_hora_inicio,
+                    status__in=['pendente', 'confirmado']
+                ).exists()
+
+                if conflito:
+                    total_pulados += 1
+                    continue
+
+                # Criar agendamento (dentro da transação, lock ainda ativo)
                 Agendamento.objects.create(
                     empresa=rec.empresa,
                     cliente=rec.cliente,

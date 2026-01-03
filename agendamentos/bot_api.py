@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils.timezone import now, make_aware
 from django.utils.dateparse import parse_datetime, parse_date
+from django.db import transaction
 from datetime import datetime, timedelta, time
 from django.db.models import Q
 from django.core.exceptions import ValidationError
@@ -197,50 +198,52 @@ def processar_agendamento(empresa, telefone, dados, log):
             'mensagem': 'Não é possível agendar para o passado! Escolha uma data futura.'
         }
 
-    # 6. Verificar disponibilidade (conflitos)
-    conflitos = Agendamento.objects.filter(
-        empresa=empresa,
-        profissional=profissional,
-        data_hora_inicio__lt=data_hora_fim,
-        data_hora_fim__gt=data_hora_inicio,
-        status__in=['pendente', 'confirmado']
-    )
-
-    if conflitos.exists():
-        # Buscar horários alternativos
-        horarios_alt = buscar_horarios_alternativos(
-            empresa,
-            profissional,
-            data,
-            servico.duracao_minutos
-        )
-
-        return {
-            'sucesso': False,
-            'mensagem': f'Este horário já está ocupado! 😔\n\n'
-                       f'Horários disponíveis para {data.strftime("%d/%m/%Y")}:\n'
-                       f'{formatar_horarios(horarios_alt)}',
-            'horarios_alternativos': horarios_alt
-        }
-
-    # 7. Criar agendamento
+    # 6. Verificar disponibilidade e criar agendamento (com proteção contra race condition)
     codigo = gerar_codigo_agendamento()
 
-    agendamento = Agendamento.objects.create(
-        empresa=empresa,
-        cliente=cliente,
-        servico=servico,
-        profissional=profissional,
-        data_hora_inicio=data_hora_inicio,
-        data_hora_fim=data_hora_fim,
-        status='pendente',
-        valor_cobrado=servico.preco,
-        notas=f'Agendado via WhatsApp. Código: {codigo}'
-    )
+    with transaction.atomic():
+        # Lock pessimista: bloqueia outros agendamentos durante a verificação
+        conflitos = Agendamento.objects.select_for_update().filter(
+            empresa=empresa,
+            profissional=profissional,
+            data_hora_inicio__lt=data_hora_fim,
+            data_hora_fim__gt=data_hora_inicio,
+            status__in=['pendente', 'confirmado']
+        )
 
-    # Vincular log ao agendamento
-    log.agendamento = agendamento
-    log.save()
+        if conflitos.exists():
+            # Buscar horários alternativos
+            horarios_alt = buscar_horarios_alternativos(
+                empresa,
+                profissional,
+                data,
+                servico.duracao_minutos
+            )
+
+            return {
+                'sucesso': False,
+                'mensagem': f'Este horário já está ocupado! 😔\n\n'
+                           f'Horários disponíveis para {data.strftime("%d/%m/%Y")}:\n'
+                           f'{formatar_horarios(horarios_alt)}',
+                'horarios_alternativos': horarios_alt
+            }
+
+        # 7. Criar agendamento (dentro da transação, lock ainda ativo)
+        agendamento = Agendamento.objects.create(
+            empresa=empresa,
+            cliente=cliente,
+            servico=servico,
+            profissional=profissional,
+            data_hora_inicio=data_hora_inicio,
+            data_hora_fim=data_hora_fim,
+            status='pendente',
+            valor_cobrado=servico.preco,
+            notas=f'Agendado via WhatsApp. Código: {codigo}'
+        )
+
+        # Vincular log ao agendamento
+        log.agendamento = agendamento
+        log.save()
 
     # 8. Retornar sucesso
     return {
