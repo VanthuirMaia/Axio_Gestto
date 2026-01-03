@@ -605,6 +605,7 @@ def buscar_ou_criar_cliente(empresa, telefone, dados):
             empresa=empresa,
             nome=nome,
             telefone=telefone,
+            origem='whatsapp',
             ativo=True
         )
 

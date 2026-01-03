@@ -12,6 +12,20 @@ class Cliente(models.Model):
     estado = models.CharField(max_length=2, blank=True)
     cep = models.CharField(max_length=10, blank=True)
     notas = models.TextField(blank=True)
+
+    # Origem do cadastro
+    origem = models.CharField(
+        max_length=20,
+        choices=[
+            ('whatsapp', 'WhatsApp Bot'),
+            ('manual', 'Manual (Dashboard)'),
+            ('site', 'Site Público'),
+            ('importacao', 'Importação'),
+        ],
+        default='manual',
+        help_text='Canal de origem do cliente'
+    )
+
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)

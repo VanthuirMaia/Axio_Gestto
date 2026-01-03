@@ -232,6 +232,7 @@ def confirmar_agendamento(request, slug):
             defaults={
                 'nome': cliente_nome,
                 'email': cliente_email,
+                'origem': 'site',
                 'ativo': True
             }
         )
