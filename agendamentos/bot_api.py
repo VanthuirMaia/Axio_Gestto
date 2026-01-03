@@ -87,6 +87,9 @@ def processar_comando_bot(request):
         elif intencao == 'confirmar':
             resultado = processar_confirmacao(empresa, telefone, dados, log)
 
+        elif intencao == 'endereco':
+            resultado = processar_consulta_endereco(empresa, log)
+
         else:
             resultado = {
                 'sucesso': False,
@@ -392,6 +395,57 @@ def processar_confirmacao(empresa, telefone, dados, log):
     }
 
 
+def processar_consulta_endereco(empresa, log):
+    """
+    Retorna informações de endereço e localização da empresa
+    """
+    # Verificar se tem endereço cadastrado
+    tem_endereco = bool(empresa.endereco or empresa.cidade or empresa.cep)
+
+    mensagem_final = f"📍 *{empresa.nome}*\n\n"
+
+    if not tem_endereco:
+        mensagem_final += "Endereço não cadastrado no sistema."
+        if empresa.telefone:
+            mensagem_final += f"\n\n📞 Telefone: {empresa.telefone}"
+    else:
+        # Montar endereço completo
+        endereco_completo = []
+
+        if empresa.endereco:
+            endereco_completo.append(f"📍 {empresa.endereco}")
+
+        if empresa.cidade and empresa.estado:
+            endereco_completo.append(f"   {empresa.cidade} - {empresa.estado}")
+
+        if empresa.cep:
+            endereco_completo.append(f"   CEP: {empresa.cep}")
+
+        # Telefone de contato
+        if empresa.telefone:
+            endereco_completo.append(f"\n📞 Telefone: {empresa.telefone}")
+
+        mensagem_final += '\n'.join(endereco_completo)
+
+        # Link do Google Maps
+        if empresa.google_maps_link:
+            mensagem_final += f"\n\n🗺️ Ver no mapa:\n{empresa.google_maps_link}"
+
+    return {
+        'sucesso': True,
+        'mensagem': mensagem_final,
+        'dados': {
+            'nome': empresa.nome,
+            'endereco': empresa.endereco,
+            'cidade': empresa.cidade,
+            'estado': empresa.estado,
+            'cep': empresa.cep,
+            'telefone': empresa.telefone,
+            'google_maps_link': empresa.google_maps_link
+        }
+    }
+
+
 # ============================================
 # WEBHOOK MULTI-TENANT (SAAS)
 # ============================================
@@ -551,6 +605,9 @@ def whatsapp_webhook_saas(request):
             elif intencao == 'confirmar':
                 resultado = processar_confirmacao(empresa, telefone, dados, log)
 
+            elif intencao == 'endereco':
+                resultado = processar_consulta_endereco(empresa, log)
+
             else:
                 resultado = {
                     'sucesso': False,
@@ -590,24 +647,32 @@ def whatsapp_webhook_saas(request):
 # ============================================
 
 def buscar_ou_criar_cliente(empresa, telefone, dados):
-    """Busca cliente por telefone ou cria novo"""
-    telefone_limpo = telefone.replace('+55', '').replace(' ', '').replace('-', '')
+    """Busca cliente por telefone ou cria novo (operação atômica)"""
+    # Limpar telefone: extrair apenas dígitos
+    import re
+    telefone_limpo = re.sub(r'\D', '', telefone)  # Remove tudo que não é dígito
 
-    cliente = Cliente.objects.filter(
+    # Remover código do país (55) se presente no início
+    if telefone_limpo.startswith('55') and len(telefone_limpo) > 10:
+        telefone_limpo = telefone_limpo[2:]
+
+    nome = dados.get('nome_cliente', 'Cliente WhatsApp')
+
+    # get_or_create é atômico e previne violação de constraint única
+    cliente, criado = Cliente.objects.get_or_create(
         empresa=empresa,
-        telefone__contains=telefone_limpo
-    ).first()
+        telefone=telefone_limpo,
+        defaults={
+            'nome': nome,
+            'origem': 'whatsapp',
+            'ativo': True
+        }
+    )
 
-    if not cliente:
-        # Criar novo cliente
-        nome = dados.get('nome_cliente', 'Cliente WhatsApp')
-        cliente = Cliente.objects.create(
-            empresa=empresa,
-            nome=nome,
-            telefone=telefone,
-            origem='whatsapp',
-            ativo=True
-        )
+    # Atualizar nome se cliente já existia e veio um nome diferente
+    if not criado and nome != 'Cliente WhatsApp' and cliente.nome != nome:
+        cliente.nome = nome
+        cliente.save(update_fields=['nome'])
 
     return cliente
 

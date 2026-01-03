@@ -39,7 +39,7 @@ class TestadorIntegracaoN8N:
     def __init__(self):
         self.base_url = settings.SITE_URL
         self.n8n_webhook_url = settings.N8N_WEBHOOK_URL
-        self.n8n_api_key = settings.N8N_API_KEY
+        self.n8n_api_key = settings.GESTTO_API_KEY
         self.empresa_id = None
         self.webhook_secret = None
         self.resultados = []
@@ -75,11 +75,11 @@ class TestadorIntegracaoN8N:
             self.print_error("N8N_WEBHOOK_URL não configurado!")
             return False
 
-        # Verificar N8N_API_KEY
+        # Verificar GESTTO_API_KEY
         if self.n8n_api_key:
-            self.print_success(f"N8N_API_KEY configurado: {self.n8n_api_key[:10]}...")
+            self.print_success(f"GESTTO_API_KEY configurado: {self.n8n_api_key[:10]}...")
         else:
-            self.print_error("N8N_API_KEY não configurado!")
+            self.print_error("GESTTO_API_KEY não configurado!")
             return False
 
         # Verificar EVOLUTION_API_URL
