@@ -524,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             console.log(`[Calendar] Buscando eventos de ${startStr} até ${endStr}`);
 
-            fetch(`/agendamentos/api/?start=${startStr}&end=${endStr}`)
+            fetch(`/app/agendamentos/api/?start=${startStr}&end=${endStr}`)
                 .then(r => r.json())
                 .then(lista => {
                     console.log(`[Calendar] Recebidos ${lista.length} agendamentos:`, lista);

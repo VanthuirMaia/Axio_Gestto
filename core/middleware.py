@@ -27,22 +27,26 @@ class LimitesPlanoMiddleware:
 
     # URLs que serão verificadas
     ROTAS_PROTEGIDAS = [
-        '/agendamentos/criar/',
-        '/agendamentos/recorrencias/criar/',
-        '/clientes/criar/',
-        '/configuracoes/profissionais/criar/',
+        '/app/agendamentos/criar/',
+        '/app/agendamentos/recorrencias/criar/',
+        '/app/clientes/criar/',
+        '/app/configuracoes/profissionais/criar/',
     ]
 
     # URLs que NUNCA serão bloqueadas (essenciais)
     ROTAS_EXCLUIDAS = [
-        '/admin/',
-        '/login/',
-        '/logout/',
-        '/dashboard/',
+        '/app/admin/',
+        '/app/login/',
+        '/app/logout/',
+        '/app/dashboard/',
         '/health/',
         '/api/',
-        '/configuracoes/assinatura/',  # Permitir acesso à página de upgrade
-        '/password-reset/',
+        '/app/configuracoes/assinatura/',  # Permitir acesso à página de upgrade
+        '/app/password-reset/',
+        '/agendar/',  # Agendamento público
+        '/manifest.json',
+        '/service-worker.js',
+        '/offline/',
     ]
 
     def __init__(self, get_response):
@@ -52,6 +56,10 @@ class LimitesPlanoMiddleware:
         # Verificar limites antes de processar a requisição
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
+
+            # Pular se usuário não tem empresa vinculada
+            if not empresa:
+                return self.get_response(request)
 
             # Pular verificação se não tem assinatura (admin, empresa sem assinatura, etc)
             try:
@@ -71,7 +79,7 @@ class LimitesPlanoMiddleware:
 
             # 1. VERIFICAR ASSINATURA ATIVA
             if assinatura.status not in ['ativa', 'trial']:
-                if not path.startswith('/configuracoes/assinatura/'):
+                if not path.startswith('/app/configuracoes/assinatura/'):
                     messages.error(
                         request,
                         f'Sua assinatura está {assinatura.status}. '
@@ -94,7 +102,7 @@ class LimitesPlanoMiddleware:
                 return redirect('configuracoes_assinatura')
 
             # 3. VERIFICAR LIMITE DE PROFISSIONAIS
-            if '/profissionais/criar/' in path or '/configuracoes/profissionais/criar/' in path:
+            if '/profissionais/criar/' in path or '/app/configuracoes/profissionais/criar/' in path:
                 from empresas.models import Profissional
 
                 total_profissionais = Profissional.objects.filter(
@@ -111,7 +119,7 @@ class LimitesPlanoMiddleware:
                     return redirect('configuracoes_assinatura')
 
             # 4. VERIFICAR LIMITE DE AGENDAMENTOS DO MÊS
-            if any(rota in path for rota in ['/agendamentos/criar/', '/api/whatsapp-webhook/', '/api/bot/processar/']):
+            if any(rota in path for rota in ['/app/agendamentos/criar/', '/api/whatsapp-webhook/', '/api/bot/processar/']):
                 from agendamentos.models import Agendamento
 
                 # Contar agendamentos do mês atual
@@ -143,7 +151,7 @@ class LimitesPlanoMiddleware:
                     )
 
                     # Se for criação manual, redirecionar
-                    if '/agendamentos/criar/' in path:
+                    if '/app/agendamentos/criar/' in path:
                         return redirect('configuracoes_assinatura')
 
                     # Se for API/webhook, deixar o endpoint retornar erro 429
@@ -170,6 +178,10 @@ class AssinaturaExpiracaoMiddleware:
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
 
+            # Pular se usuário não tem empresa vinculada
+            if not empresa:
+                return self.get_response(request)
+
             try:
                 assinatura = empresa.assinatura
             except Exception:
@@ -184,9 +196,9 @@ class AssinaturaExpiracaoMiddleware:
 
                     # Mostrar aviso apenas no dashboard (não em páginas públicas/landing)
                     # Excluir rotas da landing page e páginas públicas
-                    is_landing_page = request.path.startswith('/landing/') or request.path in ['/', '/login/', '/cadastro/']
+                    is_landing_page = request.path.startswith('/landing/') or request.path in ['/', '/app/login/', '/cadastro/']
 
-                    if request.path == '/dashboard/' and not is_landing_page:
+                    if request.path == '/app/dashboard/' and not is_landing_page:
                         if dias_restantes <= 0:
                             messages.error(
                                 request,

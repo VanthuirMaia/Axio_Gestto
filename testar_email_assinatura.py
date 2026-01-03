@@ -128,31 +128,30 @@ def teste_2_usuario_manual():
     """
     TESTE 2: Criar usuário manual (sem empresa)
     ESPERADO: 1 email HTML SEM senha (via signal)
+
+    NOTA: Este teste foi DESABILITADO porque agora é obrigatório
+    que todo usuário tenha uma empresa vinculada.
     """
     print("\n" + "="*70)
-    print("TESTE 2: Usuário criado MANUALMENTE (sem empresa)")
+    print("TESTE 2: DESABILITADO - Usuário sem empresa não é mais permitido")
     print("="*70)
-    print("Esperado: 1 email HTML simples SEM senha (via signal)")
-    print("-"*70)
-
-    # Criar usuário SEM empresa (dispara signal)
-    usuario = Usuario.objects.create_user(
-        username='usuario_manual_teste',
-        email='usuario_manual_teste@example.com',
-        password='senha123',
-        first_name='Usuário',
-        last_name='Manual',
-        # SEM empresa!
-    )
-    print(f"✓ Usuário criado: {usuario.email}")
-    print(f"  Tem empresa? {usuario.empresa is not None}")
-
-    print("\n" + "="*70)
-    print("RESULTADO ESPERADO:")
-    print("  ✅ 1 email HTML simples via signal (SEM senha)")
-    print(f"     - Email: {usuario.email}")
-    print("  ❌ Senha NÃO incluída no email (signal não tem acesso)")
+    print("MOTIVO: Campo 'empresa' agora é obrigatório no modelo Usuario")
+    print("       A validação impede criação de usuários sem empresa")
     print("="*70)
+    return  # Retorna sem executar o teste
+
+    # CÓDIGO COMENTADO - NÃO EXECUTAR
+    # # Criar usuário SEM empresa (dispara signal)
+    # usuario = Usuario.objects.create_user(
+    #     username='usuario_manual_teste',
+    #     email='usuario_manual_teste@example.com',
+    #     password='senha123',
+    #     first_name='Usuário',
+    #     last_name='Manual',
+    #     # SEM empresa!
+    # )
+    # print(f"✓ Usuário criado: {usuario.email}")
+    # print(f"  Tem empresa? {usuario.empresa is not None}")
 
 
 def teste_3_verificar_templates():
