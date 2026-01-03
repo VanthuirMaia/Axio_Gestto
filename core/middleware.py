@@ -31,6 +31,7 @@ class LimitesPlanoMiddleware:
         '/app/agendamentos/recorrencias/criar/',
         '/app/clientes/criar/',
         '/app/configuracoes/profissionais/criar/',
+        '/app/configuracoes/servicos/criar/',  # NOVO: verificar limite de serviços
     ]
 
     # URLs que NUNCA serão bloqueadas (essenciais)
@@ -119,6 +120,24 @@ class LimitesPlanoMiddleware:
                         request,
                         f'Você atingiu o limite de {plano.max_profissionais} profissionais do plano {plano.get_nome_display()}. '
                         f'Faça upgrade para adicionar mais profissionais.'
+                    )
+                    return redirect('configuracoes_assinatura')
+
+            # 3.1. VERIFICAR LIMITE DE SERVIÇOS (NOVO)
+            if '/servicos/criar/' in path or '/app/configuracoes/servicos/criar/' in path:
+                from empresas.models import Servico
+
+                total_servicos = Servico.objects.filter(
+                    empresa=empresa,
+                    ativo=True
+                ).count()
+
+                if total_servicos >= plano.max_servicos:
+                    messages.warning(
+                        request,
+                        f'🔒 Você atingiu o limite de {plano.max_servicos} serviços do plano {plano.get_nome_display()}. '
+                        f'<a href="/app/configuracoes/assinatura/" class="alert-link">Faça upgrade</a> para cadastrar mais serviços.',
+                        extra_tags='safe'
                     )
                     return redirect('configuracoes_assinatura')
 

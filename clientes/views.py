@@ -15,9 +15,9 @@ from core.decorators import plano_required
 # ============================================
 
 @login_required
-@plano_required(feature_name='Dashboard de Clientes')
+@plano_required(feature_flag='permite_dashboard_clientes', feature_name='Dashboard de Clientes')
 def dashboard_clientes(request):
-    """Dashboard principal de clientes com métricas e insights"""
+    """Dashboard principal de clientes com métricas e insights (APENAS PLANO PROFISSIONAL)"""
     empresa = request.user.empresa
     if not empresa:
         return redirect('logout')
@@ -184,9 +184,8 @@ def dashboard_clientes(request):
 # ============================================
 
 @login_required
-@plano_required(feature_name='Listagem de Clientes')
 def listar_clientes(request):
-    """Lista completa de clientes (renomeado para lista_clientes no template)"""
+    """Lista completa de clientes - LIBERADO PARA TODOS OS PLANOS"""
     empresa = request.user.empresa
     if not empresa:
         return redirect('logout')
@@ -325,9 +324,8 @@ def deletar_cliente(request, id):
 # ============================================
 
 @login_required
-@plano_required(feature_name='Detalhes do Cliente')
 def detalhes_cliente(request, id):
-    """Visualiza perfil completo do cliente com histórico"""
+    """Visualiza perfil completo do cliente com histórico - LIBERADO PARA TODOS OS PLANOS"""
     empresa = request.user.empresa
     cliente = get_object_or_404(Cliente, id=id, empresa=empresa)
     

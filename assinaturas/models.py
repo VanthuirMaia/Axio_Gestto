@@ -76,9 +76,33 @@ class Plano(models.Model):
     )
 
     # Recursos adicionais (features flags)
-    permite_relatorios_avancados = models.BooleanField(default=False)
-    permite_integracao_contabil = models.BooleanField(default=False)
-    permite_multi_unidades = models.BooleanField(default=False)
+    # NOVAS FLAGS ESPECÍFICAS (estratégia 2 planos simplificada)
+    permite_financeiro = models.BooleanField(
+        default=False,
+        help_text="Permite acesso ao módulo Financeiro completo"
+    )
+    permite_dashboard_clientes = models.BooleanField(
+        default=False,
+        help_text="Permite acesso ao Dashboard de Clientes com métricas"
+    )
+    permite_recorrencias = models.BooleanField(
+        default=False,
+        help_text="Permite criar agendamentos recorrentes"
+    )
+
+    # FLAGS ANTIGAS (manter por compatibilidade, serão removidas futuramente)
+    permite_relatorios_avancados = models.BooleanField(
+        default=False,
+        help_text="DEPRECATED - usar permite_financeiro e permite_dashboard_clientes"
+    )
+    permite_integracao_contabil = models.BooleanField(
+        default=False,
+        help_text="DEPRECATED - funcionalidade não implementada"
+    )
+    permite_multi_unidades = models.BooleanField(
+        default=False,
+        help_text="DEPRECATED - funcionalidade não implementada"
+    )
 
     # Controle
     ativo = models.BooleanField(default=True)

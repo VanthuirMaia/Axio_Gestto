@@ -39,34 +39,21 @@
         </a>
       </li>
 
-      <!-- Clientes -->
+      <!-- Clientes (LIBERADO PARA TODOS OS PLANOS) -->
       <li class="nav-item">
-        {% if empresa.assinatura_ativa.plano.permite_relatorios_avancados %}
         <a
-          href="{% url 'dashboard_clientes' %}"
+          href="{% url 'listar_clientes' %}"
           class="nav-link {% if 'clientes' in request.path %}active{% endif %}"
           data-title="Clientes"
         >
           <i class="bi bi-people"></i>
           <span class="sidebar-text ms-2">Clientes</span>
         </a>
-        {% else %}
-        <a
-          href="{% url 'configuracoes_assinatura' %}"
-          class="nav-link nav-link-locked"
-          data-title="Clientes (Plano Profissional)"
-          title="Disponível no Plano Profissional"
-        >
-          <i class="bi bi-people"></i>
-          <span class="sidebar-text ms-2">Clientes</span>
-          <span class="badge bg-warning text-dark ms-auto">PRO</span>
-        </a>
-        {% endif %}
       </li>
 
-      <!-- Financeiro -->
+      <!-- Financeiro (APENAS PLANO PROFISSIONAL) -->
       <li class="nav-item">
-        {% if empresa.assinatura_ativa.plano.permite_relatorios_avancados %}
+        {% if empresa.assinatura_ativa and empresa.assinatura_ativa.plano.permite_financeiro %}
         <a
           href="{% url 'financeiro_dashboard' %}"
           class="nav-link {% if 'financeiro' in request.path %}active{% endif %}"

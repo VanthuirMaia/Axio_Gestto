@@ -7,22 +7,25 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 
-def plano_required(feature_name='relatórios avançados', redirect_to='dashboard'):
+def plano_required(feature_flag=None, feature_name=None, redirect_to='dashboard'):
     """
-    Decorator para proteger views que requerem plano Profissional ou superior.
+    Decorator para proteger views que requerem recursos específicos do plano.
 
-    Verifica se o usuário tem um plano com permite_relatorios_avancados=True.
-    Caso contrário, exibe mensagem e redireciona.
+    NOVA VERSÃO: Verifica feature flag específica (permite_financeiro, permite_dashboard_clientes, etc)
 
     Args:
-        feature_name: Nome do recurso bloqueado (para mensagem)
+        feature_flag: Nome do campo boolean no modelo Plano (ex: 'permite_financeiro')
+        feature_name: Nome do recurso para exibir na mensagem (ex: 'Controle Financeiro')
         redirect_to: URL name para redirecionar caso bloqueado
 
     Uso:
         @login_required
-        @plano_required(feature_name='Dashboard Financeiro')
-        def dashboard_financeiro(request):
+        @plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
+        def financeiro_dashboard(request):
             ...
+
+    Compatibilidade com código antigo:
+        @plano_required(feature_name='Dashboard Financeiro')  # Usa permite_relatorios_avancados
     """
     def decorator(view_func):
         @wraps(view_func)
@@ -44,12 +47,17 @@ def plano_required(feature_name='relatórios avançados', redirect_to='dashboard
                 messages.error(request, 'Sua empresa não possui uma assinatura ativa.')
                 return redirect('dashboard')
 
-            # Verificar se o plano permite relatórios avançados
             plano = assinatura.plano
-            if not plano.permite_relatorios_avancados:
+
+            # Determinar qual flag verificar
+            flag_to_check = feature_flag if feature_flag else 'permite_relatorios_avancados'
+            display_name = feature_name if feature_name else 'este recurso'
+
+            # Verificar se o plano tem a feature flag
+            if not getattr(plano, flag_to_check, False):
                 messages.warning(
                     request,
-                    f'🔒 {feature_name} está disponível apenas no <strong>Plano Profissional</strong> ou superior. '
+                    f'🔒 <strong>{display_name}</strong> está disponível apenas no <strong>Plano Profissional</strong>. '
                     f'<a href="{reverse("configuracoes_assinatura")}" class="alert-link">Faça upgrade agora</a> '
                     f'para ter acesso completo.',
                     extra_tags='safe'
