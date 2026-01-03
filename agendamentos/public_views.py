@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import Q
 from datetime import datetime, timedelta, time
 from empresas.models import Empresa, Servico, Profissional, HorarioFuncionamento
@@ -251,34 +252,36 @@ def confirmar_agendamento(request, slug):
         data_hora_inicio = timezone.make_aware(data_hora_inicio) if timezone.is_naive(data_hora_inicio) else data_hora_inicio
         data_hora_fim = data_hora_inicio + timedelta(minutes=servico.duracao_minutos)
 
-        # Verificar conflito novamente (double-check)
-        conflito = Agendamento.objects.filter(
-            empresa=empresa,
-            profissional=profissional,
-            data_hora_inicio__lt=data_hora_fim,
-            data_hora_fim__gt=data_hora_inicio,
-            status__in=['pendente', 'confirmado']
-        ).exists()
+        # Verificar conflito com proteção contra race condition
+        with transaction.atomic():
+            # Lock pessimista: bloqueia outros agendamentos durante a verificação
+            conflito = Agendamento.objects.select_for_update().filter(
+                empresa=empresa,
+                profissional=profissional,
+                data_hora_inicio__lt=data_hora_fim,
+                data_hora_fim__gt=data_hora_inicio,
+                status__in=['pendente', 'confirmado']
+            ).exists()
 
-        if conflito:
-            return JsonResponse({
-                'success': False,
-                'error': 'Este horário acabou de ser reservado. Por favor, escolha outro.'
-            }, status=409)
+            if conflito:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Este horário acabou de ser reservado. Por favor, escolha outro.'
+                }, status=409)
 
-        # Criar agendamento
-        agendamento = Agendamento.objects.create(
-            empresa=empresa,
-            cliente=cliente,
-            servico=servico,
-            profissional=profissional,
-            data_hora_inicio=data_hora_inicio,
-            data_hora_fim=data_hora_fim,
-            notas=notas,
-            valor_cobrado=servico.preco,
-            status='pendente',  # Aguardando confirmação da empresa
-            origem='site'
-        )
+            # Criar agendamento (dentro da transação, lock ainda ativo)
+            agendamento = Agendamento.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                servico=servico,
+                profissional=profissional,
+                data_hora_inicio=data_hora_inicio,
+                data_hora_fim=data_hora_fim,
+                notas=notas,
+                valor_cobrado=servico.preco,
+                status='pendente',  # Aguardando confirmação da empresa
+                origem='site'
+            )
 
         # TODO: Enviar notificação para empresa (email/WhatsApp)
         # TODO: Enviar confirmação para cliente (email/SMS)

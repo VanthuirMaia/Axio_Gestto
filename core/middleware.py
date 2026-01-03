@@ -53,6 +53,10 @@ class LimitesPlanoMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Pular rotas de API (não precisam de sessão de usuário)
+        if request.path.startswith('/api/'):
+            return self.get_response(request)
+
         # Verificar limites antes de processar a requisição
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
@@ -175,6 +179,10 @@ class AssinaturaExpiracaoMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Pular rotas de API (não precisam de sessão de usuário)
+        if request.path.startswith('/api/'):
+            return self.get_response(request)
+
         if request.user.is_authenticated and hasattr(request.user, 'empresa'):
             empresa = request.user.empresa
 
@@ -233,6 +241,10 @@ class UsageTrackingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Pular rotas de API (não precisam de sessão de usuário)
+        if request.path.startswith('/api/'):
+            return self.get_response(request)
+
         # Registrar início da requisição
         import time
         start_time = time.time()
