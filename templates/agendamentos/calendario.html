@@ -582,13 +582,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("modal-valor").innerText = ag.valor.toFixed(2);
 
             // Botão editar
-            document.getElementById("editBtn").href = `/agendamentos/editar/${ag.id}/`;
+            document.getElementById("editBtn").href = `/app/agendamentos/editar/${ag.id}/`;
 
             // Botão excluir
             document.getElementById("deleteBtn").onclick = function () {
                 if (!confirm("Tem certeza que deseja excluir este agendamento?")) return;
 
-                fetch(`/agendamentos/deletar/${ag.id}/`, {
+                fetch(`/app/agendamentos/deletar/${ag.id}/`, {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}"
