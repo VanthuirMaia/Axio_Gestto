@@ -12,6 +12,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
@@ -265,10 +269,10 @@
                 ☰
             </button>
             <ul id="mobileMenu">
-                <li><a href="{% url 'landing:home' %}">Início</a></li>
-                <li><a href="{% url 'landing:precos' %}">Preços</a></li>
-                <li><a href="{% url 'landing:sobre' %}">Sobre</a></li>
-                <li><a href="{% url 'landing:contato' %}">Contato</a></li>
+                <li><a href="{% url 'landing:home' %}#inicio">Início</a></li>
+                <li><a href="{% url 'landing:home' %}#precos">Preços</a></li>
+                <li><a href="{% url 'landing:home' %}#sobre">Sobre</a></li>
+                <li><a href="{% url 'landing:home' %}#contato">Contato</a></li>
                 <li><a href="{% url 'landing:cadastro' %}" class="btn-primary">Começar Grátis</a></li>
             </ul>
         </nav>

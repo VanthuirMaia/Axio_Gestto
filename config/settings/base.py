@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
     # Third party
     'django_apscheduler',
+    'axes',  # Monitoramento de segurança
 ]
 
 MIDDLEWARE = [
@@ -46,6 +47,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Segurança - Django Axes
+    'axes.middleware.AxesMiddleware',
+
+    # Landing Page Security Monitoring
+    'landing.middleware.LandingSecurityMonitoringMiddleware',
 
     # SaaS Middlewares
     'core.middleware.AssinaturaExpiracaoMiddleware',
@@ -207,3 +214,106 @@ MATERIAL_ADMIN_SITE = {
 
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 APSCHEDULER_RUN_NOW_TIMEOUT = 25
+
+# ============================================
+# SEGURANÇA E LOGGING
+# ============================================
+
+# Django Axes - Proteção contra tentativas de login
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Deve vir primeiro
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AXES_FAILURE_LIMIT = 5  # Bloqueia após 5 tentativas falhas
+AXES_COOLOFF_TIME = 1  # Bloqueia por 1 hora
+AXES_LOCK_OUT_BY_USER_OR_IP = False  # Não bloquear apenas por IP ou username
+AXES_RESET_ON_SUCCESS = True
+AXES_ENABLE_ACCESS_FAILURE_LOG = True
+AXES_LOCKOUT_TEMPLATE = None  # Use template padrão
+AXES_LOCKOUT_URL = None  # URL de redirecionamento quando bloqueado
+AXES_VERBOSE = True  # Logs detalhados
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Bloqueio por combinação de username+IP
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'landing_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'data' / 'logs' / 'landing.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'data' / 'logs' / 'security.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'app_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'data' / 'logs' / 'app.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'app_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'landing': {
+            'handlers': ['console', 'landing_file', 'security_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'axes': {
+            'handlers': ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
+
+# Headers de Segurança Adicionais
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'  # Previne clickjacking

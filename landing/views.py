@@ -5,12 +5,19 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django_ratelimit.decorators import ratelimit
 from assinaturas.models import Plano
 import requests
+import logging
+
+# Logger específico para landing page
+logger = logging.getLogger('landing')
 
 
+@ratelimit(key='ip', rate='60/m', method='GET', block=True)
 def home(request):
     """Página inicial da landing page"""
+    logger.info(f"Acesso à home - IP: {request.META.get('REMOTE_ADDR')}")
     context = {
         'site_name': 'Gestto',
         'tagline': 'Sistema completo de agendamentos com WhatsApp',
@@ -29,6 +36,8 @@ def precos(request):
 
 
 @require_http_methods(["GET", "POST"])
+@ratelimit(key='ip', rate='10/h', method='POST', block=True)  # Máximo 10 cadastros por hora por IP
+@ratelimit(key='ip', rate='30/m', method='GET', block=True)
 def cadastro(request):
     """Formulário de cadastro de novo cliente"""
     if request.method == 'POST':
@@ -40,9 +49,13 @@ def cadastro(request):
         plano = request.POST.get('plano', 'essencial')
         gateway = request.POST.get('gateway', 'stripe')
 
+        # Log de tentativa de cadastro
+        logger.warning(f"Tentativa de cadastro - IP: {request.META.get('REMOTE_ADDR')}, Email: {email_admin}, Empresa: {nome_empresa}")
+
         # Validações básicas
         if not nome_empresa or not email_admin or not telefone or not cnpj:
             messages.error(request, 'Preencha todos os campos obrigatórios.')
+            logger.warning(f"Cadastro incompleto - IP: {request.META.get('REMOTE_ADDR')}")
             return redirect('landing:cadastro')
 
         # Chamar API interna de create-tenant
@@ -57,8 +70,6 @@ def cadastro(request):
             }
 
             # Debug: log do payload
-            import logging
-            logger = logging.getLogger(__name__)
             logger.info(f"Enviando para API: {payload}")
 
             response = requests.post(
@@ -76,6 +87,7 @@ def cadastro(request):
             if data.get('sucesso'):
                 # Redirecionar para página de checkout
                 checkout_url = data.get('checkout_url')
+                logger.info(f"Cadastro bem-sucedido - Email: {email_admin}, Empresa: {nome_empresa}")
                 if checkout_url:
                     return redirect(checkout_url)
                 else:
@@ -84,10 +96,12 @@ def cadastro(request):
             else:
                 # Mostrar erro retornado pela API
                 erro = data.get('erro') or data.get('mensagem', 'Erro ao processar cadastro.')
+                logger.error(f"Erro na API de cadastro - Email: {email_admin}, Erro: {erro}")
                 messages.error(request, f'Erro: {erro}')
                 return redirect('landing:cadastro')
 
         except Exception as e:
+            logger.error(f"Exceção no cadastro - Email: {email_admin}, Erro: {str(e)}")
             messages.error(request, f'Erro ao processar cadastro: {str(e)}')
             return redirect('landing:cadastro')
 

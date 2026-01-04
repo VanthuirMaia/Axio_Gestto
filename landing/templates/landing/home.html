@@ -2,21 +2,138 @@
 
 {% block content %}
 <style>
+    /* ==================== CORES E VARIÁVEIS ==================== */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --accent-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --dark: #1f2937;
+        --gray: #6b7280;
+        --light-gray: #f9fafb;
+        --white: #ffffff;
+    }
+
+    /* ==================== ANIMAÇÕES ==================== */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* ==================== HERO SECTION ==================== */
     .hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary-gradient);
         color: white;
-        padding: 6rem 0;
+        padding: 8rem 0 6rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+        animation: float 20s infinite ease-in-out;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 900px;
+        margin: 0 auto;
         text-align: center;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
     .hero h1 {
-        font-size: 3rem;
-        margin-bottom: 1rem;
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
     }
 
-    .hero p {
-        font-size: 1.25rem;
-        margin-bottom: 2rem;
+    .hero h1 .highlight {
+        color: #fbbf24;
+        text-decoration: underline;
+        text-decoration-color: rgba(251, 191, 36, 0.3);
+        text-decoration-thickness: 4px;
+        text-underline-offset: 8px;
+    }
+
+    .hero .subtitle {
+        font-size: 1.4rem;
+        margin-bottom: 2.5rem;
+        opacity: 0.95;
+        line-height: 1.6;
+    }
+
+    .hero-stats {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin: 2rem 0 3rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        display: block;
+        color: #fbbf24;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
         opacity: 0.9;
     }
 
@@ -24,121 +141,578 @@
         display: flex;
         gap: 1rem;
         justify-content: center;
+        flex-wrap: wrap;
     }
 
     .btn {
-        padding: 1rem 2rem;
-        border-radius: 8px;
+        padding: 1.2rem 2.5rem;
+        border-radius: 12px;
         text-decoration: none;
-        font-weight: 600;
-        transition: transform 0.3s;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
     .btn:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
-    .btn-white {
+    .btn-primary {
         background: white;
-        color: #667eea;
+        color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background: #f8f9fa;
     }
 
     .btn-outline {
-        border: 2px solid white;
+        border: 3px solid white;
         color: white;
         background: transparent;
+        backdrop-filter: blur(10px);
     }
 
-    .features {
-        padding: 4rem 0;
+    .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.1);
     }
 
-    .features h2 {
-        text-align: center;
-        font-size: 2.5rem;
-        margin-bottom: 3rem;
-    }
-
-    .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    .trust-badges {
+        margin-top: 3rem;
+        display: flex;
+        justify-content: center;
         gap: 2rem;
+        align-items: center;
+        flex-wrap: wrap;
+        opacity: 0.9;
     }
 
-    .feature-card {
-        padding: 2rem;
-        border-radius: 12px;
-        background: #f9fafb;
+    .trust-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    /* ==================== COMO FUNCIONA ==================== */
+    .how-it-works {
+        padding: 5rem 0;
+        background: white;
+    }
+
+    .section-header {
         text-align: center;
+        margin-bottom: 4rem;
     }
 
-    .feature-icon {
+    .section-badge {
+        display: inline-block;
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .section-header h2 {
+        font-size: 2.8rem;
+        margin-bottom: 1rem;
+        color: var(--dark);
+        font-weight: 800;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: var(--gray);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3rem;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .step-card {
+        text-align: center;
+        padding: 2rem;
+        position: relative;
+    }
+
+    .step-number {
+        width: 80px;
+        height: 80px;
+        background: var(--primary-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        font-weight: 800;
+        color: white;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .step-card h3 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        color: var(--dark);
+        font-weight: 700;
+    }
+
+    .step-card p {
+        color: var(--gray);
+        line-height: 1.6;
+    }
+
+    /* ==================== BENEFÍCIOS ==================== */
+    .benefits {
+        padding: 5rem 0;
+        background: var(--light-gray);
+    }
+
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .benefit-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .benefit-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
+        border-color: var(--primary-color);
+    }
+
+    .benefit-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .benefit-icon {
+        font-size: 3rem;
+        filter: drop-shadow(0 4px 10px rgba(102, 126, 234, 0.3));
+    }
+
+    .benefit-card h3 {
+        font-size: 1.5rem;
+        color: var(--dark);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .benefit-card p {
+        color: var(--gray);
+        line-height: 1.7;
+        font-size: 1.05rem;
+    }
+
+    .benefit-meta {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--light-gray);
+        color: var(--accent-color);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    /* ==================== ROI / ECONOMIA ==================== */
+    .roi-section {
+        padding: 5rem 0;
+        background: var(--dark);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .roi-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .roi-text h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: 800;
+    }
+
+    .roi-text p {
+        font-size: 1.15rem;
+        line-height: 1.7;
+        opacity: 0.9;
+        margin-bottom: 2rem;
+    }
+
+    .roi-stats {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 2.5rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .roi-stat {
+        margin-bottom: 1.5rem;
+    }
+
+    .roi-stat:last-child {
+        margin-bottom: 0;
+    }
+
+    .roi-stat-label {
+        font-size: 0.95rem;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+    }
+
+    .roi-stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #fbbf24;
+    }
+
+    .roi-stat-detail {
+        font-size: 0.9rem;
+        opacity: 0.7;
+        margin-top: 0.25rem;
+    }
+
+    /* ==================== PROVA SOCIAL / DEPOIMENTOS ==================== */
+    .testimonials {
+        padding: 5rem 0;
+        background: white;
+    }
+
+    .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .testimonial-card {
+        background: var(--light-gray);
+        padding: 2rem;
+        border-radius: 16px;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .testimonial-quote {
+        font-size: 3rem;
+        color: var(--primary-color);
+        opacity: 0.3;
+        position: absolute;
+        top: 1rem;
+        left: 1.5rem;
+    }
+
+    .testimonial-text {
+        margin: 2rem 0 1.5rem;
+        line-height: 1.7;
+        color: var(--dark);
+        position: relative;
+        z-index: 1;
+    }
+
+    .testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .author-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .author-info h4 {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--dark);
+        font-weight: 600;
+    }
+
+    .author-info p {
+        margin: 0.25rem 0 0;
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+
+    .rating {
+        color: #fbbf24;
+        margin-top: 0.5rem;
+    }
+
+    /* ==================== FAQ ==================== */
+    .faq {
+        padding: 5rem 0;
+        background: var(--light-gray);
+    }
+
+    .faq-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        background: white;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .faq-question {
+        padding: 1.5rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background: var(--light-gray);
+        color: var(--primary-color);
+    }
+
+    .faq-answer {
+        padding: 0 2rem 1.5rem;
+        color: var(--gray);
+        line-height: 1.7;
+        display: none;
+    }
+
+    .faq-item.active .faq-answer {
+        display: block;
+    }
+
+    .faq-toggle {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        transition: transform 0.3s ease;
+    }
+
+    .faq-item.active .faq-toggle {
+        transform: rotate(45deg);
+    }
+
+    /* ==================== CTA FINAL ==================== */
+    .final-cta {
+        padding: 6rem 0;
+        background: var(--primary-gradient);
+        color: white;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .final-cta::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: float 15s infinite ease-in-out;
+    }
+
+    .final-cta-content {
+        position: relative;
+        z-index: 2;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .urgency-badge {
+        background: var(--danger-color);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        animation: pulse 2s infinite;
+    }
+
+    .final-cta h2 {
         font-size: 3rem;
         margin-bottom: 1rem;
+        font-weight: 800;
     }
 
-    .feature-card h3 {
-        margin-bottom: 1rem;
+    .final-cta p {
+        font-size: 1.3rem;
+        margin-bottom: 2.5rem;
+        opacity: 0.95;
     }
 
-    .cta {
-        background: #f3f4f6;
-        padding: 4rem 0;
-        text-align: center;
+    .cta-features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 2rem 0 2.5rem;
+        flex-wrap: wrap;
     }
 
-    .cta h2 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
+    .cta-feature {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.05rem;
     }
 
-    .cta p {
-        font-size: 1.25rem;
-        margin-bottom: 2rem;
-        color: #666;
+    /* ==================== BOTÃO FLUTUANTE WHATSAPP ==================== */
+    .whatsapp-float {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        z-index: 1000;
+        animation: slideInRight 0.5s ease-out;
     }
 
-    /* RESPONSIVIDADE MELHORADA */
-    @media (max-width: 992px) {
-        .hero {
-            padding: 4rem 0;
-        }
+    .whatsapp-button {
+        background: #25d366;
+        color: white;
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        cursor: pointer;
+    }
 
-        .hero h1 {
-            font-size: 2.25rem;
-        }
+    .whatsapp-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 35px rgba(37, 211, 102, 0.6);
+    }
 
-        .hero p {
-            font-size: 1.125rem;
-        }
+    .whatsapp-button::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: #25d366;
+        animation: pulse 2s infinite;
+        z-index: -1;
+    }
 
-        .features h2,
-        .cta h2 {
-            font-size: 2rem;
-        }
+    .whatsapp-tooltip {
+        position: absolute;
+        right: 80px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        color: var(--dark);
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
 
-        .features-grid {
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
+    .whatsapp-float:hover .whatsapp-tooltip {
+        opacity: 1;
+        right: 75px;
+    }
 
-        .feature-card {
-            padding: 1.5rem;
-        }
+    .whatsapp-tooltip::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 8px solid white;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+    }
+
+    /* ==================== RESPONSIVIDADE ==================== */
+    @media (max-width: 1024px) {
+        .hero h1 { font-size: 2.8rem; }
+        .hero .subtitle { font-size: 1.2rem; }
+        .steps-grid { grid-template-columns: 1fr; gap: 2rem; }
+        .benefits-grid { grid-template-columns: 1fr; }
+        .roi-content { grid-template-columns: 1fr; gap: 3rem; }
+        .testimonials-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 768px) {
         .hero {
-            padding: 3rem 0;
+            padding: 5rem 0 4rem;
         }
 
         .hero h1 {
-            font-size: 1.875rem;
-            line-height: 1.2;
+            font-size: 2.2rem;
         }
 
-        .hero p {
-            font-size: 1rem;
+        .hero .subtitle {
+            font-size: 1.1rem;
+        }
+
+        .hero-stats {
+            gap: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
         }
 
         .hero-buttons {
@@ -146,140 +720,746 @@
             width: 100%;
         }
 
-        .hero-buttons .btn {
+        .btn {
             width: 100%;
-            text-align: center;
+            justify-content: center;
         }
 
-        .features,
-        .cta {
-            padding: 3rem 0;
+        .section-header h2 {
+            font-size: 2rem;
         }
 
-        .features h2,
-        .cta h2 {
-            font-size: 1.75rem;
-            margin-bottom: 2rem;
+        .final-cta h2 {
+            font-size: 2.2rem;
         }
 
-        .cta p {
-            font-size: 1.125rem;
+        .whatsapp-float {
+            bottom: 20px;
+            right: 20px;
         }
 
-        .features-grid {
-            grid-template-columns: 1fr;
-            gap: 1.25rem;
+        .whatsapp-button {
+            width: 60px;
+            height: 60px;
+            font-size: 1.8rem;
         }
 
-        .feature-card {
-            padding: 1.5rem 1.25rem;
+        .whatsapp-tooltip {
+            display: none;
         }
 
-        .feature-icon {
-            font-size: 2.5rem;
-        }
-
-        .container {
-            padding: 0 1.5rem;
+        .cta-features {
+            flex-direction: column;
+            gap: 1rem;
         }
     }
 
     @media (max-width: 576px) {
         .hero h1 {
-            font-size: 1.625rem;
-        }
-
-        .hero p {
-            font-size: 0.9375rem;
-        }
-
-        .btn {
-            padding: 0.875rem 1.5rem;
-            font-size: 0.9375rem;
-        }
-
-        .features h2,
-        .cta h2 {
-            font-size: 1.5rem;
-        }
-
-        .cta p {
-            font-size: 1rem;
-        }
-
-        .feature-card h3 {
-            font-size: 1.125rem;
-        }
-
-        .feature-card p {
-            font-size: 0.9375rem;
+            font-size: 1.8rem;
         }
 
         .container {
             padding: 0 1rem;
         }
+
+        .section-header h2 {
+            font-size: 1.75rem;
+        }
+
+        .benefit-card,
+        .step-card {
+            padding: 1.5rem;
+        }
+    }
+
+    /* ==================== PREÇOS HOME ==================== */
+    .pricing-section-home {
+        padding: 5rem 0;
+        background: white;
+    }
+
+    .pricing-grid-home {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        max-width: 900px;
+        margin: 3rem auto 0;
+    }
+
+    .pricing-card-home {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        border: 2px solid transparent;
+    }
+
+    .pricing-card-home:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
+    }
+
+    .pricing-card-home.featured-home {
+        border: 3px solid var(--primary-color);
+    }
+
+    .badge-home {
+        display: inline-block;
+        background: var(--accent-color);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-placeholder-home {
+        height: 38px;
+        margin-bottom: 1.5rem;
+    }
+
+    .plan-header-home {
+        margin-bottom: 2rem;
+    }
+
+    .plan-name-home {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+
+    .plan-price-home {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .plan-price-home small {
+        font-size: 1.2rem;
+        color: var(--gray);
+        font-weight: 600;
+    }
+
+    .plan-features-home {
+        list-style: none;
+        padding: 0;
+        margin: 2rem 0;
+        text-align: left;
+        flex-grow: 1;
+    }
+
+    .plan-features-home li {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--light-gray);
+        font-size: 1rem;
+        color: var(--dark);
+    }
+
+    .plan-features-home li:before {
+        content: "✅ ";
+        color: var(--accent-color);
+        margin-right: 0.5rem;
+    }
+
+    .plan-footer-home {
+        margin-top: auto;
+    }
+
+    .btn-plan-home {
+        display: block;
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.2rem 2rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-plan-home:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    /* Scroll suave */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    @media (max-width: 768px) {
+        .pricing-grid-home {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
-<section class="hero">
+<!-- HERO SECTION -->
+<section id="inicio" class="hero">
     <div class="container">
-        <h1>Agendamentos Automáticos via WhatsApp</h1>
-        <p>Sistema completo de gestão com bot inteligente que agenda automaticamente</p>
-        <div class="hero-buttons">
-            <a href="{% url 'landing:cadastro' %}" class="btn btn-white">Começar Grátis</a>
-            <a href="{% url 'landing:precos' %}" class="btn btn-outline">Ver Preços</a>
-        </div>
-    </div>
-</section>
+        <div class="hero-content">
+            <div class="hero-badge">🚀 Mais de 500+ empresas automatizando agendamentos</div>
 
-<section class="features">
-    <div class="container">
-        <h2>Por que escolher o Gestto?</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">💬</div>
-                <h3>WhatsApp Automático</h3>
-                <p>Bot com IA que agenda automaticamente pelo WhatsApp. Seus clientes marcam horários sozinhos!</p>
+            <h1>
+                Pare de Perder Tempo com <span class="highlight">Agendamentos Manuais</span>
+            </h1>
+
+            <p class="subtitle">
+                Deixe a IA fazer o trabalho pesado. Seu cliente agenda pelo WhatsApp,
+                automaticamente, 24/7, enquanto você foca no que realmente importa: fazer seu negócio crescer.
+            </p>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Menos tempo agendando</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">3x</span>
+                    <span class="stat-label">Mais agendamentos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Atendimento automático</span>
+                </div>
             </div>
 
-            <div class="feature-card">
-                <div class="feature-icon">📅</div>
-                <h3>Agenda Inteligente</h3>
-                <p>Calendário completo, verificação de conflitos e notificações automáticas.</p>
+            <div class="hero-buttons">
+                <a href="{% url 'landing:cadastro' %}" class="btn btn-primary">
+                    ⚡ Começar Grátis Agora
+                </a>
+                <a href="#precos" class="btn btn-outline">
+                    💰 Ver Preços
+                </a>
             </div>
 
-            <div class="feature-card">
-                <div class="feature-icon">💰</div>
-                <h3>Gestão Financeira</h3>
-                <p>Controle receitas, despesas e faturamento em um único lugar.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">👥</div>
-                <h3>Múltiplos Profissionais</h3>
-                <p>Gerencie sua equipe, serviços e horários de forma simples.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Relatórios Completos</h3>
-                <p>Dashboard em tempo real com métricas do seu negócio.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Seguro e Confiável</h3>
-                <p>Seus dados protegidos com criptografia e backups automáticos.</p>
+            <div class="trust-badges">
+                <div class="trust-badge">✅ 7 dias grátis</div>
+                <div class="trust-badge">✅ Sem cartão</div>
+                <div class="trust-badge">✅ Cancele quando quiser</div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="cta">
+<!-- COMO FUNCIONA -->
+<section id="como-funciona" class="how-it-works">
     <div class="container">
-        <h2>Pronto para começar?</h2>
-        <p>Teste grátis por 7 dias. Sem cartão de crédito.</p>
-        <a href="{% url 'landing:cadastro' %}" class="btn btn-primary" style="background: #667eea; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Criar Conta Grátis</a>
+        <div class="section-header">
+            <span class="section-badge">Simples e Rápido</span>
+            <h2>Como Funciona?</h2>
+            <p>Comece a automatizar seus agendamentos em 3 passos simples</p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Conecte seu WhatsApp</h3>
+                <p>Integração rápida e fácil com QR Code. Leva menos de 2 minutos.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Configure seus Serviços</h3>
+                <p>Adicione profissionais, serviços e horários disponíveis.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Deixe o Bot Trabalhar</h3>
+                <p>Clientes agendam sozinhos pelo WhatsApp, 24 horas por dia.</p>
+            </div>
+        </div>
     </div>
 </section>
+
+<!-- BENEFÍCIOS -->
+<section id="beneficios" class="benefits">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Por que escolher Gestto?</span>
+            <h2>Transforme a Gestão do Seu Negócio</h2>
+            <p>Tudo que você precisa em um único sistema</p>
+        </div>
+
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">🤖</div>
+                    <h3>WhatsApp Bot com IA</h3>
+                </div>
+                <p>Atendimento inteligente 24/7. Seus clientes agendam sozinhos pelo WhatsApp, sem você precisar fazer nada. O bot entende linguagem natural e faz tudo automaticamente.</p>
+                <div class="benefit-meta">⚡ Economize até 15 horas por semana</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">📅</div>
+                    <h3>Agenda Inteligente</h3>
+                </div>
+                <p>Visualização completa da sua agenda, verificação automática de conflitos, confirmações e lembretes por WhatsApp. Nunca mais perca um cliente por esquecimento.</p>
+                <div class="benefit-meta">📈 Redução de 80% em faltas</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">💰</div>
+                    <h3>Gestão Financeira Completa</h3>
+                </div>
+                <p>Controle total de receitas, despesas, comissões e faturamento. Relatórios detalhados que mostram exatamente quanto você está ganhando.</p>
+                <div class="benefit-meta">💵 Aumente seu faturamento em até 40%</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">👥</div>
+                    <h3>Gestão de Equipe</h3>
+                </div>
+                <p>Gerencie múltiplos profissionais, horários personalizados, comissões automáticas e relatórios de performance individual. Tudo em um só lugar.</p>
+                <div class="benefit-meta">🎯 Melhore a produtividade da equipe</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">📊</div>
+                    <h3>Dashboard em Tempo Real</h3>
+                </div>
+                <p>Métricas ao vivo do seu negócio: agendamentos, faturamento, clientes novos, taxa de retorno e muito mais. Tome decisões baseadas em dados.</p>
+                <div class="benefit-meta">📱 Acesse de qualquer lugar</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-header">
+                    <div class="benefit-icon">🔒</div>
+                    <h3>Seguro e Confiável</h3>
+                </div>
+                <p>Seus dados protegidos com criptografia de ponta. Backup automático diário. Infraestrutura de alta disponibilidade. Conformidade com LGPD.</p>
+                <div class="benefit-meta">🛡️ 99.9% de disponibilidade</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PREÇOS -->
+<section id="precos" class="pricing-section-home">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Planos e Preços</span>
+            <h2>Escolha o Plano Ideal</h2>
+            <p>Teste grátis por 7 dias. Cancele quando quiser.</p>
+        </div>
+
+        <div class="pricing-grid-home">
+            <div class="pricing-card-home">
+                <div class="badge-placeholder-home"></div>
+                <div class="plan-header-home">
+                    <div class="plan-name-home">Essencial</div>
+                    <div class="plan-price-home">
+                        R$ 79,99
+                        <small>/mês</small>
+                    </div>
+                </div>
+                <ul class="plan-features-home">
+                    <li>1 profissional</li>
+                    <li>Agendamentos ilimitados</li>
+                    <li>Bot WhatsApp automático</li>
+                    <li>Agenda inteligente</li>
+                    <li>Gestão básica de agendamentos</li>
+                    <li>Suporte email (24h)</li>
+                    <li>7 dias de teste grátis</li>
+                </ul>
+                <div class="plan-footer-home">
+                    <a href="{% url 'landing:cadastro' %}?plano=essencial" class="btn-plan-home">
+                        Começar Agora
+                    </a>
+                </div>
+            </div>
+
+            <div class="pricing-card-home featured-home">
+                <span class="badge-home">Mais Popular</span>
+                <div class="plan-header-home">
+                    <div class="plan-name-home">Profissional</div>
+                    <div class="plan-price-home">
+                        R$ 199,99
+                        <small>/mês</small>
+                    </div>
+                </div>
+                <ul class="plan-features-home">
+                    <li>4 profissionais</li>
+                    <li>Agendamentos ilimitados</li>
+                    <li>Bot WhatsApp automático</li>
+                    <li>Agenda inteligente</li>
+                    <li>Gestão financeira completa</li>
+                    <li>Relatórios e análises avançadas</li>
+                    <li>Dashboard de clientes</li>
+                    <li>Suporte email + WhatsApp (12h)</li>
+                    <li>14 dias de teste grátis</li>
+                </ul>
+                <div class="plan-footer-home">
+                    <a href="{% url 'landing:cadastro' %}?plano=profissional" class="btn-plan-home">
+                        Começar Agora
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: var(--light-gray); border-radius: 12px;">
+            <h3 style="margin-bottom: 1rem;">Todos os planos incluem:</h3>
+            <p>✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; padding: 3rem 2rem; background: var(--primary-gradient); border-radius: 12px; color: white; box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);">
+            <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; margin-bottom: 1rem; font-weight: 600;">
+                💼 PLANO PERSONALIZADO
+            </div>
+            <h2 style="margin-bottom: 1rem; font-size: 2rem;">Mais de 4 profissionais?</h2>
+            <p style="margin-bottom: 0.5rem; opacity: 0.95; font-size: 1.125rem; font-weight: 500;">
+                Oferecemos soluções personalizadas para sua empresa
+            </p>
+            <p style="margin-bottom: 2rem; opacity: 0.85; font-size: 0.95rem;">
+                Infraestrutura dedicada • API customizada • Suporte prioritário • Multi-unidades
+            </p>
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">A partir de</div>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.25rem;">R$ 1.000</div>
+                <div style="font-size: 0.95rem; opacity: 0.85;">/mês + recursos ilimitados</div>
+            </div>
+            <a href="#contato" style="display: inline-block; background: white; color: var(--primary-color); padding: 1.25rem 3rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); transition: all 0.3s;">
+                Falar com Comercial
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ROI / ECONOMIA -->
+<section class="roi-section">
+    <div class="container">
+        <div class="roi-content">
+            <div class="roi-text">
+                <h2>Quanto Tempo e Dinheiro Você Vai Economizar?</h2>
+                <p>
+                    Imagine recuperar todas aquelas horas perdidas respondendo mensagens e
+                    fazendo agendamentos manualmente. Com o Gestto, você automatiza tudo e
+                    ainda aumenta seu faturamento.
+                </p>
+                <p>
+                    Nossos clientes economizam em média <strong>15 horas por semana</strong>
+                    e aumentam o faturamento em <strong>até 40%</strong> nos primeiros 3 meses.
+                </p>
+                <a href="{% url 'landing:cadastro' %}" class="btn btn-primary">
+                    🚀 Começar a Economizar Agora
+                </a>
+            </div>
+
+            <div class="roi-stats">
+                <div class="roi-stat">
+                    <div class="roi-stat-label">Tempo economizado por mês</div>
+                    <div class="roi-stat-value">60h</div>
+                    <div class="roi-stat-detail">Equivalente a 1 semana e meia de trabalho</div>
+                </div>
+
+                <div class="roi-stat">
+                    <div class="roi-stat-label">Aumento médio de agendamentos</div>
+                    <div class="roi-stat-value">+180%</div>
+                    <div class="roi-stat-detail">Atendimento 24/7 = mais oportunidades</div>
+                </div>
+
+                <div class="roi-stat">
+                    <div class="roi-stat-label">ROI médio em 90 dias</div>
+                    <div class="roi-stat-value">+R$ 4.500</div>
+                    <div class="roi-stat-detail">Investimento que se paga sozinho</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section id="depoimentos" class="testimonials">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Depoimentos</span>
+            <h2>O Que Nossos Clientes Dizem</h2>
+            <p>Empresas reais, resultados reais</p>
+        </div>
+
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <div class="testimonial-text">
+                    Antes eu passava horas por dia só respondendo WhatsApp para marcar horários.
+                    Agora o bot faz tudo e eu tenho mais tempo para atender clientes. Simplesmente incrível!
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">M</div>
+                    <div class="author-info">
+                        <h4>Mariana Silva</h4>
+                        <p>Salão de Beleza • São Paulo</p>
+                        <div class="rating">⭐⭐⭐⭐⭐</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <div class="testimonial-text">
+                    Em 2 meses consegui aumentar meu faturamento em 35%. O sistema é completo,
+                    fácil de usar e o suporte é excelente. Vale cada centavo!
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">R</div>
+                    <div class="author-info">
+                        <h4>Ricardo Oliveira</h4>
+                        <p>Barbearia • Rio de Janeiro</p>
+                        <div class="rating">⭐⭐⭐⭐⭐</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <div class="testimonial-text">
+                    Gerencio 5 profissionais e antes era um caos. Com o Gestto, tudo organizado,
+                    comissões automáticas e relatórios completos. Revolucionou minha clínica!
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">C</div>
+                    <div class="author-info">
+                        <h4>Carla Mendes</h4>
+                        <p>Clínica de Estética • Brasília</p>
+                        <div class="rating">⭐⭐⭐⭐⭐</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="faq">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Perguntas Frequentes</span>
+            <h2>Dúvidas? A Gente Responde</h2>
+        </div>
+
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Como funciona o período de teste gratuito?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Você tem 7 dias para testar todas as funcionalidades sem pagar nada.
+                    Não pedimos cartão de crédito no cadastro. Se gostar, é só escolher um plano e continuar usando.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Preciso de um número exclusivo para o WhatsApp?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Sim, recomendamos fortemente ter um número comercial exclusivo para o bot.
+                    Usar número pessoal ou compartilhado pode causar problemas de funcionamento e
+                    consumo excessivo de mensagens.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    É difícil de configurar?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Nada! A integração com WhatsApp leva menos de 2 minutos com QR Code.
+                    Depois é só cadastrar seus serviços e horários. Temos vídeos tutoriais e
+                    suporte para te ajudar em tudo.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Posso cancelar a qualquer momento?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Sim! Sem multas, sem burocracia. Você cancela quando quiser direto no painel.
+                    Mas temos certeza que você vai adorar o Gestto.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Meus dados estão seguros?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Absolutamente. Usamos criptografia de ponta, backup diário automático e
+                    estamos em conformidade com a LGPD. Seus dados são 100% protegidos.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Funciona para qualquer tipo de negócio?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Sim! Salões, barbearias, clínicas, consultórios, academias, estúdios,
+                    pet shops e qualquer negócio que trabalha com agendamentos de serviços.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SOBRE -->
+<section id="sobre" style="padding: 5rem 0; background: white;">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Sobre Nós</span>
+            <h2>Conheça o Gestto</h2>
+            <p>A solução completa para gestão do seu negócio</p>
+        </div>
+
+        <div style="max-width: 800px; margin: 3rem auto; line-height: 1.8; text-align: center;">
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--dark);">
+                O <strong style="color: var(--primary-color);">Gestto</strong> é uma plataforma completa de gestão de agendamentos desenvolvida especialmente para profissionais autônomos e pequenas empresas que desejam automatizar seus processos.
+            </p>
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--dark);">
+                Com integração direta ao WhatsApp e bot com inteligência artificial, seus clientes podem agendar serviços de forma totalmente automática, sem que você precise responder cada mensagem manualmente.
+            </p>
+            <p style="margin-bottom: 2rem; font-size: 1.1rem; color: var(--dark);">
+                <strong style="color: var(--primary-color);">Nossa missão:</strong> Simplificar a gestão do seu negócio para que você possa focar no que realmente importa - atender bem seus clientes.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- CONTATO -->
+<section id="contato" style="padding: 5rem 0; background: var(--light-gray);">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Entre em Contato</span>
+            <h2>Fale Conosco</h2>
+            <p>Estamos aqui para ajudar você</p>
+        </div>
+
+        <div style="max-width: 700px; margin: 3rem auto; text-align: center; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div style="background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); transition: all 0.3s ease;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.3rem; color: var(--dark);">📧 Email</h3>
+                <p style="margin: 0;"><a href="mailto:contato@gestto.app.br" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">contato@gestto.app.br</a></p>
+            </div>
+            <div style="background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); transition: all 0.3s ease;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.3rem; color: var(--dark);">💬 WhatsApp</h3>
+                <p style="margin: 0;"><a href="https://wa.me/5587981531743" target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">(87) 98153-1743</a></p>
+            </div>
+            <div style="background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); transition: all 0.3s ease;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.3rem; color: var(--dark);">🌐 Site</h3>
+                <p style="margin: 0;"><a href="https://axiodev.cloud" target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">axiodev.cloud</a></p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 12px; max-width: 700px; margin-left: auto; margin-right: auto;">
+            <p style="color: var(--gray); margin: 0;">Respondemos todos os contatos em até 24 horas úteis.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="final-cta">
+    <div class="container">
+        <div class="final-cta-content">
+            <div class="urgency-badge">🔥 Oferta por Tempo Limitado</div>
+
+            <h2>Comece Hoje Mesmo, GRÁTIS</h2>
+
+            <p>
+                Junte-se a mais de 500 empresas que já automatizaram seus agendamentos
+                e aumentaram o faturamento. Teste grátis por 7 dias, sem cartão de crédito.
+            </p>
+
+            <div class="cta-features">
+                <div class="cta-feature">✅ Setup em 5 minutos</div>
+                <div class="cta-feature">✅ Suporte incluído</div>
+                <div class="cta-feature">✅ Sem surpresas</div>
+            </div>
+
+            <a href="{% url 'landing:cadastro' %}" class="btn btn-primary" style="font-size: 1.2rem; padding: 1.5rem 3rem;">
+                🚀 Criar Minha Conta Grátis
+            </a>
+
+            <p style="margin-top: 1.5rem; font-size: 0.95rem; opacity: 0.8;">
+                💳 Não precisa de cartão de crédito • ⚡ Ative em menos de 2 minutos
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- BOTÃO FLUTUANTE WHATSAPP -->
+<div class="whatsapp-float">
+    <div class="whatsapp-tooltip">💬 Tire suas dúvidas agora!</div>
+    <a href="https://wa.me/5587981531743?text=Olá! Vim pelo site e gostaria de saber mais sobre o Gestto"
+       target="_blank"
+       class="whatsapp-button"
+       aria-label="Fale conosco no WhatsApp">
+        💬
+    </a>
+</div>
+
+<script>
+    // FAQ Toggle
+    function toggleFaq(element) {
+        const faqItem = element.parentElement;
+        const isActive = faqItem.classList.contains('active');
+
+        // Fecha todos os outros
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Abre o clicado (se não estava ativo)
+        if (!isActive) {
+            faqItem.classList.add('active');
+        }
+    }
+
+    // Animação de entrada quando elementos aparecem na tela
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    // Observa cards de benefícios, depoimentos, etc.
+    document.addEventListener('DOMContentLoaded', function() {
+        const animatedElements = document.querySelectorAll('.benefit-card, .testimonial-card, .step-card, .faq-item');
+        animatedElements.forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+    });
+</script>
 {% endblock %}
