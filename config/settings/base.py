@@ -227,13 +227,14 @@ AUTHENTICATION_BACKENDS = [
 
 AXES_FAILURE_LIMIT = 5  # Bloqueia após 5 tentativas falhas
 AXES_COOLOFF_TIME = 1  # Bloqueia por 1 hora
-AXES_LOCK_OUT_BY_USER_OR_IP = False  # Não bloquear apenas por IP ou username
 AXES_RESET_ON_SUCCESS = True
 AXES_ENABLE_ACCESS_FAILURE_LOG = True
 AXES_LOCKOUT_TEMPLATE = None  # Use template padrão
 AXES_LOCKOUT_URL = None  # URL de redirecionamento quando bloqueado
 AXES_VERBOSE = True  # Logs detalhados
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Bloqueio por combinação de username+IP
+# Nova configuração (v8.0+)
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]  # Bloqueia por combinação username+IP
 
 # Logging Configuration
 LOGGING = {
