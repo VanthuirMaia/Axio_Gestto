@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Third party
     'django_apscheduler',
     'axes',  # Monitoramento de segurança
+    'corsheaders',  # CORS headers
 ]
 
 MIDDLEWARE = [
