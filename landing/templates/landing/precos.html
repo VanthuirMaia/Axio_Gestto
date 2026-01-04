@@ -1,244 +1,474 @@
-{% extends 'landing/base.html' %}
-
-{% block title %}Preços - Gestto{% endblock %}
-
+{% extends 'landing/base.html' %} {% block title %}Preços - Gestto{% endblock %}
 {% block content %}
 <style>
-    .pricing-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 4rem 0;
-        text-align: center;
+  .pricing-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+  }
+
+  .pricing-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .pricing-section {
+    padding: 4rem 0;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+    align-items: stretch;
+  }
+
+  .pricing-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
+  }
+
+  .pricing-card.featured {
+    border: 3px solid #667eea;
+  }
+
+  .pricing-card.featured:hover {
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.35);
+  }
+
+  .badge {
+    display: inline-block;
+    background: #10b981;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    height: 28px;
+  }
+
+  .badge-placeholder {
+    height: 28px;
+    margin-bottom: 1rem;
+    visibility: hidden;
+  }
+
+  .plan-header {
+    flex-shrink: 0;
+  }
+
+  .plan-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    min-height: 2rem;
+  }
+
+  .plan-price {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #667eea;
+    margin: 1rem 0;
+    min-height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .plan-price small {
+    font-size: 1rem;
+    color: #666;
+  }
+
+  .plan-features {
+    list-style: none;
+    margin: 2rem 0;
+    text-align: left;
+    flex-grow: 1;
+    padding: 0;
+  }
+
+  .plan-features li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+  }
+
+  .plan-features li:before {
+    content: "✅ ";
+    color: #10b981;
+  }
+
+  .plan-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .btn-plan {
+    display: block;
+    background: #667eea;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+  }
+
+  .btn-plan:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  /* ==================== BOTÃO FLUTUANTE WHATSAPP ==================== */
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .whatsapp-float {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000;
+    animation: slideInRight 0.5s ease-out;
+  }
+
+  .whatsapp-button {
+    background: #25d366;
+    color: white;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .whatsapp-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 35px rgba(37, 211, 102, 0.6);
+  }
+
+  .whatsapp-button::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #25d366;
+    animation: pulse 2s infinite;
+    z-index: -1;
+  }
+
+  .whatsapp-tooltip {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    color: #1f2937;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+
+  .whatsapp-float:hover .whatsapp-tooltip {
+    opacity: 1;
+    right: 75px;
+  }
+
+  .whatsapp-tooltip::after {
+    content: "";
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid white;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+  }
+
+  @media (max-width: 768px) {
+    .whatsapp-float {
+      bottom: 20px;
+      right: 20px;
     }
 
-    .pricing-hero h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
+    .whatsapp-button {
+      width: 60px;
+      height: 60px;
+      font-size: 1.8rem;
     }
 
-    .pricing-section {
-        padding: 4rem 0;
+    .whatsapp-tooltip {
+      display: none;
     }
-
-    .pricing-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        margin-top: 2rem;
-        align-items: stretch;
-    }
-
-    .pricing-card {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        text-align: center;
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-    }
-
-    .pricing-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
-    }
-
-    .pricing-card.featured {
-        border: 3px solid #667eea;
-    }
-
-    .pricing-card.featured:hover {
-        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.35);
-    }
-
-    .badge {
-        display: inline-block;
-        background: #10b981;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-        height: 28px;
-    }
-
-    .badge-placeholder {
-        height: 28px;
-        margin-bottom: 1rem;
-        visibility: hidden;
-    }
-
-    .plan-header {
-        flex-shrink: 0;
-    }
-
-    .plan-name {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-        min-height: 2rem;
-    }
-
-    .plan-price {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #667eea;
-        margin: 1rem 0;
-        min-height: 4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-    }
-
-    .plan-price small {
-        font-size: 1rem;
-        color: #666;
-    }
-
-    .plan-features {
-        list-style: none;
-        margin: 2rem 0;
-        text-align: left;
-        flex-grow: 1;
-        padding: 0;
-    }
-
-    .plan-features li {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 0.95rem;
-    }
-
-    .plan-features li:before {
-        content: "✅ ";
-        color: #10b981;
-    }
-
-    .plan-footer {
-        margin-top: auto;
-        padding-top: 1rem;
-    }
-
-    .btn-plan {
-        display: block;
-        background: #667eea;
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        width: 100%;
-        text-align: center;
-    }
-
-    .btn-plan:hover {
-        background: #5568d3;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
+  }
 </style>
 
 <section class="pricing-hero">
-    <div class="container">
-        <h1>Escolha o Plano Ideal</h1>
-        <p>Teste grátis. Cancele quando quiser.</p>
-    </div>
+  <div class="container">
+    <h1>Escolha o Plano Ideal</h1>
+    <p>Teste grátis. Cancele quando quiser.</p>
+  </div>
 </section>
 
 <section class="pricing-section">
-    <div class="container">
-        <div class="pricing-grid">
-            {% for plano in planos %}
-            <div class="pricing-card {% if plano.nome == 'profissional' %}featured{% endif %}">
-                {% if plano.nome == 'profissional' %}
-                <span class="badge">Mais Popular</span>
-                {% else %}
-                <div class="badge-placeholder"></div>
-                {% endif %}
+  <div class="container">
+    <div class="pricing-grid">
+      {% for plano in planos %}
+      {% if plano.nome == 'essencial' or plano.nome == 'profissional' %}
+      <div
+        class="pricing-card {% if plano.nome == 'profissional' %}featured{% endif %}"
+      >
+        {% if plano.nome == 'profissional' %}
+        <span class="badge">Mais Popular</span>
+        {% else %}
+        <div class="badge-placeholder"></div>
+        {% endif %}
 
-                <div class="plan-header">
-                    <div class="plan-name">{{ plano.get_nome_display }}</div>
-                    <div class="plan-price">
-                        R$ {{ plano.preco_mensal|floatformat:0 }}
-                        <small>/mês</small>
-                    </div>
-                </div>
-
-                <ul class="plan-features">
-                    <li>{{ plano.max_profissionais }} profissiona{{ plano.max_profissionais|pluralize:"l,is" }}</li>
-                    <li>{% if plano.max_agendamentos_mes >= 999999 %}Agendamentos ilimitados{% else %}{{ plano.max_agendamentos_mes }} agendamentos/mês{% endif %}</li>
-                    <li>Bot WhatsApp automático</li>
-                    <li>Agenda inteligente</li>
-                    {% if plano.permite_relatorios_avancados %}
-                    <li>Gestão financeira completa</li>
-                    <li>Relatórios e análises avançadas</li>
-                    <li>Dashboard de clientes</li>
-                    {% else %}
-                    <li>Gestão básica de agendamentos</li>
-                    {% endif %}
-                    {% if plano.permite_integracao_contabil %}
-                    <li>Integração contábil</li>
-                    {% endif %}
-                    {% if plano.permite_multi_unidades %}
-                    <li>Múltiplas unidades</li>
-                    {% endif %}
-                    {% if plano.nome == 'essencial' %}
-                    <li>Suporte email (24h)</li>
-                    {% elif plano.nome == 'profissional' %}
-                    <li>Suporte email + WhatsApp (12h)</li>
-                    {% elif plano.nome == 'empresarial' %}
-                    <li>Suporte completo (4h)</li>
-                    <li>Email + WhatsApp + Ligação</li>
-                    {% endif %}
-                    <li>{{ plano.trial_dias }} dias de teste grátis</li>
-                </ul>
-
-                <div class="plan-footer">
-                    <a href="{% url 'landing:cadastro' %}?plano={{ plano.nome }}" class="btn-plan">
-                        Começar Agora
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="plan-header">
+          <div class="plan-name">{{ plano.get_nome_display }}</div>
+          <div class="plan-price">
+            R$ {{ plano.preco_mensal|floatformat:2 }}
+            <small>/mês</small>
+          </div>
         </div>
 
-        <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f9fafb; border-radius: 12px;">
-            <h3 style="margin-bottom: 1rem;">Todos os planos incluem:</h3>
-            <p>✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup</p>
-        </div>
+        <ul class="plan-features">
+          <li>
+            {{ plano.max_profissionais }} profissiona{{
+            plano.max_profissionais|pluralize:"l,is" }}
+          </li>
+          <li>
+            {% if plano.max_agendamentos_mes >= 999999 %}Agendamentos
+            ilimitados{% else %}{{ plano.max_agendamentos_mes }}
+            agendamentos/mês{% endif %}
+          </li>
+          <li>Bot WhatsApp automático</li>
+          <li>Agenda inteligente</li>
+          {% if plano.permite_relatorios_avancados %}
+          <li>Gestão financeira completa</li>
+          <li>Relatórios e análises avançadas</li>
+          <li>Dashboard de clientes</li>
+          {% else %}
+          <li>Gestão básica de agendamentos</li>
+          {% endif %} {% if plano.permite_integracao_contabil %}
+          <li>Integração contábil</li>
+          {% endif %} {% if plano.permite_multi_unidades %}
+          <li>Múltiplas unidades</li>
+          {% endif %} {% if plano.nome == 'essencial' %}
+          <li>Suporte email (24h)</li>
+          {% elif plano.nome == 'profissional' %}
+          <li>Suporte email + WhatsApp (12h)</li>
+          {% elif plano.nome == 'empresarial' %}
+          <li>Suporte completo (4h)</li>
+          <li>Email + WhatsApp + Ligação</li>
+          {% endif %}
+          <li>{{ plano.trial_dias }} dias de teste grátis</li>
+        </ul>
 
-        <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px;">
-            <h3 style="margin-bottom: 1rem; color: #856404;">⚠️ Importante: Número Exclusivo para o WhatsApp</h3>
-            <p style="color: #856404; margin-bottom: 0; font-size: 1rem; line-height: 1.6;">
-                É <strong>essencial ter um número de telefone exclusivo</strong> para o sistema Gestto.
-                Evite usar números pessoais ou compartilhados, pois isso pode causar uso excessivo de tokens
-                e impactar o funcionamento do WhatsApp Bot. Recomendamos um número comercial dedicado para
-                garantir a melhor experiência.
-            </p>
+        <div class="plan-footer">
+          <a
+            href="{% url 'landing:cadastro' %}?plano={{ plano.nome }}"
+            class="btn-plan"
+          >
+            Começar Agora
+          </a>
         </div>
-
-        <div style="text-align: center; margin-top: 2rem; padding: 3rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);">
-            <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; margin-bottom: 1rem; font-weight: 600;">
-                💼 PLANO PERSONALIZADO
-            </div>
-            <h2 style="margin-bottom: 1rem; font-size: 2rem;">Mais de 4 profissionais?</h2>
-            <p style="margin-bottom: 0.5rem; opacity: 0.95; font-size: 1.125rem; font-weight: 500;">Oferecemos soluções personalizadas para sua empresa</p>
-            <p style="margin-bottom: 2rem; opacity: 0.85; font-size: 0.95rem;">
-                Infraestrutura dedicada • API customizada • Suporte prioritário • Multi-unidades • Integrações exclusivas
-            </p>
-            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">A partir de</div>
-                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.25rem;">R$ 800</div>
-                <div style="font-size: 0.95rem; opacity: 0.85;">/mês + recursos ilimitados</div>
-            </div>
-            <a href="{% url 'landing:contato' %}" style="display: inline-block; background: white; color: #667eea; padding: 1.25rem 3rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;">
-                Falar com Comercial
-            </a>
-        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
     </div>
+
+    <div
+      style="
+        text-align: center;
+        margin-top: 3rem;
+        padding: 2rem;
+        background: #f9fafb;
+        border-radius: 12px;
+      "
+    >
+      <h3 style="margin-bottom: 1rem">Todos os planos incluem:</h3>
+      <p>
+        ✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis •
+        ✅ Sem taxa de setup
+      </p>
+    </div>
+
+    <div
+      style="
+        text-align: center;
+        margin-top: 2rem;
+        padding: 2rem;
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 12px;
+      "
+    >
+      <h3 style="margin-bottom: 1rem; color: #856404">
+        ⚠️ Importante: Número Exclusivo para o WhatsApp
+      </h3>
+      <p
+        style="
+          color: #856404;
+          margin-bottom: 0;
+          font-size: 1rem;
+          line-height: 1.6;
+        "
+      >
+        É <strong>essencial ter um número de telefone exclusivo</strong> para o
+        sistema Gestto. Evite usar números pessoais ou compartilhados, pois isso
+        pode causar uso excessivo de tokens e impactar o funcionamento do
+        WhatsApp Bot. Recomendamos um número comercial dedicado para garantir a
+        melhor experiência.
+      </p>
+    </div>
+
+    <div
+      style="
+        text-align: center;
+        margin-top: 2rem;
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+      "
+    >
+      <div
+        style="
+          display: inline-block;
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.875rem;
+          margin-bottom: 1rem;
+          font-weight: 600;
+        "
+      >
+        💼 PLANO PERSONALIZADO
+      </div>
+      <h2 style="margin-bottom: 1rem; font-size: 2rem">
+        Mais de 4 profissionais?
+      </h2>
+      <p
+        style="
+          margin-bottom: 0.5rem;
+          opacity: 0.95;
+          font-size: 1.125rem;
+          font-weight: 500;
+        "
+      >
+        Oferecemos soluções personalizadas para sua empresa
+      </p>
+      <p style="margin-bottom: 2rem; opacity: 0.85; font-size: 0.95rem">
+        Infraestrutura dedicada • API customizada • Suporte prioritário •
+        Multi-unidades • Integrações exclusivas
+      </p>
+      <div
+        style="
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+        "
+      >
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem">
+          A partir de
+        </div>
+        <div
+          style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.25rem"
+        >
+          R$ 1.000
+        </div>
+        <div style="font-size: 0.95rem; opacity: 0.85">
+          /mês + recursos ilimitados
+        </div>
+      </div>
+      <a
+        href="{% url 'landing:contato' %}"
+        style="
+          display: inline-block;
+          background: white;
+          color: #667eea;
+          padding: 1.25rem 3rem;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 1.1rem;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s;
+        "
+      >
+        Falar com Comercial
+      </a>
+    </div>
+  </div>
 </section>
+
+<!-- BOTÃO FLUTUANTE WHATSAPP -->
+<div class="whatsapp-float">
+  <div class="whatsapp-tooltip">💬 Dúvidas sobre os planos?</div>
+  <a
+    href="https://wa.me/5587981531743?text=Olá! Tenho dúvidas sobre os planos do Gestto"
+    target="_blank"
+    class="whatsapp-button"
+    aria-label="Fale conosco no WhatsApp"
+  >
+    💬
+  </a>
+</div>
 {% endblock %}
