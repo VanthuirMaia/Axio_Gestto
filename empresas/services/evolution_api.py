@@ -101,7 +101,7 @@ class EvolutionAPIService:
 
     def criar_instancia(self):
         """
-        Cria uma nova instância no Evolution API
+        Cria uma nova instância no Evolution API (modo self-service)
 
         Returns:
             dict: {'success': bool, 'data': {...} ou 'error': str}
@@ -112,49 +112,62 @@ class EvolutionAPIService:
         # Gerar webhook secret
         webhook_secret = self.config.gerar_webhook_secret()
 
-        # Configurar webhook URL
-        # ✅ Webhook genérico (um único endpoint para todos os clientes)
+        # Configurar webhook URL (global)
         webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp/"
 
         data = {
             "instanceName": instance_name,
-            "token": webhook_secret,  # Token para autenticação de webhooks
-            "qrcode": True,  # Retornar QR code
-            "integration": "WHATSAPP-BAILEYS",  # Tipo de integração
+            "token": webhook_secret,
+            "qrcode": True,
+            "integration": "WHATSAPP-BAILEYS",
 
-            # Settings/Configurations
-            "rejectCall": True,  # Rejeitar chamadas automaticamente
-            "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",  # Mensagem ao rejeitar
-            "groupsIgnore": True,  # Ignorar mensagens de grupos
-            "alwaysOnline": False,  # Não ficar sempre online
-            "readMessages": False,  # Não marcar mensagens como lidas automaticamente
-            "readStatus": False,  # Não enviar status de leitura
+            # Settings padrão
+            "rejectCall": True,
+            "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",
+            "groupsIgnore": True,
+            "alwaysOnline": False,
+            "readMessages": False,
+            "readStatus": False,
 
-            # Webhook configuration (formato correto da Evolution API v2)
+            # Webhook config
             "webhook": {
-                "url": webhook_url,  # URL do webhook
-                "byEvents": True,  # Receber webhooks separados por evento
-                "base64": True,  # Retornar dados em base64 (imagens, áudios, etc)
+                "url": webhook_url,
+                "byEvents": True,
+                "base64": True,
                 "events": [
-                    "QRCODE_UPDATED",  # QR Code atualizado
-                    "MESSAGES_UPSERT",  # Nova mensagem recebida/enviada
-                    "MESSAGES_UPDATE",  # Mensagem atualizada
-                    "SEND_MESSAGE",  # Mensagem enviada
-                    "CONNECTION_UPDATE",  # Mudança de status de conexão
+                    "QRCODE_UPDATED",
+                    "MESSAGES_UPSERT",
+                    "MESSAGES_UPDATE",
+                    "SEND_MESSAGE",
+                    "CONNECTION_UPDATE",
                 ]
             }
         }
 
-        # Log da configuração para debug
         logger.info(f"Criando instância {instance_name} com webhook: {webhook_url}")
-        logger.debug(f"Payload de criação: {data}")
 
-        result = self._request('POST', 'instance/create', data=data)
+        # 🔧 Buscar sempre da ENV (para empresas novas, self-service)
+        api_url = getattr(settings, 'EVOLUTION_API_URL', 'http://localhost:8080')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', 'dev-evolution-key')
+
+        endpoint = f"{api_url.rstrip('/')}/instance/create"
+        headers = {
+            'Content-Type': 'application/json',
+            'apikey': api_key,
+        }
+
+        try:
+            response = requests.post(endpoint, headers=headers, json=data, timeout=30)
+            response.raise_for_status()
+            result = {'success': True, 'data': response.json()}
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro na requisição Evolution API: {e}")
+            result = {'success': False, 'error': str(e)}
 
         if result['success']:
-            # Salvar dados da instância
             instance_data = result['data'].get('instance', {})
 
+            # Atualiza a configuração local
             self.config.instance_name = instance_name
             self.config.instance_token = instance_data.get('token', webhook_secret)
             self.config.webhook_url = webhook_url
@@ -162,17 +175,17 @@ class EvolutionAPIService:
             self.config.metadados = instance_data
             self.config.save()
 
-            logger.info(f"Instância criada: {instance_name}")
+            logger.info(f"Instância criada com sucesso: {instance_name}")
 
-            # ✅ Inserir AQUI (depois do save, antes de configurar webhook/settings)
+            # ✅ Salva registro da instância vinculada à empresa
             from whatsapp.models import WhatsAppInstance
 
             try:
                 WhatsAppInstance.objects.update_or_create(
-                    cliente=self.config.empresa.usuario,  # ajuste se o relacionamento for diferente
-                    instance_name=instance_name,
+                    empresa=self.config.empresa,  # <-- Corrigido: vincula à empresa
                     defaults={
-                        "evolution_instance_id": instance_data.get("id", ""),
+                        "instance_name": instance_name,
+                        "evolution_instance_id": instance_data.get("instanceId", ""),
                         "status": "pending",
                         "webhook_token": webhook_secret,
                     }
@@ -181,15 +194,52 @@ class EvolutionAPIService:
             except Exception as e:
                 logger.error(f"Erro ao salvar WhatsAppInstance: {e}")
 
-            # Reconfigurar webhook e settings como backup
-            # (já foram enviados na criação, mas reenviar garante que estão aplicados)
-            webhook_config_result = self.configurar_webhook()
-            if not webhook_config_result['success']:
-                logger.warning(f"Erro ao reconfigurar webhook: {webhook_config_result.get('error')}")
+            # ✅ Configura Webhook e Settings usando Evolution v2
+            webhook_config_result = self._request(
+                'POST', f"webhook/{instance_name}/update",
+                data={
+                    "enabled": True,
+                    "url": webhook_url,
+                    "byEvents": True,
+                    "base64": True,
+                    "events": [
+                        "QRCODE_UPDATED",
+                        "MESSAGES_UPSERT",
+                        "MESSAGES_UPDATE",
+                        "SEND_MESSAGE",
+                        "CONNECTION_UPDATE"
+                    ]
+                }
+            )
 
-            settings_result = self.configurar_settings()
+            if not webhook_config_result['success']:
+                logger.warning(f"Erro ao configurar webhook: {webhook_config_result.get('error')}")
+
+            settings_result = self._request(
+                'POST', f"instance/{instance_name}/settings",
+                data={
+                    "rejectCall": True,
+                    "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",
+                    "groupsIgnore": True,
+                    "alwaysOnline": False,
+                    "readMessages": False,
+                    "readStatus": False
+                }
+            )
+
             if not settings_result['success']:
-                logger.warning(f"Erro ao reconfigurar settings: {settings_result.get('error')}")
+                logger.warning(f"Erro ao configurar settings: {settings_result.get('error')}")
+
+            # ✅ (Opcional) Buscar QR Code logo após criação
+            qr_result = self._request('GET', f"instance/qr/{instance_name}")
+            if qr_result['success']:
+                qr_data = qr_result['data']
+                qr_base64 = qr_data.get('base64', '')
+                if qr_base64:
+                    self.config.qr_code = qr_base64
+                    self.config.qr_code_expira_em = now() + timedelta(minutes=2)
+                    self.config.save()
+                    logger.info("QR Code recebido e salvo com sucesso.")
 
         else:
             self.config.status = 'erro'
@@ -400,42 +450,68 @@ class EvolutionAPIService:
 
     def verificar_existencia_instancia(self):
         """
-        Verifica se a instância ainda existe na Evolution API
-        Útil para detectar se foi deletada externamente
+        Verifica se a instância ainda existe na Evolution API.
+        Útil para detectar se foi deletada externamente ou se há erro de comunicação.
 
         Returns:
-            dict: {'success': bool, 'exists': bool, 'error': str}
+            dict: {
+                'success': bool,
+                'exists': bool | None,
+                'data': list | None,
+                'error': str | None
+            }
         """
+        # ⚙️ Caso ainda não haja instância configurada
         if not self.config.instance_name:
-            return {'success': True, 'exists': False, 'error': 'Instância não configurada'}
-
-        endpoint = f"instance/fetchInstances"
-        result = self._request('GET', endpoint)
-
-        if result['success']:
-            instances = result['data']
-
-            # Verificar se nossa instância está na lista
-            instance_exists = False
-            for inst in instances:
-                if isinstance(inst, dict):
-                    inst_name = inst.get('instance', {}).get('instanceName', '')
-                    if inst_name == self.config.instance_name:
-                        instance_exists = True
-                        break
-
+            logger.info("ℹ️ Nenhuma instância configurada localmente para esta empresa.")
             return {
                 'success': True,
-                'exists': instance_exists,
-                'data': result['data']
+                'exists': False,
+                'error': 'Instância não configurada'
             }
-        else:
-            # Se houve erro na requisição, não podemos determinar
+
+        endpoint = "instance/fetchInstances"
+        result = self._request('GET', endpoint)
+
+        # ⚠️ Verifica se o resultado é válido
+        if not result or not isinstance(result, dict):
+            logger.warning("⚠️ Falha na comunicação com Evolution API ao verificar instância (resposta inválida).")
             return {
                 'success': False,
                 'exists': None,
-                'error': result.get('error', 'Erro ao verificar instâncias')
+                'data': None,
+                'error': 'Resposta inválida da Evolution API'
             }
+
+        # ✅ Caso a API tenha retornado sucesso
+        if result.get('success'):
+            data = result.get('data', [])
+
+            # Algumas versões da Evolution retornam dict em vez de list
+            if isinstance(data, dict):
+                data = [data]
+
+            instance_exists = any(
+                isinstance(inst, dict)
+                and inst.get('instance', {}).get('instanceName') == self.config.instance_name
+                for inst in data
+            )
+
+            logger.info(f"🔍 Instância '{self.config.instance_name}' encontrada? {instance_exists}")
+            return {
+                'success': True,
+                'exists': instance_exists,
+                'data': data
+            }
+
+        # ❌ Caso a requisição tenha falhado
+        logger.error(f"❌ Erro ao verificar existência da instância: {result.get('error')}")
+        return {
+            'success': False,
+            'exists': None,
+            'data': None,
+            'error': result.get('error', 'Erro desconhecido ao verificar instância')
+        }
 
     def sincronizar_status(self):
         """
@@ -616,3 +692,33 @@ class EvolutionAPIService:
             return {'success': True, 'processed': True, 'type': 'new_message'}
 
         return {'success': True, 'processed': False, 'type': 'unknown_event'}
+
+    
+    def _request(self, method, endpoint, data=None, instance_token=None):
+        base_url = self.base_url or getattr(settings, 'EVOLUTION_API_URL', '')
+        url = f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+        ...
+
+    def resetar_instancia(self):
+        """
+        Reseta completamente a configuração WhatsApp local,
+        permitindo criar uma nova instância do zero.
+        """
+        logger.warning(f"🔄 Resetando configuração WhatsApp da empresa: {self.config.empresa.nome}")
+
+        self.config.instance_name = ""
+        self.config.instance_token = ""
+        self.config.status = "nao_configurado"
+        self.config.qr_code = ""
+        self.config.qr_code_expira_em = None
+        self.config.webhook_url = ""
+        self.config.webhook_secret = ""
+        self.config.numero_conectado = ""
+        self.config.nome_perfil = ""
+        self.config.foto_perfil_url = ""
+        self.config.metadados = {}
+        self.config.ultimo_erro = ""
+        self.config.save()
+
+        logger.info(f"✅ Configuração WhatsApp resetada para empresa {self.config.empresa.nome}")
+        return {"success": True, "message": "Configuração resetada com sucesso"}
