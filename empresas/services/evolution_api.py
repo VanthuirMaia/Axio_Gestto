@@ -2,6 +2,7 @@
 Service Layer para integração com Evolution API
 Documentação: https://doc.evolution-api.com/v2/pt/
 """
+from unittest import result
 import requests
 import logging
 from django.conf import settings
@@ -112,8 +113,8 @@ class EvolutionAPIService:
         webhook_secret = self.config.gerar_webhook_secret()
 
         # Configurar webhook URL
-        # URL do webhook intermediário (Django valida e encaminha para n8n)
-        webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp-n8n/{self.config.empresa.id}/{webhook_secret}/"
+        # ✅ Webhook genérico (um único endpoint para todos os clientes)
+        webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp/"
 
         data = {
             "instanceName": instance_name,
@@ -163,6 +164,23 @@ class EvolutionAPIService:
 
             logger.info(f"Instância criada: {instance_name}")
 
+            # ✅ Inserir AQUI (depois do save, antes de configurar webhook/settings)
+            from whatsapp.models import WhatsAppInstance
+
+            try:
+                WhatsAppInstance.objects.update_or_create(
+                    cliente=self.config.empresa.usuario,  # ajuste se o relacionamento for diferente
+                    instance_name=instance_name,
+                    defaults={
+                        "evolution_instance_id": instance_data.get("id", ""),
+                        "status": "pending",
+                        "webhook_token": webhook_secret,
+                    }
+                )
+                logger.info(f"Instância registrada no banco: {instance_name}")
+            except Exception as e:
+                logger.error(f"Erro ao salvar WhatsAppInstance: {e}")
+
             # Reconfigurar webhook e settings como backup
             # (já foram enviados na criação, mas reenviar garante que estão aplicados)
             webhook_config_result = self.configurar_webhook()
@@ -180,6 +198,7 @@ class EvolutionAPIService:
             logger.error(f"Erro ao criar instância: {result.get('error')}")
 
         return result
+
 
     def obter_qrcode(self):
         """

@@ -15,6 +15,8 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from datetime import timedelta
 from django.utils.timezone import now, localtime
+from axes.helpers import get_client_ip_address, get_client_cache_keys
+from axes.models import AccessAttempt
 from .models import Usuario
 from empresas.models import Empresa
 from agendamentos.models import Agendamento
@@ -26,18 +28,42 @@ from financeiro.models import LancamentoFinanceiro
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
-    
+
     if request.method == 'POST':
         email_ou_usuario = request.POST.get('email_ou_usuario')
         senha = request.POST.get('senha')
-        
+
+        # Verificar se o IP/usuário está bloqueado pelo django-axes
+        ip_address = get_client_ip_address(request)
+        cache_keys = get_client_cache_keys(request, credentials={'username': email_ou_usuario})
+
+        # Buscar tentativas de acesso bloqueadas
+        attempts = AccessAttempt.objects.filter(
+            ip_address=ip_address
+        ).filter(
+            failures_since_start__gte=settings.AXES_FAILURE_LIMIT
+        )
+
+        if attempts.exists():
+            messages.error(
+                request,
+                f'Muitas tentativas de login falhas. Sua conta foi temporariamente bloqueada. '
+                f'Aguarde alguns minutos ou entre em contato com o suporte.'
+            )
+            return render(request, 'login.html')
+
+        # Tentar autenticar
         try:
             usuario = Usuario.objects.get(email=email_ou_usuario)
             user = authenticate(request, username=usuario.username, password=senha)
         except Usuario.DoesNotExist:
             user = authenticate(request, username=email_ou_usuario, password=senha)
-        
-        if user is not None and user.ativo:
+
+        if user is not None:
+            if not user.ativo:
+                messages.error(request, 'Sua conta está inativa. Entre em contato com o suporte.')
+                return render(request, 'login.html')
+
             login(request, user)
 
             # Redirecionar para onboarding se não completado
@@ -47,8 +73,18 @@ def login_view(request):
 
             return redirect('dashboard')
         else:
-            messages.error(request, 'Email/Usuario ou senha incorretos.')
-    
+            # Verificar se o usuário existe mas a senha está incorreta
+            try:
+                usuario_existe = Usuario.objects.get(email=email_ou_usuario)
+                messages.error(request, 'Senha incorreta. Tente novamente.')
+            except Usuario.DoesNotExist:
+                # Verificar se existe pelo username
+                try:
+                    usuario_existe = Usuario.objects.get(username=email_ou_usuario)
+                    messages.error(request, 'Senha incorreta. Tente novamente.')
+                except Usuario.DoesNotExist:
+                    messages.error(request, 'Email/Usuário não encontrado. Verifique seus dados ou cadastre-se.')
+
     return render(request, 'login.html')
 
 

@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from whatsapp import views as whatsapp_views
 from core.views import (
     login_view, logout_view, dashboard_view,
     password_reset_request, password_reset_sent,
@@ -77,6 +78,10 @@ urlpatterns = [
 
     # Evolution API → Django → n8n (NOVO - webhook intermediário)
     path('api/webhooks/whatsapp-n8n/<int:empresa_id>/<str:secret>/', whatsapp_webhook_n8n, name='whatsapp_webhook_n8n'),
+
+    # Novo webhook global — todas as instâncias do WhatsApp passam por aqui
+    path('api/webhooks/teste/', lambda request: JsonResponse({'ok': True}), name='teste_whatsapp'),
+    path('api/webhooks/whatsapp/', include('whatsapp.urls')),
 
     # APIs n8n - Consultas
     path('api/bot/empresa/info/', consultar_informacoes_empresa, name='api_bot_info_empresa'),

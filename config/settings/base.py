@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'financeiro.apps.FinanceiroConfig',
     'configuracoes.apps.ConfiguracoesConfig',
     'assinaturas.apps.AssinaturasConfig',
+    'whatsapp.apps.WhatsappConfig',
 
     # Third party
     'django_apscheduler',
@@ -319,3 +320,6 @@ LOGGING = {
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'  # Previne clickjacking
+
+APPEND_SLASH = True
+# ============================================

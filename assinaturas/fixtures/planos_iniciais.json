@@ -5,7 +5,7 @@
     "fields": {
       "nome": "essencial",
       "descricao": "Ideal para profissionais autônomos. Bot WhatsApp inteligente, agendamentos online ilimitados e página de agendamento personalizada. Tudo que você precisa para começar!",
-      "preco_mensal": "79.90",
+      "preco_mensal": "79.99",
       "max_profissionais": 1,
       "max_agendamentos_mes": 999999,
       "max_usuarios": 1,
@@ -31,7 +31,7 @@
     "fields": {
       "nome": "profissional",
       "descricao": "Gestão completa do seu negócio! Tudo do Essencial + Controle Financeiro, Dashboard de Métricas, Agendamentos Recorrentes e gestão de equipe com até 4 profissionais.",
-      "preco_mensal": "199.90",
+      "preco_mensal": "199.99",
       "max_profissionais": 4,
       "max_agendamentos_mes": 999999,
       "max_usuarios": 4,
@@ -56,8 +56,8 @@
     "pk": 3,
     "fields": {
       "nome": "empresarial",
-      "descricao": "Plano personalizado para empresas com mais de 4 profissionais. Recursos ilimitados e suporte dedicado. (Em desenvolvimento)",
-      "preco_mensal": "999.90",
+      "descricao": "Plano personalizado para empresas com mais de 4 profissionais. Recursos ilimitados e suporte dedicado.",
+      "preco_mensal": "1000.00",
       "max_profissionais": 999,
       "max_agendamentos_mes": 999999,
       "max_usuarios": 999,
@@ -71,7 +71,7 @@
       "permite_relatorios_avancados": true,
       "permite_integracao_contabil": true,
       "permite_multi_unidades": true,
-      "ativo": false,
+      "ativo": true,
       "ordem_exibicao": 3,
       "criado_em": "2025-01-01T00:00:00Z",
       "atualizado_em": "2025-01-01T00:00:00Z"
