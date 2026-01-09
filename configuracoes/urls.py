@@ -39,6 +39,13 @@ urlpatterns = [
     path('usuarios/<int:pk>/editar/', views.usuario_editar, name='usuario_editar'),
     path('usuarios/<int:pk>/deletar/', views.usuario_deletar, name='usuario_deletar'),
 
+    # Horários de Funcionamento
+    path('horarios/', views.horarios_funcionamento, name='horarios_funcionamento'),
+    path('horarios/datas-especiais/', views.datas_especiais_lista, name='datas_especiais_lista'),
+    path('horarios/datas-especiais/nova/', views.data_especial_criar, name='data_especial_criar'),
+    path('horarios/datas-especiais/<int:pk>/editar/', views.data_especial_editar, name='data_especial_editar'),
+    path('horarios/datas-especiais/<int:pk>/deletar/', views.data_especial_deletar, name='data_especial_deletar'),
+
     # WhatsApp / Evolution API
     path('whatsapp/', views.whatsapp_dashboard, name='whatsapp_dashboard'),
     path('whatsapp/criar-instancia/', views.whatsapp_criar_instancia, name='whatsapp_criar_instancia'),

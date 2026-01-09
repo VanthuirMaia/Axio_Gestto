@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Datas Especiais - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div class="page-header mb-0">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-clean">
+          <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'horarios_funcionamento' %}">Horarios</a></li>
+          <li class="breadcrumb-item active">Datas Especiais</li>
+        </ol>
+      </nav>
+      <h2>Datas Especiais</h2>
+      <p class="text-muted mb-0">Feriados e horarios diferenciados</p>
+    </div>
+    <a href="{% url 'data_especial_criar' %}" class="btn btn-primary btn-sm-clean">
+      <i class="bi bi-plus me-1"></i>Nova Data
+    </a>
+  </div>
+
+  <!-- Lista -->
+  <div class="card card-clean">
+    <div class="card-body p-0">
+      {% for data in datas %}
+      <div class="list-item-clean">
+        <div class="list-item-avatar {% if data.tipo == 'feriado' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+          <i class="bi {% if data.tipo == 'feriado' %}bi-x-circle{% else %}bi-clock{% endif %}"></i>
+        </div>
+        <div class="list-item-content">
+          <p class="list-item-title">
+            {{ data.descricao }}
+            <span class="badge-clean {% if data.tipo == 'feriado' %}bg-danger{% else %}bg-warning{% endif %} ms-1">
+              {{ data.get_tipo_display }}
+            </span>
+          </p>
+          <p class="list-item-subtitle">
+            {{ data.data|date:"d/m/Y" }}
+            {% if data.tipo == 'especial' and data.hora_abertura %}
+              &bull; {{ data.hora_abertura|time:"H:i" }} - {{ data.hora_fechamento|time:"H:i" }}
+            {% endif %}
+          </p>
+        </div>
+        <div class="list-item-actions">
+          <a href="{% url 'data_especial_editar' data.id %}" class="btn btn-icon btn-outline-secondary" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a href="{% url 'data_especial_deletar' data.id %}" class="btn btn-icon btn-outline-danger" title="Excluir">
+            <i class="bi bi-trash"></i>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="bi bi-calendar-x empty-state-icon"></i>
+        <p class="empty-state-text">Nenhuma data especial cadastrada</p>
+        <a href="{% url 'data_especial_criar' %}" class="btn btn-primary btn-sm-clean mt-2">
+          <i class="bi bi-plus me-1"></i>Adicionar
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

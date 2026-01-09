@@ -46,6 +46,14 @@
       <span class="config-card-subtitle">formas</span>
     </a>
 
+    <!-- Horarios -->
+    <a href="{% url 'horarios_funcionamento' %}" class="config-card">
+      <i class="bi bi-clock config-card-icon" style="color: #0d9488;"></i>
+      <span class="config-card-title">Horarios</span>
+      <span class="config-card-value">{{ total_datas_especiais }}</span>
+      <span class="config-card-subtitle">datas especiais</span>
+    </a>
+
     <!-- Usuarios -->
     <a href="{% url 'usuarios_lista' %}" class="config-card">
       <i class="bi bi-people config-card-icon" style="color: #7c3aed;"></i>

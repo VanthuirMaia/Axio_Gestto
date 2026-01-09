@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if data_especial %}Editar{% else %}Nova{% endif %} Data Especial - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="page-header mb-3">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-clean">
+        <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'horarios_funcionamento' %}">Horarios</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'datas_especiais_lista' %}">Datas Especiais</a></li>
+        <li class="breadcrumb-item active">{% if data_especial %}Editar{% else %}Nova{% endif %}</li>
+      </ol>
+    </nav>
+    <h2>{% if data_especial %}Editar{% else %}Nova{% endif %} Data Especial</h2>
+  </div>
+
+  <!-- Formulário -->
+  <div class="card card-clean">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <!-- Data -->
+          <div class="col-md-6">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-control" name="data" required
+                   value="{% if data_especial %}{{ data_especial.data|date:'Y-m-d' }}{% endif %}">
+          </div>
+
+          <!-- Tipo -->
+          <div class="col-md-6">
+            <label class="form-label">Tipo</label>
+            <select class="form-select" name="tipo" id="tipo" onchange="toggleHorarios()">
+              <option value="feriado" {% if data_especial.tipo == 'feriado' %}selected{% endif %}>
+                Feriado - Fechado
+              </option>
+              <option value="especial" {% if data_especial.tipo == 'especial' %}selected{% endif %}>
+                Horario Especial
+              </option>
+            </select>
+          </div>
+
+          <!-- Descrição -->
+          <div class="col-12">
+            <label class="form-label">Descricao</label>
+            <input type="text" class="form-control" name="descricao" required
+                   placeholder="Ex: Natal, Ano Novo, Carnaval..."
+                   value="{% if data_especial %}{{ data_especial.descricao }}{% endif %}">
+          </div>
+
+          <!-- Horários (só para tipo especial) -->
+          <div class="col-12" id="horarios_especiais" style="{% if not data_especial or data_especial.tipo != 'especial' %}display: none;{% endif %}">
+            <hr class="my-3">
+            <label class="form-label">Horario de Funcionamento Especial</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small text-muted">Abertura</label>
+                <input type="time" class="form-control" name="hora_abertura"
+                       value="{% if data_especial.hora_abertura %}{{ data_especial.hora_abertura|time:'H:i' }}{% endif %}">
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Fechamento</label>
+                <input type="time" class="form-control" name="hora_fechamento"
+                       value="{% if data_especial.hora_fechamento %}{{ data_especial.hora_fechamento|time:'H:i' }}{% endif %}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="d-flex justify-content-between mt-4">
+          <a href="{% url 'datas_especiais_lista' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleHorarios() {
+  const tipo = document.getElementById('tipo').value;
+  const horarios = document.getElementById('horarios_especiais');
+
+  if (tipo === 'especial') {
+    horarios.style.display = 'block';
+  } else {
+    horarios.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

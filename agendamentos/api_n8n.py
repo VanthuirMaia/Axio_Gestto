@@ -11,9 +11,100 @@ from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
 from datetime import datetime, timedelta, time
 
-from empresas.models import Servico, Profissional, HorarioFuncionamento, DataEspecial, Empresa
+from empresas.models import Servico, Profissional, HorarioFuncionamento, DataEspecial, Empresa, ConfiguracaoWhatsApp
 from agendamentos.models import Agendamento
 from .authentication import APIKeyAuthentication
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================
+# ENDPOINT PARA N8N IDENTIFICAR EMPRESA
+# ============================================
+
+@api_view(['GET', 'POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def buscar_empresa_por_instancia(request, instance_name=None):
+    """
+    Busca dados da empresa pelo instance_name do WhatsApp.
+    Usado pelo n8n para identificar qual empresa recebeu a mensagem.
+
+    GET /api/n8n/empresa-por-instancia/<instance_name>/
+    ou
+    POST /api/n8n/empresa-por-instancia/
+    { "instance_name": "barbearia-ze_5" }
+
+    Response:
+    {
+        "sucesso": true,
+        "empresa": {
+            "id": 5,
+            "nome": "Barbearia do Zé",
+            "slug": "barbearia-ze",
+            "telefone": "87999998888",
+            "email": "contato@barbearia.com",
+            "instance_name": "barbearia-ze_5",
+            "assinatura_ativa": true
+        }
+    }
+    """
+    # Validar API Key do n8n (segurança básica)
+    api_key_header = request.headers.get('X-API-Key') or request.headers.get('apikey')
+    expected_key = getattr(settings, 'GESTTO_API_KEY', '')
+
+    if not api_key_header or api_key_header != expected_key:
+        return Response({
+            'sucesso': False,
+            'erro': 'API Key inválida ou não fornecida'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Obter instance_name (da URL ou do body)
+    if not instance_name:
+        instance_name = request.data.get('instance_name') or request.GET.get('instance_name')
+
+    if not instance_name:
+        return Response({
+            'sucesso': False,
+            'erro': 'instance_name é obrigatório'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Buscar configuração do WhatsApp
+    try:
+        config = ConfiguracaoWhatsApp.objects.select_related('empresa').get(
+            instance_name=instance_name
+        )
+        empresa = config.empresa
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        logger.warning(f"Instância não encontrada: {instance_name}")
+        return Response({
+            'sucesso': False,
+            'erro': f'Nenhuma empresa encontrada para instância: {instance_name}'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    # Verificar assinatura
+    assinatura_ativa = empresa.assinatura_ativa if hasattr(empresa, 'assinatura_ativa') else False
+
+    # Retornar dados da empresa
+    return Response({
+        'sucesso': True,
+        'empresa': {
+            'id': empresa.id,
+            'nome': empresa.nome,
+            'slug': empresa.slug,
+            'telefone': empresa.telefone or '',
+            'email': empresa.email or '',
+            'instance_name': config.instance_name,
+            'whatsapp_status': config.status,
+            'assinatura_ativa': assinatura_ativa,
+        },
+        'config_evolution': {
+            'api_url': getattr(settings, 'EVOLUTION_API_URL', ''),
+            'instance_name': config.instance_name,
+        }
+    })
 
 
 @api_view(['GET'])

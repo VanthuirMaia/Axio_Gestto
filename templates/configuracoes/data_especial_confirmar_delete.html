@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Data Especial - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="page-header mb-3">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-clean">
+        <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'datas_especiais_lista' %}">Datas Especiais</a></li>
+        <li class="breadcrumb-item active">Excluir</li>
+      </ol>
+    </nav>
+    <h2>Excluir Data Especial</h2>
+  </div>
+
+  <!-- Confirmação -->
+  <div class="card card-clean">
+    <div class="card-body text-center py-4">
+      <div class="mb-3">
+        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+      </div>
+      <h5>Tem certeza que deseja excluir?</h5>
+      <p class="text-muted mb-0">
+        <strong>{{ data_especial.descricao }}</strong><br>
+        {{ data_especial.data|date:"d/m/Y" }}
+      </p>
+
+      <div class="d-flex justify-content-center gap-2 mt-4">
+        <a href="{% url 'datas_especiais_lista' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Cancelar
+        </a>
+        <form method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Excluir
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

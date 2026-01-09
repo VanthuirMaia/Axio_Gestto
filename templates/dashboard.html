@@ -6,32 +6,24 @@
 {% block content %}
 <div class="container-fluid py-4 px-4">
 
-  <!-- Hero Section: Saudação -->
+  <!-- Hero Section -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
-        <div class="card-body text-white py-4">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-              <h3 class="fw-bold mb-2" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                {{ saudacao }}, {{ usuario.get_full_name|default:usuario.username }}! 👋
-              </h3>
-              <p class="mb-0" style="opacity: 0.95;">
-                <i class="bi bi-building me-2"></i>{{ empresa.nome }} · 
-                <i class="bi bi-calendar3 ms-3 me-2"></i>{{ hoje|date:"l, d \d\e F \d\e Y" }}
-              </p>
-            </div>
-            <div class="text-end">
-              <div class="d-flex gap-2">
-                <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn btn-light">
-                  <i class="bi bi-plus-circle me-2"></i>Novo Agendamento
-                </a>
-                <a href="{% url 'agendamentos:calendario' %}" class="btn" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
-                  <i class="bi bi-calendar3 me-2"></i>Ver Calendário
-                </a>
-              </div>
-            </div>
-          </div>
+      <div class="hero-section">
+        <div class="hero-content">
+          <h1 class="hero-title">{{ saudacao }}, {{ usuario.get_full_name|default:usuario.username }}! 👋</h1>
+          <p class="hero-subtitle">
+            <i class="bi bi-building me-2"></i>{{ empresa.nome }} · 
+            <i class="bi bi-calendar3 ms-3 me-2"></i>{{ hoje|date:"l, d \d\e F \d\e Y" }}
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn-clean btn-clean-primary">
+            <i class="bi bi-plus-circle"></i>Novo Agendamento
+          </a>
+          <a href="{% url 'agendamentos:calendario' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-calendar3"></i>Calendário
+          </a>
         </div>
       </div>
     </div>
@@ -81,91 +73,59 @@
     
     <!-- Agendamentos Hoje -->
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #667eea !important;">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Hoje</small>
-              <h2 class="fw-bold mb-0 mt-1">{{ agendamentos_hoje }}</h2>
-              <small class="text-muted">agendamentos</small>
-            </div>
-            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
-              <i class="bi bi-calendar-check text-primary fs-3"></i>
-            </div>
-          </div>
-          <small class="text-muted">
-            <i class="bi bi-calendar-week me-1"></i>
-            {{ agendamentos_semana }} esta semana
-          </small>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Hoje</span>
+          <i class="bi bi-calendar-check metric-icon"></i>
         </div>
+        <div class="metric-value">{{ agendamentos_hoje }}</div>
+        <small class="text-muted">
+          <i class="bi bi-calendar-week me-1"></i>{{ agendamentos_semana }} esta semana
+        </small>
       </div>
     </div>
 
     <!-- Faturamento do Mês -->
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #10b981 !important;">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Faturamento</small>
-              <h2 class="fw-bold mb-0 mt-1 text-success">R$ {{ faturamento_mes|floatformat:2 }}</h2>
-              <small class="text-muted">este mês</small>
-            </div>
-            <div class="bg-success bg-opacity-10 rounded-3 p-3">
-              <i class="bi bi-cash-stack text-success fs-3"></i>
-            </div>
-          </div>
-          <small class="text-muted">
-            <i class="bi bi-clock me-1"></i>
-            R$ {{ receitas_pendentes|floatformat:2 }} pendente
-          </small>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Faturamento</span>
+          <i class="bi bi-cash-stack metric-icon"></i>
         </div>
+        <div class="metric-value text-success">R$ {{ faturamento_mes|floatformat:2 }}</div>
+        <small class="text-muted">
+          <i class="bi bi-clock me-1"></i>R$ {{ receitas_pendentes|floatformat:2 }} pendente
+        </small>
       </div>
     </div>
 
     <!-- Clientes Ativos -->
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #f59e0b !important;">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Clientes</small>
-              <h2 class="fw-bold mb-0 mt-1">{{ clientes_ativos }}</h2>
-              <small class="text-muted">ativos (30d)</small>
-            </div>
-            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
-              <i class="bi bi-people-fill text-warning fs-3"></i>
-            </div>
-          </div>
-          <small class="text-muted">
-            <i class="bi bi-person-plus me-1"></i>
-            +{{ novos_clientes_mes }} novos este mês
-          </small>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Clientes</span>
+          <i class="bi bi-people-fill metric-icon"></i>
         </div>
+        <div class="metric-value">{{ clientes_ativos }}</div>
+        <small class="text-muted">
+          <i class="bi bi-person-plus me-1"></i>+{{ novos_clientes_mes }} novos este mês
+        </small>
       </div>
     </div>
 
     <!-- Saldo do Mês -->
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #3b82f6 !important;">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-              <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Saldo</small>
-              <h2 class="fw-bold mb-0 mt-1 {% if saldo_mes >= 0 %}text-success{% else %}text-danger{% endif %}">
-                R$ {{ saldo_mes|floatformat:2 }}
-              </h2>
-              <small class="text-muted">receitas - despesas</small>
-            </div>
-            <div class="bg-info bg-opacity-10 rounded-3 p-3">
-              <i class="bi bi-wallet2 text-info fs-3"></i>
-            </div>
-          </div>
-          <small class="text-muted">
-            <i class="bi bi-graph-up me-1"></i>
-            Ticket médio: R$ {{ ticket_medio|floatformat:2 }}
-          </small>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Saldo</span>
+          <i class="bi bi-wallet2 metric-icon"></i>
         </div>
+        <div class="metric-value {% if saldo_mes >= 0 %}text-success{% else %}text-danger{% endif %}">
+          R$ {{ saldo_mes|floatformat:2 }}
+        </div>
+        <small class="text-muted">
+          <i class="bi bi-graph-up me-1"></i>Ticket médio: R$ {{ ticket_medio|floatformat:2 }}
+        </small>
       </div>
     </div>
 
@@ -184,7 +144,7 @@
             <i class="bi bi-graph-up text-primary me-2"></i>
             Faturamento (Últimos 7 Dias)
           </h5>
-          <a href="{% url 'financeiro_dashboard' %}" class="btn btn-sm btn-outline-primary">
+          <a href="{% url 'financeiro_dashboard' %}" class="btn-clean btn-clean-sm btn-clean-outline">
             Ver Detalhes
           </a>
         </div>
@@ -200,7 +160,7 @@
             <i class="bi bi-clock-history text-primary me-2"></i>
             Agenda de Hoje
           </h5>
-          <a href="{% url 'agendamentos:calendario' %}" class="btn btn-sm btn-outline-primary">
+          <a href="{% url 'agendamentos:calendario' %}" class="btn-clean btn-clean-sm btn-clean-outline">
             Ver Calendário
           </a>
         </div>
@@ -249,8 +209,8 @@
             <div class="p-5 text-center text-muted">
               <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
               <p class="mb-2">Nenhum agendamento para hoje</p>
-              <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-2"></i>Criar Agendamento
+              <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn-clean btn-clean-sm btn-clean-primary">
+                <i class="bi bi-plus-circle"></i>Criar Agendamento
               </a>
             </div>
           {% endif %}
@@ -269,7 +229,7 @@
             <i class="bi bi-star-fill text-warning me-2"></i>
             Top Clientes VIP
           </h6>
-          <a href="{% url 'dashboard_clientes' %}" class="btn btn-sm btn-link p-0">Ver todos</a>
+          <a href="{% url 'dashboard_clientes' %}" class="btn-clean btn-clean-sm btn-clean-ghost">Ver todos</a>
         </div>
         <div class="card-body p-0">
           {% if top_clientes %}
@@ -311,20 +271,20 @@
           </h6>
         </div>
         <div class="card-body d-grid gap-2">
-          <a href="{% url 'criar_cliente' %}" class="btn btn-outline-primary">
-            <i class="bi bi-person-plus me-2"></i>Novo Cliente
+          <a href="{% url 'criar_cliente' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-person-plus"></i>Novo Cliente
           </a>
-          <a href="{% url 'lancamento_criar' %}" class="btn btn-outline-success">
-            <i class="bi bi-cash-coin me-2"></i>Novo Lançamento
+          <a href="{% url 'lancamento_criar' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-cash-coin"></i>Novo Lançamento
           </a>
-          <a href="{% url 'dashboard_clientes' %}" class="btn btn-outline-info">
-            <i class="bi bi-graph-up me-2"></i>Dashboard Clientes
+          <a href="{% url 'dashboard_clientes' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-graph-up"></i>Dashboard Clientes
           </a>
-          <a href="{% url 'financeiro_dashboard' %}" class="btn btn-outline-warning">
-            <i class="bi bi-wallet2 me-2"></i>Dashboard Financeiro
+          <a href="{% url 'financeiro_dashboard' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-wallet2"></i>Dashboard Financeiro
           </a>
-          <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-gear me-2"></i>Configurações
+          <a href="{% url 'configuracoes_dashboard' %}" class="btn-clean btn-clean-outline">
+            <i class="bi bi-gear"></i>Configurações
           </a>
         </div>
       </div>

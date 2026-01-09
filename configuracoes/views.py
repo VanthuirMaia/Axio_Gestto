@@ -5,9 +5,12 @@ from django.urls import reverse
 from django.utils.timezone import now
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import timedelta
 
-from empresas.models import Empresa, Servico, Profissional
+from empresas.models import Empresa, Servico, Profissional, HorarioFuncionamento, DataEspecial
 from financeiro.models import CategoriaFinanceira, FormaPagamento
 
 # Na view
@@ -28,6 +31,7 @@ def configuracoes_dashboard(request):
         'total_categorias': CategoriaFinanceira.objects.filter(empresa=empresa, ativo=True).count(),
         'total_formas_pagamento': FormaPagamento.objects.filter(empresa=empresa, ativo=True).count(),
         'total_usuarios': Usuario.objects.filter(empresa=empresa, ativo=True).count(),
+        'total_datas_especiais': DataEspecial.objects.filter(empresa=empresa).count(),
     }
 
     return render(request, 'configuracoes/dashboard.html', context)
@@ -694,7 +698,7 @@ def whatsapp_dashboard(request):
 @login_required
 def whatsapp_criar_instancia(request):
     """
-    Cria instância e retorna QR Code (AJAX)
+    Conecta WhatsApp usando método robusto com retry (AJAX)
     """
     from django.http import JsonResponse
     from empresas.models import ConfiguracaoWhatsApp
@@ -706,32 +710,29 @@ def whatsapp_criar_instancia(request):
     empresa = request.user.empresa
     config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
 
-    # Criar service
+    # Criar service e usar método robusto
     service = EvolutionAPIService(config)
+    result = service.conectar_whatsapp()
 
-    # Criar instância
-    result = service.criar_instancia()
-
-    if not result['success']:
-        return JsonResponse({
-            'success': False,
-            'error': result.get('error', 'Erro ao criar instância')
-        })
-
-    # Obter QR Code
-    qr_result = service.obter_qrcode()
-
-    if qr_result['success']:
-        return JsonResponse({
+    if result['success']:
+        response_data = {
             'success': True,
-            'qrcode': qr_result['qrcode'],
-            'status': config.status,
+            'status': result['status'],
+            'message': result['message'],
+            'action': result['action'],
             'instance_name': config.instance_name
-        })
+        }
+
+        # Incluir QR Code se disponível
+        if result.get('qrcode'):
+            response_data['qrcode'] = result['qrcode']
+
+        return JsonResponse(response_data)
     else:
         return JsonResponse({
             'success': False,
-            'error': 'Instância criada mas QR Code não disponível. Tente novamente.'
+            'error': result.get('message', 'Erro ao conectar WhatsApp'),
+            'action': result.get('action', 'error')
         })
 
 
@@ -981,11 +982,11 @@ def whatsapp_sincronizar(request):
 def whatsapp_resetar_config(request):
     """
     Reseta completamente a configuracao local do WhatsApp.
-    Util quando a instancia foi deletada externamente ou ha inconsistencias.
-    NAO deleta a instancia na Evolution API, apenas limpa os dados locais.
+    AGORA TAMBEM deleta a instancia na Evolution API para evitar conflitos.
     """
     from django.http import JsonResponse
     from empresas.models import ConfiguracaoWhatsApp, WhatsAppInstance
+    from empresas.services import EvolutionAPIService
 
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
@@ -996,6 +997,21 @@ def whatsapp_resetar_config(request):
         config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
     except ConfiguracaoWhatsApp.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Configuracao nao encontrada'})
+
+    # ✅ NOVO: Tentar deletar a instância na Evolution API antes de resetar
+    if config.instance_name:
+        try:
+            service = EvolutionAPIService(config)
+            delete_result = service.deletar_instancia()
+            
+            if delete_result['success']:
+                logger.info(f"Instância {config.instance_name} deletada na Evolution API com sucesso")
+            else:
+                logger.warning(f"Não foi possível deletar instância na Evolution API: {delete_result.get('error')}")
+                # Continua mesmo se falhar - pode ser que já tenha sido deletada
+        except Exception as e:
+            logger.error(f"Erro ao tentar deletar instância: {e}")
+            # Continua mesmo com erro
 
     # Resetar todos os campos
     config.instance_name = ''
@@ -1019,7 +1035,7 @@ def whatsapp_resetar_config(request):
 
     return JsonResponse({
         'success': True,
-        'message': 'Configuracao resetada'
+        'message': 'Configuracao resetada e instancia deletada'
     })
 
 
@@ -1150,3 +1166,183 @@ def whatsapp_webhook_n8n(request, empresa_id, secret):
             'success': False,
             'error': 'Erro interno do servidor'
         }, status=500)
+
+
+# ==========================================
+# HORÁRIOS DE FUNCIONAMENTO
+# ==========================================
+
+@login_required
+def horarios_funcionamento(request):
+    """
+    Gerencia horários de funcionamento da empresa.
+    Exibe todos os 7 dias da semana e permite editar cada um.
+    """
+    from datetime import time
+
+    empresa = request.user.empresa
+
+    DIAS_SEMANA = [
+        (0, 'Segunda-feira'),
+        (1, 'Terça-feira'),
+        (2, 'Quarta-feira'),
+        (3, 'Quinta-feira'),
+        (4, 'Sexta-feira'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+
+    if request.method == 'POST':
+        # Processar formulário
+        for dia_num, dia_nome in DIAS_SEMANA:
+            ativo = request.POST.get(f'ativo_{dia_num}') == 'on'
+            hora_abertura = request.POST.get(f'abertura_{dia_num}')
+            hora_fechamento = request.POST.get(f'fechamento_{dia_num}')
+            intervalo_inicio = request.POST.get(f'intervalo_inicio_{dia_num}') or None
+            intervalo_fim = request.POST.get(f'intervalo_fim_{dia_num}') or None
+
+            if ativo and hora_abertura and hora_fechamento:
+                # Criar ou atualizar horário
+                HorarioFuncionamento.objects.update_or_create(
+                    empresa=empresa,
+                    dia_semana=dia_num,
+                    defaults={
+                        'hora_abertura': hora_abertura,
+                        'hora_fechamento': hora_fechamento,
+                        'intervalo_inicio': intervalo_inicio if intervalo_inicio else None,
+                        'intervalo_fim': intervalo_fim if intervalo_fim else None,
+                        'ativo': True,
+                    }
+                )
+            else:
+                # Desativar ou remover horário do dia
+                HorarioFuncionamento.objects.filter(
+                    empresa=empresa,
+                    dia_semana=dia_num
+                ).update(ativo=False)
+
+        messages.success(request, 'Horários de funcionamento atualizados com sucesso!')
+        return redirect('horarios_funcionamento')
+
+    # Buscar horários existentes
+    horarios_existentes = {
+        h.dia_semana: h
+        for h in HorarioFuncionamento.objects.filter(empresa=empresa)
+    }
+
+    # Montar lista de dias com horários
+    dias = []
+    for dia_num, dia_nome in DIAS_SEMANA:
+        horario = horarios_existentes.get(dia_num)
+        dias.append({
+            'numero': dia_num,
+            'nome': dia_nome,
+            'ativo': horario.ativo if horario else False,
+            'abertura': horario.hora_abertura.strftime('%H:%M') if horario and horario.hora_abertura else '09:00',
+            'fechamento': horario.hora_fechamento.strftime('%H:%M') if horario and horario.hora_fechamento else '18:00',
+            'intervalo_inicio': horario.intervalo_inicio.strftime('%H:%M') if horario and horario.intervalo_inicio else '',
+            'intervalo_fim': horario.intervalo_fim.strftime('%H:%M') if horario and horario.intervalo_fim else '',
+        })
+
+    context = {
+        'empresa': empresa,
+        'dias': dias,
+    }
+
+    return render(request, 'configuracoes/horarios_funcionamento.html', context)
+
+
+@login_required
+def datas_especiais_lista(request):
+    """Lista datas especiais (feriados e horários diferenciados)"""
+    empresa = request.user.empresa
+    datas = DataEspecial.objects.filter(empresa=empresa).order_by('data')
+
+    context = {
+        'empresa': empresa,
+        'datas': datas,
+    }
+
+    return render(request, 'configuracoes/datas_especiais_lista.html', context)
+
+
+@login_required
+def data_especial_criar(request):
+    """Cria nova data especial"""
+    empresa = request.user.empresa
+
+    if request.method == 'POST':
+        data = request.POST.get('data')
+        descricao = request.POST.get('descricao')
+        tipo = request.POST.get('tipo', 'feriado')
+        hora_abertura = request.POST.get('hora_abertura') or None
+        hora_fechamento = request.POST.get('hora_fechamento') or None
+
+        DataEspecial.objects.create(
+            empresa=empresa,
+            data=data,
+            descricao=descricao,
+            tipo=tipo,
+            hora_abertura=hora_abertura if tipo == 'especial' else None,
+            hora_fechamento=hora_fechamento if tipo == 'especial' else None,
+        )
+
+        messages.success(request, f'Data especial "{descricao}" adicionada!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+    }
+
+    return render(request, 'configuracoes/data_especial_form.html', context)
+
+
+@login_required
+def data_especial_editar(request, pk):
+    """Edita data especial"""
+    empresa = request.user.empresa
+    data_especial = get_object_or_404(DataEspecial, pk=pk, empresa=empresa)
+
+    if request.method == 'POST':
+        data_especial.data = request.POST.get('data')
+        data_especial.descricao = request.POST.get('descricao')
+        data_especial.tipo = request.POST.get('tipo', 'feriado')
+
+        if data_especial.tipo == 'especial':
+            data_especial.hora_abertura = request.POST.get('hora_abertura') or None
+            data_especial.hora_fechamento = request.POST.get('hora_fechamento') or None
+        else:
+            data_especial.hora_abertura = None
+            data_especial.hora_fechamento = None
+
+        data_especial.save()
+
+        messages.success(request, f'Data especial "{data_especial.descricao}" atualizada!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+        'data_especial': data_especial,
+    }
+
+    return render(request, 'configuracoes/data_especial_form.html', context)
+
+
+@login_required
+def data_especial_deletar(request, pk):
+    """Deleta data especial"""
+    empresa = request.user.empresa
+    data_especial = get_object_or_404(DataEspecial, pk=pk, empresa=empresa)
+
+    if request.method == 'POST':
+        descricao = data_especial.descricao
+        data_especial.delete()
+        messages.success(request, f'Data especial "{descricao}" removida!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+        'data_especial': data_especial,
+    }
+
+    return render(request, 'configuracoes/data_especial_confirmar_delete.html', context)

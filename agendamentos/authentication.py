@@ -5,7 +5,7 @@ Autenticação por API Key para n8n
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.conf import settings
-from empresas.models import Empresa
+from empresas.models import Empresa, ConfiguracaoWhatsApp
 
 
 class APIKeyAuthentication(BaseAuthentication):
@@ -14,7 +14,11 @@ class APIKeyAuthentication(BaseAuthentication):
 
     n8n envia:
     X-API-Key: sua-chave-secreta-aqui
+
+    E para identificar a empresa (em ordem de prioridade):
+    X-Instance-Name: empresa-slug_123  (nome da instância Evolution)
     X-Empresa-ID: 1
+    X-Telefone-WhatsApp: 5587999999999
     """
 
     def authenticate(self, request):
@@ -30,23 +34,37 @@ class APIKeyAuthentication(BaseAuthentication):
 
         # 🔍 IDENTIFICAÇÃO MULTI-TENANT DA EMPRESA
         # Ordem de prioridade:
-        # 1. X-Empresa-ID (header explícito)
-        # 2. X-Telefone-WhatsApp (busca empresa pelo número conectado)
-        # 3. Primeira empresa ativa (fallback)
+        # 1. X-Instance-Name (nome da instância Evolution - RECOMENDADO)
+        # 2. X-Empresa-ID (header explícito)
+        # 3. X-Telefone-WhatsApp (busca empresa pelo número conectado)
+        # 4. Primeira empresa ativa (fallback)
 
+        instance_name = request.headers.get('X-Instance-Name') or request.headers.get('instance_name')
         empresa_id = request.headers.get('X-Empresa-ID') or request.headers.get('empresa_id')
         telefone_whatsapp = request.headers.get('X-Telefone-WhatsApp') or request.headers.get('telefone_whatsapp')
 
         empresa = None
 
-        # 1. Tentar por ID direto
-        if empresa_id:
+        # 1. Tentar por instance_name (Evolution API)
+        if instance_name:
+            try:
+                config = ConfiguracaoWhatsApp.objects.select_related('empresa').get(
+                    instance_name=instance_name
+                )
+                empresa = config.empresa
+                if not empresa.ativa:
+                    raise AuthenticationFailed(f'Empresa da instância {instance_name} está inativa')
+            except ConfiguracaoWhatsApp.DoesNotExist:
+                raise AuthenticationFailed(f'Nenhuma empresa encontrada para instância: {instance_name}')
+
+        # 2. Tentar por ID direto
+        elif empresa_id:
             try:
                 empresa = Empresa.objects.get(id=empresa_id, ativa=True)
             except Empresa.DoesNotExist:
                 raise AuthenticationFailed(f'Empresa ID {empresa_id} não encontrada')
 
-        # 2. Tentar identificar pelo número do WhatsApp conectado
+        # 3. Tentar identificar pelo número do WhatsApp conectado
         elif telefone_whatsapp:
             # Limpar telefone (remover caracteres especiais)
             import re
@@ -61,7 +79,7 @@ class APIKeyAuthentication(BaseAuthentication):
             if not empresa:
                 raise AuthenticationFailed(f'Nenhuma empresa encontrada com WhatsApp {telefone_whatsapp}')
 
-        # 3. Fallback: primeira empresa ativa
+        # 4. Fallback: primeira empresa ativa
         else:
             empresa = Empresa.objects.filter(ativa=True).first()
             if not empresa:

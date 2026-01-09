@@ -17,7 +17,8 @@ from agendamentos.api_n8n import (
     listar_profissionais,
     consultar_horarios_funcionamento,
     consultar_datas_especiais,
-    consultar_horarios_disponiveis
+    consultar_horarios_disponiveis,
+    buscar_empresa_por_instancia
 )
 from empresas.api_views import whatsapp_webhook
 from configuracoes.views import whatsapp_webhook_n8n
@@ -90,6 +91,10 @@ urlpatterns = [
     path('api/n8n/horarios-funcionamento/', consultar_horarios_funcionamento, name='api_n8n_horarios_funcionamento'),
     path('api/n8n/datas-especiais/', consultar_datas_especiais, name='api_n8n_datas_especiais'),
     path('api/n8n/horarios-disponiveis/', consultar_horarios_disponiveis, name='api_n8n_horarios_disponiveis'),
+
+    # API n8n - Buscar empresa por instance_name (usado para identificar empresa no webhook)
+    path('api/n8n/empresa-por-instancia/<str:instance_name>/', buscar_empresa_por_instancia, name='api_n8n_empresa_por_instancia'),
+    path('api/n8n/empresa-por-instancia/', buscar_empresa_por_instancia, name='api_n8n_empresa_por_instancia_post'),
 
     # ==========================================
     # PRIVADO - Sistema (só clientes autenticados)

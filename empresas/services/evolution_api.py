@@ -4,6 +4,7 @@ Documentação: https://doc.evolution-api.com/v2/pt/
 """
 import requests
 import logging
+import time
 from django.conf import settings
 from django.utils.timezone import now
 from datetime import timedelta
@@ -98,6 +99,323 @@ class EvolutionAPIService:
     # GERENCIAMENTO DE INSTÂNCIAS
     # ==========================================
 
+    def _buscar_instancia_na_api(self, instance_name):
+        """
+        Busca uma instância específica na Evolution API pelo nome.
+
+        Returns:
+            dict: {'exists': bool, 'instance': dict|None, 'status': str|None}
+        """
+        api_url = getattr(settings, 'EVOLUTION_API_URL', '')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+
+        if not api_url or not api_key:
+            return {'exists': False, 'instance': None, 'status': None, 'error': 'API não configurada'}
+
+        try:
+            response = requests.get(
+                f"{api_url.rstrip('/')}/instance/fetchInstances",
+                headers={'Content-Type': 'application/json', 'apikey': api_key},
+                timeout=15
+            )
+            response.raise_for_status()
+            instances = response.json()
+
+            # Buscar instância pelo nome
+            for inst in instances:
+                if inst.get('name') == instance_name:
+                    return {
+                        'exists': True,
+                        'instance': inst,
+                        'status': inst.get('connectionStatus', 'unknown')
+                    }
+
+            return {'exists': False, 'instance': None, 'status': None}
+
+        except Exception as e:
+            logger.error(f"Erro ao buscar instância na API: {e}")
+            return {'exists': False, 'instance': None, 'status': None, 'error': str(e)}
+
+    def _obter_qrcode_com_retry(self, instance_name, max_tentativas=5, intervalo=2):
+        """
+        Tenta obter o QR Code com retry.
+
+        Args:
+            instance_name: Nome da instância
+            max_tentativas: Número máximo de tentativas
+            intervalo: Segundos entre tentativas
+
+        Returns:
+            dict: {'success': bool, 'qrcode': str|None, 'error': str|None}
+        """
+        api_url = getattr(settings, 'EVOLUTION_API_URL', '')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+
+        for tentativa in range(1, max_tentativas + 1):
+            logger.info(f"Tentativa {tentativa}/{max_tentativas} de obter QR Code para {instance_name}")
+
+            try:
+                # Tenta endpoint /instance/connect primeiro (gera QR se necessário)
+                response = requests.get(
+                    f"{api_url.rstrip('/')}/instance/connect/{instance_name}",
+                    headers={'Content-Type': 'application/json', 'apikey': api_key},
+                    timeout=15
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    qr_base64 = data.get('base64', '')
+
+                    if qr_base64:
+                        logger.info(f"QR Code obtido com sucesso na tentativa {tentativa}")
+                        return {'success': True, 'qrcode': qr_base64}
+
+                # Se não veio no connect, tenta endpoint específico de QR
+                response = requests.get(
+                    f"{api_url.rstrip('/')}/instance/qr/{instance_name}",
+                    headers={'Content-Type': 'application/json', 'apikey': api_key},
+                    timeout=15
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    qr_base64 = data.get('base64', '')
+
+                    if qr_base64:
+                        logger.info(f"QR Code obtido via /qr na tentativa {tentativa}")
+                        return {'success': True, 'qrcode': qr_base64}
+
+            except Exception as e:
+                logger.warning(f"Erro na tentativa {tentativa}: {e}")
+
+            # Aguardar antes da próxima tentativa
+            if tentativa < max_tentativas:
+                time.sleep(intervalo)
+
+        return {
+            'success': False,
+            'qrcode': None,
+            'error': f'QR Code não disponível após {max_tentativas} tentativas'
+        }
+
+    def conectar_whatsapp(self):
+        """
+        Método principal e robusto para conectar WhatsApp.
+
+        Fluxo:
+        1. Verifica se instância já existe na Evolution API
+        2. Se existe e está conectada -> retorna sucesso
+        3. Se existe mas não conectada -> obtém QR Code
+        4. Se não existe -> cria instância e obtém QR Code
+
+        Returns:
+            dict: {
+                'success': bool,
+                'qrcode': str|None,
+                'status': str,
+                'message': str,
+                'action': str  # 'already_connected', 'qrcode_ready', 'created', 'error'
+            }
+        """
+        # Gerar nome da instância
+        instance_name = self.config.gerar_instance_name()
+        logger.info(f"Iniciando conexão WhatsApp para instância: {instance_name}")
+
+        # 1. Verificar se instância já existe na Evolution API
+        busca = self._buscar_instancia_na_api(instance_name)
+
+        if busca.get('exists'):
+            status_api = busca.get('status', 'unknown')
+            logger.info(f"Instância {instance_name} já existe na API com status: {status_api}")
+
+            # Se já está conectada
+            if status_api == 'open':
+                self.config.status = 'conectado'
+                self.config.save()
+                return {
+                    'success': True,
+                    'qrcode': None,
+                    'status': 'conectado',
+                    'message': 'WhatsApp já está conectado!',
+                    'action': 'already_connected'
+                }
+
+            # Se está em outro status, tentar obter QR Code
+            qr_result = self._obter_qrcode_com_retry(instance_name)
+
+            if qr_result['success']:
+                self.config.qr_code = qr_result['qrcode']
+                self.config.qr_code_expira_em = now() + timedelta(minutes=2)
+                self.config.status = 'aguardando_qr'
+                self.config.save()
+
+                return {
+                    'success': True,
+                    'qrcode': qr_result['qrcode'],
+                    'status': 'aguardando_qr',
+                    'message': 'QR Code pronto! Escaneie com seu WhatsApp.',
+                    'action': 'qrcode_ready'
+                }
+            else:
+                # Instância existe mas não conseguiu QR - tentar deletar e recriar
+                logger.warning(f"Instância existe mas QR não disponível. Deletando para recriar...")
+                self._deletar_instancia_na_api(instance_name)
+                # Continua para criar nova instância
+
+        # 2. Criar nova instância
+        logger.info(f"Criando nova instância: {instance_name}")
+        criar_result = self._criar_instancia_na_api(instance_name)
+
+        if not criar_result['success']:
+            self.config.status = 'erro'
+            self.config.ultimo_erro = criar_result.get('error', 'Erro ao criar instância')
+            self.config.save()
+            return {
+                'success': False,
+                'qrcode': None,
+                'status': 'erro',
+                'message': criar_result.get('error', 'Erro ao criar instância'),
+                'action': 'error'
+            }
+
+        # Salvar dados da instância criada
+        instance_data = criar_result.get('data', {}).get('instance', {})
+        self.config.instance_name = instance_name
+        self.config.instance_token = instance_data.get('token', '')
+
+        # Salvar URL do webhook (URL única - identificação por instance_name)
+        self.config.webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', '') or f"{settings.SITE_URL}/api/webhooks/whatsapp/"
+
+        self.config.status = 'aguardando_qr'
+        self.config.save()
+
+        # Registrar no banco
+        from empresas.models import WhatsAppInstance
+        try:
+            WhatsAppInstance.objects.update_or_create(
+                empresa=self.config.empresa,
+                defaults={
+                    "instance_name": instance_name,
+                    "evolution_instance_id": instance_data.get("instanceId", ""),
+                    "status": "pending",
+                    "webhook_token": self.config.webhook_secret,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Erro ao salvar WhatsAppInstance: {e}")
+
+        # 3. Obter QR Code com retry
+        # Aguardar um pouco para a instância ficar pronta
+        time.sleep(1)
+
+        qr_result = self._obter_qrcode_com_retry(instance_name)
+
+        if qr_result['success']:
+            self.config.qr_code = qr_result['qrcode']
+            self.config.qr_code_expira_em = now() + timedelta(minutes=2)
+            self.config.save()
+
+            return {
+                'success': True,
+                'qrcode': qr_result['qrcode'],
+                'status': 'aguardando_qr',
+                'message': 'Instância criada! Escaneie o QR Code.',
+                'action': 'created'
+            }
+        else:
+            # Criou mas não conseguiu QR
+            return {
+                'success': False,
+                'qrcode': None,
+                'status': 'aguardando_qr',
+                'message': 'Instância criada mas QR Code ainda não disponível. Atualize a página em alguns segundos.',
+                'action': 'created_no_qr'
+            }
+
+    def _criar_instancia_na_api(self, instance_name):
+        """
+        Cria uma instância na Evolution API (método interno).
+        """
+        api_url = getattr(settings, 'EVOLUTION_API_URL', '')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+
+        if not api_url or not api_key:
+            return {'success': False, 'error': 'Evolution API não configurada'}
+
+        webhook_secret = self.config.gerar_webhook_secret()
+
+        # Usar N8N_WEBHOOK_URL diretamente (URL única para todas as empresas)
+        # A identificação da empresa é feita pelo instance_name no payload
+        webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', '') or f"{settings.SITE_URL}/api/webhooks/whatsapp/"
+
+        logger.info(f"Webhook configurado: {webhook_url}")
+
+        data = {
+            "instanceName": instance_name,
+            "token": webhook_secret,
+            "qrcode": True,
+            "integration": "WHATSAPP-BAILEYS",
+            "rejectCall": True,
+            "msgCall": "Não aceitamos chamadas. Por favor, envie mensagem de texto.",
+            "groupsIgnore": True,
+            "alwaysOnline": False,
+            "readMessages": False,
+            "readStatus": False,
+            "webhook": {
+                "url": webhook_url,
+                "byEvents": False,  # IMPORTANTE: False para enviar apikey e server_url no payload
+                "base64": True,
+                "events": [
+                    "MESSAGES_UPSERT",
+                ]
+            }
+        }
+
+        try:
+            response = requests.post(
+                f"{api_url.rstrip('/')}/instance/create",
+                headers={'Content-Type': 'application/json', 'apikey': api_key},
+                json=data,
+                timeout=30
+            )
+            response.raise_for_status()
+            logger.info(f"Instância {instance_name} criada com sucesso")
+            return {'success': True, 'data': response.json()}
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 403:
+                error_msg = "Acesso negado. Verifique a EVOLUTION_API_KEY."
+            elif e.response.status_code == 400:
+                # Pode ser que a instância já existe
+                error_msg = f"Erro 400: {e.response.text}"
+            else:
+                error_msg = f"Erro HTTP {e.response.status_code}"
+            logger.error(f"Erro ao criar instância: {error_msg}")
+            return {'success': False, 'error': error_msg}
+
+        except Exception as e:
+            logger.error(f"Erro ao criar instância: {e}")
+            return {'success': False, 'error': str(e)}
+
+    def _deletar_instancia_na_api(self, instance_name):
+        """
+        Deleta uma instância na Evolution API (método interno).
+        """
+        api_url = getattr(settings, 'EVOLUTION_API_URL', '')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+
+        try:
+            response = requests.delete(
+                f"{api_url.rstrip('/')}/instance/delete/{instance_name}",
+                headers={'Content-Type': 'application/json', 'apikey': api_key},
+                timeout=15
+            )
+            logger.info(f"Instância {instance_name} deletada: {response.status_code}")
+            return response.status_code in [200, 404]  # 404 = já não existia
+        except Exception as e:
+            logger.error(f"Erro ao deletar instância: {e}")
+            return False
+
     def criar_instancia(self):
         """
         Cria uma nova instância no Evolution API (modo self-service)
@@ -159,6 +477,21 @@ class EvolutionAPIService:
             response = requests.post(endpoint, headers=headers, json=data, timeout=30)
             response.raise_for_status()
             result = {'success': True, 'data': response.json()}
+        except requests.exceptions.HTTPError as e:
+            # Tratamento específico para erro 403 (Forbidden)
+            if e.response.status_code == 403:
+                error_msg = (
+                    f"Erro 403: Acesso negado pela Evolution API. "
+                    f"Verifique se a EVOLUTION_API_KEY está correta no arquivo .env. "
+                    f"API Key atual: {'***' + api_key[-4:] if len(api_key) > 4 else '(vazia)'}"
+                )
+                logger.error(error_msg)
+                logger.error(f"URL tentada: {endpoint}")
+                logger.error(f"Headers enviados: {{'Content-Type': 'application/json', 'apikey': '***'}}")
+                result = {'success': False, 'error': error_msg}
+            else:
+                logger.error(f"Erro HTTP {e.response.status_code} na requisição Evolution API: {e}")
+                result = {'success': False, 'error': str(e)}
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro na requisição Evolution API: {e}")
             result = {'success': False, 'error': str(e)}
