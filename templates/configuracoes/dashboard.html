@@ -1,204 +1,142 @@
 {% extends 'base.html' %}
 
-{% block title %}Configurações – {{ empresa.nome }}{% endblock %}
+{% block title %}Configuracoes - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-4">
-  
+<div class="container-fluid py-3 px-3 px-lg-4">
+
   <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h2 class="fw-bold mb-1">Configurações</h2>
-      <p class="text-muted mb-0">Gerencie os dados do seu negócio</p>
-    </div>
+  <div class="page-header">
+    <h2>Configuracoes</h2>
+    <p class="text-muted mb-0">Gerencie seu negocio</p>
   </div>
 
-  <!-- Cards de Configurações -->
-  <div class="row g-4">
-    
-    <!-- Serviços -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'servicos_lista' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-scissors text-primary" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">Serviços</h5>
-            <p class="text-muted mb-2">Gerencie seus serviços</p>
-            <h3 class="text-primary fw-bold">{{ total_servicos }}</h3>
-            <small class="text-muted">serviços ativos</small>
-          </div>
-        </div>
-      </a>
-    </div>
+  <!-- Grid de Cards -->
+  <div class="config-grid mb-4">
+
+    <!-- Servicos -->
+    <a href="{% url 'servicos_lista' %}" class="config-card">
+      <i class="bi bi-scissors config-card-icon text-primary"></i>
+      <span class="config-card-title">Servicos</span>
+      <span class="config-card-value">{{ total_servicos }}</span>
+      <span class="config-card-subtitle">ativos</span>
+    </a>
 
     <!-- Profissionais -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'profissionais_lista' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-person-badge text-success" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">Profissionais</h5>
-            <p class="text-muted mb-2">Equipe</p>
-            <h3 class="text-success fw-bold">{{ total_profissionais }}</h3>
-            <small class="text-muted">profissionais ativos</small>
-          </div>
-        </div>
-      </a>
-    </div>
+    <a href="{% url 'profissionais_lista' %}" class="config-card">
+      <i class="bi bi-person-badge config-card-icon text-success"></i>
+      <span class="config-card-title">Profissionais</span>
+      <span class="config-card-value">{{ total_profissionais }}</span>
+      <span class="config-card-subtitle">ativos</span>
+    </a>
 
-    <!-- Categorias Financeiras -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'categorias_lista' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-tags text-warning" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">Categorias</h5>
-            <p class="text-muted mb-2">Categorias financeiras</p>
-            <h3 class="text-warning fw-bold">{{ total_categorias }}</h3>
-            <small class="text-muted">categorias ativas</small>
-          </div>
-        </div>
-      </a>
-    </div>
+    <!-- Categorias -->
+    <a href="{% url 'categorias_lista' %}" class="config-card">
+      <i class="bi bi-tags config-card-icon text-warning"></i>
+      <span class="config-card-title">Categorias</span>
+      <span class="config-card-value">{{ total_categorias }}</span>
+      <span class="config-card-subtitle">ativas</span>
+    </a>
 
     <!-- Formas de Pagamento -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'formas_pagamento_lista' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-credit-card text-info" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">Pagamentos</h5>
-            <p class="text-muted mb-2">Formas de pagamento</p>
-            <h3 class="text-info fw-bold">{{ total_formas_pagamento }}</h3>
-            <small class="text-muted">formas ativas</small>
-          </div>
-        </div>
-      </a>
-    </div>
+    <a href="{% url 'formas_pagamento_lista' %}" class="config-card">
+      <i class="bi bi-credit-card config-card-icon text-info"></i>
+      <span class="config-card-title">Pagamentos</span>
+      <span class="config-card-value">{{ total_formas_pagamento }}</span>
+      <span class="config-card-subtitle">formas</span>
+    </a>
+
+    <!-- Usuarios -->
+    <a href="{% url 'usuarios_lista' %}" class="config-card">
+      <i class="bi bi-people config-card-icon" style="color: #7c3aed;"></i>
+      <span class="config-card-title">Usuarios</span>
+      <span class="config-card-value">{{ total_usuarios }}</span>
+      <span class="config-card-subtitle">ativos</span>
+    </a>
 
     <!-- Assinatura -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'configuracoes_assinatura' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-star-fill text-warning" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">Assinatura</h5>
-            <p class="text-muted mb-2">Gerenciar plano</p>
-            <h3 class="text-warning fw-bold">
-              {% if empresa.assinatura %}
-                {{ empresa.assinatura.plano.get_nome_display|truncatechars:8 }}
-              {% else %}
-                -
-              {% endif %}
-            </h3>
-            <small class="text-muted">
-              {% if empresa.assinatura %}
-                {{ empresa.assinatura.get_status_display }}
-              {% else %}
-                sem assinatura
-              {% endif %}
-            </small>
-          </div>
-        </div>
-      </a>
-    </div>
+    <a href="{% url 'configuracoes_assinatura' %}" class="config-card">
+      <i class="bi bi-star config-card-icon text-warning"></i>
+      <span class="config-card-title">Assinatura</span>
+      <span class="config-card-value" style="font-size: 0.875rem;">
+        {% if empresa.assinatura %}{{ empresa.assinatura.plano.get_nome_display|truncatechars:10 }}{% else %}-{% endif %}
+      </span>
+      <span class="config-card-subtitle">
+        {% if empresa.assinatura %}{{ empresa.assinatura.get_status_display }}{% else %}sem plano{% endif %}
+      </span>
+    </a>
 
     <!-- WhatsApp -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <a href="{% url 'whatsapp_dashboard' %}" class="text-decoration-none">
-        <div class="card shadow-sm h-100 border-0 hover-card">
-          <div class="card-body text-center">
-            <div class="mb-3">
-              <i class="bi bi-whatsapp text-success" style="font-size: 3rem;"></i>
-            </div>
-            <h5 class="card-title fw-bold">WhatsApp</h5>
-            <p class="text-muted mb-2">Integração</p>
-            <h3 class="text-success fw-bold">
-              {% if empresa.config_whatsapp.esta_conectado %}
-                <i class="bi bi-check-circle-fill"></i>
-              {% else %}
-                <i class="bi bi-x-circle-fill text-secondary"></i>
-              {% endif %}
-            </h3>
-            <small class="text-muted">
-              {% if empresa.config_whatsapp %}
-                {{ empresa.config_whatsapp.get_status_display }}
-              {% else %}
-                não configurado
-              {% endif %}
-            </small>
-          </div>
-        </div>
-      </a>
-    </div>
+    <a href="{% url 'whatsapp_dashboard' %}" class="config-card">
+      <i class="bi bi-whatsapp config-card-icon text-success"></i>
+      <span class="config-card-title">WhatsApp</span>
+      <span class="config-card-value">
+        {% if empresa.config_whatsapp.esta_conectado %}
+          <i class="bi bi-check-circle text-success"></i>
+        {% else %}
+          <i class="bi bi-x-circle text-secondary"></i>
+        {% endif %}
+      </span>
+      <span class="config-card-subtitle">
+        {% if empresa.config_whatsapp %}{{ empresa.config_whatsapp.get_status_display }}{% else %}nao config.{% endif %}
+      </span>
+    </a>
+
+    <!-- Alterar Senha -->
+    <a href="{% url 'alterar_senha' %}" class="config-card">
+      <i class="bi bi-key config-card-icon text-secondary"></i>
+      <span class="config-card-title">Senha</span>
+      <span class="config-card-value"><i class="bi bi-shield-lock"></i></span>
+      <span class="config-card-subtitle">alterar</span>
+    </a>
 
   </div>
 
   <!-- Dados da Empresa -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 fw-semibold">
-            <i class="bi bi-building me-2"></i>
-            Dados da Empresa
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="text-muted small">Nome</label>
-              <p class="fw-semibold mb-0">{{ empresa.nome }}</p>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="text-muted small">CNPJ/CPF</label>
-              <p class="fw-semibold mb-0">{{ empresa.cnpj|default:"Não informado" }}</p>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="text-muted small">Telefone</label>
-              <p class="fw-semibold mb-0">{{ empresa.telefone|default:"Não informado" }}</p>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="text-muted small">E-mail</label>
-              <p class="fw-semibold mb-0">{{ empresa.email|default:"Não informado" }}</p>
-            </div>
-            <div class="col-md-12">
-              <label class="text-muted small">Endereço</label>
-              <p class="fw-semibold mb-0">
-                {{ empresa.endereco|default:"" }}
-                {% if empresa.cidade and empresa.estado %}
-                  - {{ empresa.cidade }}/{{ empresa.estado }}
-                {% endif %}
-              </p>
-            </div>
+  <div class="card card-clean">
+    <div class="card-body">
+      <h6 class="mb-3" style="font-size: 0.8125rem; font-weight: 600; color: #6b7280;">
+        <i class="bi bi-building me-2"></i>DADOS DA EMPRESA
+      </h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="mb-2">
+            <small class="text-muted d-block" style="font-size: 0.6875rem;">NOME</small>
+            <span style="font-size: 0.875rem;">{{ empresa.nome }}</span>
           </div>
         </div>
+        <div class="col-md-6">
+          <div class="mb-2">
+            <small class="text-muted d-block" style="font-size: 0.6875rem;">CNPJ/CPF</small>
+            <span style="font-size: 0.875rem;">{{ empresa.cnpj|default:"-" }}</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-2">
+            <small class="text-muted d-block" style="font-size: 0.6875rem;">TELEFONE</small>
+            <span style="font-size: 0.875rem;">{{ empresa.telefone|default:"-" }}</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-2">
+            <small class="text-muted d-block" style="font-size: 0.6875rem;">E-MAIL</small>
+            <span style="font-size: 0.875rem;">{{ empresa.email|default:"-" }}</span>
+          </div>
+        </div>
+        {% if empresa.endereco or empresa.cidade %}
+        <div class="col-12">
+          <div class="mb-0">
+            <small class="text-muted d-block" style="font-size: 0.6875rem;">ENDERECO</small>
+            <span style="font-size: 0.875rem;">
+              {{ empresa.endereco|default:"" }}
+              {% if empresa.cidade and empresa.estado %} - {{ empresa.cidade }}/{{ empresa.estado }}{% endif %}
+            </span>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
 
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-  .hover-card {
-    transition: all 0.3s ease;
-  }
-  
-  .hover-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  }
-</style>
 {% endblock %}

@@ -1,87 +1,61 @@
 {% extends 'base.html' %}
 
-{% block title %}Serviços – {{ empresa.nome }}{% endblock %}
+{% block title %}Servicos - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-4">
-  
+<div class="container-fluid py-3 px-3 px-lg-4">
+
   <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-2">
-              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
-              <li class="breadcrumb-item active">Serviços</li>
-            </ol>
-          </nav>
-          <h2 class="fw-bold mb-0">Serviços</h2>
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div class="page-header mb-0">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-clean">
+          <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+          <li class="breadcrumb-item active">Servicos</li>
+        </ol>
+      </nav>
+      <h2>Servicos</h2>
+    </div>
+    <a href="{% url 'servico_criar' %}" class="btn btn-primary btn-sm-clean">
+      <i class="bi bi-plus me-1"></i>Novo
+    </a>
+  </div>
+
+  <!-- Lista -->
+  <div class="card card-clean">
+    <div class="card-body p-0">
+      {% for servico in servicos %}
+      <div class="list-item-clean {% if not servico.ativo %}opacity-50{% endif %}">
+        <div class="list-item-avatar bg-primary text-white">
+          <i class="bi bi-scissors"></i>
         </div>
-        <div>
-          <a href="{% url 'servico_criar' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Novo Serviço
+        <div class="list-item-content">
+          <p class="list-item-title">
+            {{ servico.nome }}
+            {% if not servico.ativo %}<span class="badge-clean bg-secondary ms-1">inativo</span>{% endif %}
+          </p>
+          <p class="list-item-subtitle">
+            R$ {{ servico.preco|floatformat:2 }} &bull; {{ servico.duracao_minutos }}min
+          </p>
+        </div>
+        <div class="list-item-actions">
+          <a href="{% url 'servico_editar' servico.id %}" class="btn btn-icon btn-outline-secondary" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a href="{% url 'servico_deletar' servico.id %}" class="btn btn-icon btn-outline-danger" title="Excluir">
+            <i class="bi bi-trash"></i>
           </a>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Tabela -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0">
-              <thead class="bg-light">
-                <tr>
-                  <th>Nome</th>
-                  <th>Descrição</th>
-                  <th>Duração</th>
-                  <th>Preço</th>
-                  <th>Status</th>
-                  <th class="text-end">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for servico in servicos %}
-                <tr>
-                  <td><strong>{{ servico.nome }}</strong></td>
-                  <td>{{ servico.descricao|truncatewords:10 }}</td>
-                  <td>{{ servico.duracao }} min</td>
-                  <td><strong class="text-success">R$ {{ servico.preco|floatformat:2 }}</strong></td>
-                  <td>
-                    {% if servico.ativo %}
-                      <span class="badge bg-success">Ativo</span>
-                    {% else %}
-                      <span class="badge bg-secondary">Inativo</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-end">
-                    <div class="btn-group btn-group-sm">
-                      <a href="{% url 'servico_editar' servico.id %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                      <a href="{% url 'servico_deletar' servico.id %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="6" class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                    <p class="mb-0">Nenhum serviço cadastrado</p>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="bi bi-scissors empty-state-icon"></i>
+        <p class="empty-state-text">Nenhum servico cadastrado</p>
+        <a href="{% url 'servico_criar' %}" class="btn btn-primary btn-sm-clean mt-2">
+          <i class="bi bi-plus me-1"></i>Adicionar
+        </a>
       </div>
+      {% endfor %}
     </div>
   </div>
 

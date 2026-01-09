@@ -550,3 +550,306 @@ body {
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+
+
+/* ============================================
+   CONFIGURACOES - DESIGN CLEAN
+   ============================================ */
+
+/* Page Header Clean */
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1,
+.page-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.page-header .text-muted {
+  font-size: 0.8125rem;
+}
+
+/* Breadcrumb Compacto */
+.breadcrumb-clean {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.breadcrumb-clean .breadcrumb-item + .breadcrumb-item::before {
+  font-size: 0.875rem;
+}
+
+/* Botoes Compactos */
+.btn-sm-clean {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+}
+
+/* Cards Clean */
+.card-clean {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card-clean:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.card-clean .card-body {
+  padding: 1rem;
+}
+
+/* Card Item - Para listas de itens */
+.card-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.card-item:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.card-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Grid Clean para Dashboard */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.config-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+  text-align: center;
+  min-height: 120px;
+}
+
+.config-card:hover {
+  border-color: var(--sidebar-active);
+  background: #f8fafc;
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.config-card-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.config-card-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+.config-card-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--sidebar-active);
+}
+
+.config-card-subtitle {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* Status Badge Clean */
+.badge-clean {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Tabelas Clean */
+.table-clean {
+  font-size: 0.8125rem;
+}
+
+.table-clean th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.table-clean td {
+  padding: 0.625rem 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.table-clean tbody tr:hover {
+  background-color: #fafafa;
+}
+
+/* Form Clean */
+.form-label-clean {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.375rem;
+}
+
+.form-control-clean {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+.form-control-clean:focus {
+  border-color: var(--sidebar-active);
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+/* List Group Clean */
+.list-item-clean {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  margin-bottom: 0.375rem;
+  transition: all 0.15s ease;
+}
+
+.list-item-clean:hover {
+  background: #fafafa;
+  border-color: #d1d5db;
+}
+
+.list-item-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.list-item-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.list-item-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+/* Action Buttons - Icone apenas */
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+/* Empty State Clean */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  font-size: 0.8125rem;
+}
+
+/* Section Divider */
+.section-divider {
+  border: 0;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Alert Clean */
+.alert-clean {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  border-radius: 0.375rem;
+  border: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .config-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header h1,
+  .page-header h2 {
+    font-size: 1.125rem;
+  }
+}

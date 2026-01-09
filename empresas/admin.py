@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Empresa, Servico, Profissional, HorarioFuncionamento, DataEspecial
+from .models import (
+    Empresa, Servico, Profissional, HorarioFuncionamento, DataEspecial,
+    ConfiguracaoWhatsApp, WhatsAppInstance
+)
 
 
 class AssinaturaInline(admin.StackedInline):
@@ -81,4 +84,98 @@ class DataEspecialAdmin(admin.ModelAdmin):
         elif obj.hora_abertura and obj.hora_fechamento:
             return f"{obj.hora_abertura.strftime('%H:%M')} - {obj.hora_fechamento.strftime('%H:%M')}"
         return '-'
-    horarios.short_description = 'Horários'
+    horarios.short_description = 'Horarios'
+
+
+@admin.register(ConfiguracaoWhatsApp)
+class ConfiguracaoWhatsAppAdmin(admin.ModelAdmin):
+    list_display = (
+        'empresa', 'status_display', 'instance_name', 'numero_conectado',
+        'ultima_sincronizacao', 'ativo'
+    )
+    list_filter = ('status', 'ativo')
+    search_fields = ('empresa__nome', 'instance_name', 'numero_conectado')
+    readonly_fields = (
+        'criado_em', 'atualizado_em', 'ultima_sincronizacao',
+        'qr_code_display', 'metadados'
+    )
+
+    fieldsets = (
+        ('Empresa', {
+            'fields': ('empresa', 'ativo')
+        }),
+        ('Evolution API', {
+            'fields': ('evolution_api_url', 'evolution_api_key'),
+            'classes': ('collapse',),
+        }),
+        ('Instancia', {
+            'fields': ('instance_name', 'instance_token', 'status')
+        }),
+        ('Conexao', {
+            'fields': ('numero_conectado', 'nome_perfil', 'foto_perfil_url')
+        }),
+        ('QR Code', {
+            'fields': ('qr_code_display', 'qr_code_expira_em'),
+            'classes': ('collapse',),
+        }),
+        ('Webhook', {
+            'fields': ('webhook_url', 'webhook_secret'),
+            'classes': ('collapse',),
+        }),
+        ('Metadados', {
+            'fields': ('metadados', 'ultimo_erro'),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('criado_em', 'atualizado_em', 'ultima_sincronizacao'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def status_display(self, obj):
+        colors = {
+            'nao_configurado': '#6b7280',
+            'aguardando_qr': '#f59e0b',
+            'conectando': '#3b82f6',
+            'conectado': '#10b981',
+            'desconectado': '#ef4444',
+            'erro': '#dc2626',
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_display.short_description = 'Status'
+
+    def qr_code_display(self, obj):
+        if obj.qr_code:
+            return format_html(
+                '<img src="data:image/png;base64,{}" style="max-width: 200px;"/>',
+                obj.qr_code
+            )
+        return '-'
+    qr_code_display.short_description = 'QR Code'
+
+
+@admin.register(WhatsAppInstance)
+class WhatsAppInstanceAdmin(admin.ModelAdmin):
+    list_display = (
+        'empresa', 'instance_name', 'status', 'evolution_instance_id', 'criado_em'
+    )
+    list_filter = ('status', 'empresa')
+    search_fields = ('empresa__nome', 'instance_name', 'evolution_instance_id')
+    readonly_fields = ('criado_em', 'atualizado_em')
+
+    fieldsets = (
+        (None, {
+            'fields': ('empresa', 'instance_name', 'status')
+        }),
+        ('Evolution API', {
+            'fields': ('evolution_instance_id', 'webhook_token')
+        }),
+        ('Timestamps', {
+            'fields': ('criado_em', 'atualizado_em'),
+            'classes': ('collapse',),
+        }),
+    )

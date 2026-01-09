@@ -2,7 +2,6 @@
 Service Layer para integração com Evolution API
 Documentação: https://doc.evolution-api.com/v2/pt/
 """
-from unittest import result
 import requests
 import logging
 from django.conf import settings
@@ -178,11 +177,11 @@ class EvolutionAPIService:
             logger.info(f"Instância criada com sucesso: {instance_name}")
 
             # ✅ Salva registro da instância vinculada à empresa
-            from whatsapp.models import WhatsAppInstance
+            from empresas.models import WhatsAppInstance
 
             try:
                 WhatsAppInstance.objects.update_or_create(
-                    empresa=self.config.empresa,  # <-- Corrigido: vincula à empresa
+                    empresa=self.config.empresa,
                     defaults={
                         "instance_name": instance_name,
                         "evolution_instance_id": instance_data.get("instanceId", ""),
@@ -694,11 +693,6 @@ class EvolutionAPIService:
         return {'success': True, 'processed': False, 'type': 'unknown_event'}
 
     
-    def _request(self, method, endpoint, data=None, instance_token=None):
-        base_url = self.base_url or getattr(settings, 'EVOLUTION_API_URL', '')
-        url = f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
-        ...
-
     def resetar_instancia(self):
         """
         Reseta completamente a configuração WhatsApp local,

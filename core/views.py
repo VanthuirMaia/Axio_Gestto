@@ -430,8 +430,62 @@ def password_reset_confirm(request, uidb64, token):
 
 @require_http_methods(["GET"])
 def password_reset_complete(request):
-    """Página final confirmando sucesso"""
+    """Pagina final confirmando sucesso"""
     return render(request, 'password_reset_complete.html')
+
+
+# ==========================================
+# ALTERAR SENHA (USUARIO LOGADO)
+# ==========================================
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def alterar_senha(request):
+    """
+    Permite que o usuario logado altere sua propria senha.
+    Requer a senha atual para confirmacao.
+    """
+    if request.method == 'POST':
+        senha_atual = request.POST.get('senha_atual')
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        usuario = request.user
+
+        # Verificar senha atual
+        if not usuario.check_password(senha_atual):
+            messages.error(request, 'Senha atual incorreta.')
+            return render(request, 'alterar_senha.html')
+
+        # Verificar se as novas senhas coincidem
+        if nova_senha != confirmar_senha:
+            messages.error(request, 'As novas senhas nao coincidem.')
+            return render(request, 'alterar_senha.html')
+
+        # Validar a nova senha
+        try:
+            password_validation.validate_password(nova_senha, usuario)
+        except ValidationError as e:
+            for error in e.messages:
+                messages.error(request, error)
+            return render(request, 'alterar_senha.html')
+
+        # Verificar se a nova senha e diferente da atual
+        if usuario.check_password(nova_senha):
+            messages.error(request, 'A nova senha deve ser diferente da senha atual.')
+            return render(request, 'alterar_senha.html')
+
+        # Alterar senha
+        usuario.set_password(nova_senha)
+        usuario.save()
+
+        # Reautenticar o usuario para nao deslogar
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, usuario)
+
+        messages.success(request, 'Senha alterada com sucesso!')
+        return redirect('configuracoes_dashboard')
+
+    return render(request, 'alterar_senha.html')
 
 
 # ==========================================

@@ -1,97 +1,63 @@
 {% extends 'base.html' %}
 
-{% block title %}Profissionais – {{ empresa.nome }}{% endblock %}
+{% block title %}Profissionais - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-4">
+<div class="container-fluid py-3 px-3 px-lg-4">
 
   <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-2">
-              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
-              <li class="breadcrumb-item active">Profissionais</li>
-            </ol>
-          </nav>
-          <h2 class="fw-bold mb-0">Profissionais</h2>
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div class="page-header mb-0">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-clean">
+          <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+          <li class="breadcrumb-item active">Profissionais</li>
+        </ol>
+      </nav>
+      <h2>Profissionais</h2>
+    </div>
+    <a href="{% url 'profissional_criar' %}" class="btn btn-primary btn-sm-clean">
+      <i class="bi bi-plus me-1"></i>Novo
+    </a>
+  </div>
+
+  <!-- Lista -->
+  <div class="card card-clean">
+    <div class="card-body p-0">
+      {% for prof in profissionais %}
+      <div class="list-item-clean {% if not prof.ativo %}opacity-50{% endif %}">
+        <div class="list-item-avatar bg-success text-white">
+          <i class="bi bi-person"></i>
         </div>
-        <div>
-          <a href="{% url 'profissional_criar' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Novo Profissional
+        <div class="list-item-content">
+          <p class="list-item-title">
+            {{ prof.nome }}
+            {% if not prof.ativo %}<span class="badge-clean bg-secondary ms-1">inativo</span>{% endif %}
+          </p>
+          <p class="list-item-subtitle">
+            {% if prof.especialidade %}{{ prof.especialidade }}{% endif %}
+            {% if prof.telefone %}&bull; {{ prof.telefone }}{% endif %}
+          </p>
+        </div>
+        <div class="list-item-actions">
+          <a href="{% url 'profissional_editar' prof.id %}" class="btn btn-icon btn-outline-secondary" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a href="{% url 'profissional_deletar' prof.id %}" class="btn btn-icon btn-outline-danger" title="Excluir">
+            <i class="bi bi-trash"></i>
           </a>
         </div>
       </div>
-    </div>
-  </div>
-
-
-  <!-- Cards de Profissionais -->
-  <div class="row g-3">
-    {% for prof in profissionais %}
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="flex-grow-1">
-              <div class="d-flex align-items-center mb-2">
-                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-2" 
-                     style="width: 45px; height: 45px;">
-                  <i class="bi bi-person-fill text-white fs-5"></i>
-                </div>
-                <div>
-                  <h5 class="card-title mb-0">{{ prof.nome }}</h5>
-                  {% if prof.ativo %}
-                    <span class="badge bg-success">Ativo</span>
-                  {% else %}
-                    <span class="badge bg-secondary">Inativo</span>
-                  {% endif %}
-                </div>
-              </div>
-              
-              {% if prof.especialidade %}
-              <p class="text-muted small mb-2">
-                <i class="bi bi-star me-1"></i>{{ prof.especialidade }}
-              </p>
-              {% endif %}
-              
-              {% if prof.telefone %}
-              <p class="text-muted small mb-1">
-                <i class="bi bi-telephone me-1"></i>{{ prof.telefone }}
-              </p>
-              {% endif %}
-              
-              {% if prof.email %}
-              <p class="text-muted small mb-0">
-                <i class="bi bi-envelope me-1"></i>{{ prof.email }}
-              </p>
-              {% endif %}
-            </div>
-          </div>
-          
-          <div class="d-flex gap-2 mt-3">
-            <a href="{% url 'profissional_editar' prof.id %}" class="btn btn-sm btn-outline-primary flex-grow-1">
-              <i class="bi bi-pencil me-1"></i>Editar
-            </a>
-            <a href="{% url 'profissional_deletar' prof.id %}" class="btn btn-sm btn-outline-danger">
-              <i class="bi bi-trash"></i>
-            </a>
-          </div>
-        </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="bi bi-person-badge empty-state-icon"></i>
+        <p class="empty-state-text">Nenhum profissional cadastrado</p>
+        <a href="{% url 'profissional_criar' %}" class="btn btn-primary btn-sm-clean mt-2">
+          <i class="bi bi-plus me-1"></i>Adicionar
+        </a>
       </div>
+      {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body text-center py-5 text-muted">
-          <i class="bi bi-person-badge fs-1 d-block mb-2"></i>
-          <p class="mb-0">Nenhum profissional cadastrado</p>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
   </div>
 
 </div>

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Alterar Senha - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+          <li class="breadcrumb-item active">Alterar Senha</li>
+        </ol>
+      </nav>
+      <h2 class="fw-bold mb-1">
+        <i class="bi bi-shield-lock me-2"></i>
+        Alterar Senha
+      </h2>
+      <p class="text-muted mb-0">Atualize sua senha de acesso ao sistema</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-key me-2"></i>
+            Nova Senha
+          </h5>
+        </div>
+        <div class="card-body">
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {% if message.tags == 'error' or message.tags == 'danger' %}
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {% elif message.tags == 'success' %}
+                  <i class="bi bi-check-circle-fill me-2"></i>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Dica de seguranca:</strong> Use uma senha forte com pelo menos 8 caracteres,
+            combinando letras, numeros e simbolos.
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="senha_atual" class="form-label fw-semibold">
+                <i class="bi bi-lock me-1"></i>
+                Senha Atual
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="senha_atual"
+                name="senha_atual"
+                placeholder="Digite sua senha atual"
+                required
+                autocomplete="current-password"
+              >
+            </div>
+
+            <hr class="my-4">
+
+            <div class="mb-3">
+              <label for="nova_senha" class="form-label fw-semibold">
+                <i class="bi bi-key me-1"></i>
+                Nova Senha
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="nova_senha"
+                name="nova_senha"
+                placeholder="Digite a nova senha"
+                required
+                minlength="8"
+                autocomplete="new-password"
+              >
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Minimo de 8 caracteres. Nao pode ser totalmente numerica.
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="confirmar_senha" class="form-label fw-semibold">
+                <i class="bi bi-key-fill me-1"></i>
+                Confirmar Nova Senha
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="confirmar_senha"
+                name="confirmar_senha"
+                placeholder="Confirme a nova senha"
+                required
+                minlength="8"
+                autocomplete="new-password"
+              >
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Cancelar
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>
+                Alterar Senha
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

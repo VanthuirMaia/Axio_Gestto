@@ -16,17 +16,20 @@ from django.utils.safestring import mark_safe
 
 @login_required
 def configuracoes_dashboard(request):
-    """Dashboard de configurações"""
+    """Dashboard de configuracoes"""
+    from core.models import Usuario
+
     empresa = request.user.empresa
-    
+
     context = {
         'empresa': empresa,
         'total_servicos': Servico.objects.filter(empresa=empresa, ativo=True).count(),
         'total_profissionais': Profissional.objects.filter(empresa=empresa, ativo=True).count(),
         'total_categorias': CategoriaFinanceira.objects.filter(empresa=empresa, ativo=True).count(),
         'total_formas_pagamento': FormaPagamento.objects.filter(empresa=empresa, ativo=True).count(),
+        'total_usuarios': Usuario.objects.filter(empresa=empresa, ativo=True).count(),
     }
-    
+
     return render(request, 'configuracoes/dashboard.html', context)
 
 
@@ -244,6 +247,233 @@ def forma_pagamento_editar(request, pk):
     }
     
     return render(request, 'configuracoes/forma_pagamento_form.html', context)
+
+
+# ==========================================
+# USUARIOS DA EMPRESA
+# ==========================================
+
+@login_required
+def usuarios_lista(request):
+    """Lista todos os usuarios da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuarios = Usuario.objects.filter(empresa=empresa).order_by('-criado_em')
+    usuarios_ativos = usuarios.filter(ativo=True).count()
+
+    # Verificar limite do plano
+    assinatura = getattr(empresa, 'assinatura', None)
+    if assinatura and assinatura.plano:
+        max_usuarios = assinatura.plano.max_usuarios
+        pode_criar = usuarios_ativos < max_usuarios
+    else:
+        max_usuarios = 1  # Sem plano = limite minimo
+        pode_criar = usuarios_ativos < max_usuarios
+
+    context = {
+        'empresa': empresa,
+        'usuarios': usuarios,
+        'total_usuarios': usuarios.count(),
+        'usuarios_ativos': usuarios_ativos,
+        'max_usuarios': max_usuarios,
+        'pode_criar': pode_criar,
+    }
+
+    return render(request, 'configuracoes/usuarios_lista.html', context)
+
+
+@login_required
+def usuario_criar(request):
+    """Cria um novo usuario para a empresa"""
+    from core.models import Usuario
+    from django.contrib.auth import password_validation
+    from django.core.exceptions import ValidationError
+
+    empresa = request.user.empresa
+
+    # Verificar limite do plano
+    usuarios_ativos = Usuario.objects.filter(empresa=empresa, ativo=True).count()
+    assinatura = getattr(empresa, 'assinatura', None)
+
+    if assinatura and assinatura.plano:
+        max_usuarios = assinatura.plano.max_usuarios
+        plano_nome = assinatura.plano.get_nome_display()
+    else:
+        max_usuarios = 1
+        plano_nome = 'Sem plano'
+
+    if usuarios_ativos >= max_usuarios:
+        messages.error(
+            request,
+            f'Limite de usuarios atingido! Seu plano ({plano_nome}) permite ate {max_usuarios} usuario(s). '
+            f'Faca upgrade do plano para adicionar mais usuarios.'
+        )
+        return redirect('usuarios_lista')
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        telefone = request.POST.get('telefone', '').strip()
+        senha = request.POST.get('senha', '')
+        confirmar_senha = request.POST.get('confirmar_senha', '')
+        is_admin = request.POST.get('is_admin') == 'on'
+
+        # Validacoes
+        erros = []
+
+        if not nome:
+            erros.append('Nome e obrigatorio.')
+
+        if not email:
+            erros.append('Email e obrigatorio.')
+        elif Usuario.objects.filter(email=email).exists():
+            erros.append('Ja existe um usuario com este email.')
+
+        if not senha:
+            erros.append('Senha e obrigatoria.')
+        elif senha != confirmar_senha:
+            erros.append('As senhas nao coincidem.')
+        else:
+            try:
+                password_validation.validate_password(senha)
+            except ValidationError as e:
+                erros.extend(e.messages)
+
+        if erros:
+            for erro in erros:
+                messages.error(request, erro)
+            return render(request, 'configuracoes/usuario_form.html', {
+                'empresa': empresa,
+                'form_data': request.POST,
+            })
+
+        # Criar usuario
+        username = email.split('@')[0]
+        # Garantir username unico
+        base_username = username
+        counter = 1
+        while Usuario.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        usuario = Usuario.objects.create_user(
+            username=username,
+            email=email,
+            password=senha,
+            first_name=nome.split()[0] if nome else '',
+            last_name=' '.join(nome.split()[1:]) if len(nome.split()) > 1 else '',
+            empresa=empresa,
+            telefone=telefone,
+            is_staff=is_admin,
+            ativo=True,
+        )
+
+        messages.success(request, f'Usuario "{nome}" criado com sucesso!')
+        return redirect('usuarios_lista')
+
+    return render(request, 'configuracoes/usuario_form.html', {'empresa': empresa})
+
+
+@login_required
+def usuario_editar(request, pk):
+    """Edita um usuario da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuario = get_object_or_404(Usuario, pk=pk, empresa=empresa)
+
+    # Nao permitir editar a si mesmo por esta tela (usar alterar senha)
+    if usuario == request.user:
+        messages.warning(request, 'Para editar seu proprio perfil, use a opcao "Alterar Senha".')
+        return redirect('usuarios_lista')
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        telefone = request.POST.get('telefone', '').strip()
+        is_admin = request.POST.get('is_admin') == 'on'
+        ativo = request.POST.get('ativo') == 'on'
+        nova_senha = request.POST.get('nova_senha', '').strip()
+
+        # Validacoes
+        erros = []
+
+        if not nome:
+            erros.append('Nome e obrigatorio.')
+
+        if not email:
+            erros.append('Email e obrigatorio.')
+        elif Usuario.objects.filter(email=email).exclude(pk=pk).exists():
+            erros.append('Ja existe outro usuario com este email.')
+
+        if nova_senha:
+            from django.contrib.auth import password_validation
+            from django.core.exceptions import ValidationError
+            try:
+                password_validation.validate_password(nova_senha)
+            except ValidationError as e:
+                erros.extend(e.messages)
+
+        if erros:
+            for erro in erros:
+                messages.error(request, erro)
+            return render(request, 'configuracoes/usuario_form.html', {
+                'empresa': empresa,
+                'usuario': usuario,
+                'editando': True,
+            })
+
+        # Atualizar usuario
+        usuario.first_name = nome.split()[0] if nome else ''
+        usuario.last_name = ' '.join(nome.split()[1:]) if len(nome.split()) > 1 else ''
+        usuario.email = email
+        usuario.telefone = telefone
+        usuario.is_staff = is_admin
+        usuario.ativo = ativo
+
+        if nova_senha:
+            usuario.set_password(nova_senha)
+
+        usuario.save()
+
+        messages.success(request, f'Usuario "{nome}" atualizado com sucesso!')
+        return redirect('usuarios_lista')
+
+    context = {
+        'empresa': empresa,
+        'usuario': usuario,
+        'editando': True,
+    }
+
+    return render(request, 'configuracoes/usuario_form.html', context)
+
+
+@login_required
+def usuario_deletar(request, pk):
+    """Deleta (desativa) um usuario da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuario = get_object_or_404(Usuario, pk=pk, empresa=empresa)
+
+    # Nao permitir deletar a si mesmo
+    if usuario == request.user:
+        messages.error(request, 'Voce nao pode deletar seu proprio usuario.')
+        return redirect('usuarios_lista')
+
+    # Nao deletar, apenas desativar
+    if request.method == 'POST':
+        usuario.ativo = False
+        usuario.save()
+        messages.success(request, f'Usuario "{usuario.get_full_name()}" desativado.')
+        return redirect('usuarios_lista')
+
+    return render(request, 'configuracoes/usuario_confirmar_delete.html', {
+        'empresa': empresa,
+        'usuario': usuario,
+    })
+
 
 # ==========================================
 # PROFISSIONAIS
@@ -747,8 +977,54 @@ def whatsapp_sincronizar(request):
         })
 
 
+@login_required
+def whatsapp_resetar_config(request):
+    """
+    Reseta completamente a configuracao local do WhatsApp.
+    Util quando a instancia foi deletada externamente ou ha inconsistencias.
+    NAO deleta a instancia na Evolution API, apenas limpa os dados locais.
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp, WhatsAppInstance
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuracao nao encontrada'})
+
+    # Resetar todos os campos
+    config.instance_name = ''
+    config.instance_token = ''
+    config.status = 'nao_configurado'
+    config.qr_code = ''
+    config.qr_code_expira_em = None
+    config.webhook_url = ''
+    config.webhook_secret = ''
+    config.numero_conectado = ''
+    config.nome_perfil = ''
+    config.foto_perfil_url = ''
+    config.metadados = {}
+    config.ultimo_erro = ''
+    config.save()
+
+    # Limpar instancias orfas
+    WhatsAppInstance.objects.filter(empresa=empresa).delete()
+
+    messages.success(request, 'Configuracao resetada com sucesso! Voce pode criar uma nova instancia.')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Configuracao resetada'
+    })
+
+
 # ==========================================
-# WEBHOOK INTERMEDIÁRIO (Evolution → Django → n8n)
+# WEBHOOK INTERMEDIARIO (Evolution -> Django -> n8n)
 # ==========================================
 
 @csrf_exempt
