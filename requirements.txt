@@ -48,4 +48,3 @@ wcwidth==0.2.14
 whitenoise==6.6.0
 django-axes==8.1.0
 django-ratelimit==4.1.0
-django-axes==8.1.0

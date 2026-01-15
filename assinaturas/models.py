@@ -11,9 +11,9 @@ class Plano(models.Model):
     Planos de assinatura disponíveis
     """
     PLANOS = [
+        ('basico', 'Básico'),
         ('essencial', 'Essencial'),
         ('profissional', 'Profissional'),
-        ('empresarial', 'Empresarial'),
     ]
 
     nome = models.CharField(
