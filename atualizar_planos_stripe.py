@@ -56,7 +56,7 @@ planos_data = [
         'max_usuarios': 4,
         'max_servicos': 50,
         'stripe_price_id': 'price_1SpsoUEOfuBf9VWtAE6wHiVM',
-        'trial_dias': 14,
+        'trial_dias': 7,
         'permite_financeiro': True,
         'permite_dashboard_clientes': True,
         'permite_recorrencias': True,
