@@ -28,6 +28,12 @@ def enviar_email_empresa_criada(sender, instance, created, **kwargs):
             print(f"❌ Erro ao criar configuração WhatsApp para {instance.nome}: {e}")
 
         # === 2️⃣ Envia e-mail de confirmação da empresa ===
+        # IMPORTANTE: Não enviar email se a empresa foi criada via checkout
+        # pois o usuário já recebe o email de ativação de conta
+        if instance.origem_cadastro == 'checkout':
+            print(f"ℹ️ Email não enviado - empresa criada via checkout (usuário recebe email de ativação)")
+            return
+        
         try:
             context = {
                 'empresa': instance,

@@ -329,6 +329,21 @@ def _enviar_email_boas_vindas(usuario, empresa, activation_token, plano):
         plano: Instância de Plano
     """
     try:
+        # Validar configurações de email antes de tentar enviar
+        if not hasattr(settings, 'EMAIL_HOST') or not settings.EMAIL_HOST:
+            logger.error('EMAIL_HOST não configurado. Não é possível enviar email.')
+            raise ValueError('Configuração de email incompleta: EMAIL_HOST não definido')
+        
+        if not hasattr(settings, 'DEFAULT_FROM_EMAIL') or not settings.DEFAULT_FROM_EMAIL:
+            logger.error('DEFAULT_FROM_EMAIL não configurado. Não é possível enviar email.')
+            raise ValueError('Configuração de email incompleta: DEFAULT_FROM_EMAIL não definido')
+        
+        # Log antes de tentar enviar
+        logger.info(f'Preparando email de boas-vindas para {usuario.email}')
+        logger.info(f'  Empresa: {empresa.nome}')
+        logger.info(f'  Plano: {plano.nome}')
+        logger.info(f'  Token de ativação: {activation_token[:10]}...')
+        
         # Contexto para o template
         context = {
             'usuario': usuario,
@@ -340,22 +355,48 @@ def _enviar_email_boas_vindas(usuario, empresa, activation_token, plano):
         }
 
         # Renderiza o template HTML
+        logger.info('Renderizando template de email...')
         html_message = render_to_string('emails/boas_vindas_com_senha.html', context)
         # Versão texto puro (fallback)
         plain_message = strip_tags(html_message)
 
+        # Configurações do email
+        from_email = settings.DEFAULT_FROM_EMAIL
+        subject = f'Ative sua conta - {empresa.nome} | Gestto 🎉'
+        
+        logger.info(f'Enviando email via SMTP...')
+        logger.info(f'  De: {from_email}')
+        logger.info(f'  Para: {usuario.email}')
+        logger.info(f'  Assunto: {subject}')
+        logger.info(f'  Host SMTP: {settings.EMAIL_HOST}')
+        
         # Envia o email
         send_mail(
-            subject=f'Ative sua conta - {empresa.nome} | Gestto 🎉',
+            subject=subject,
             message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@gestto.com.br',
+            from_email=from_email,
             recipient_list=[usuario.email],
             html_message=html_message,
-            fail_silently=False,
+            fail_silently=False,  # Lança exceção se falhar
         )
 
-        logger.info(f'Email de boas-vindas (HTML) enviado para {usuario.email}')
+        logger.info(f'✓ Email de boas-vindas enviado com sucesso para {usuario.email}')
 
+    except ValueError as e:
+        # Erro de configuração
+        logger.error(f'Erro de configuração ao enviar email: {str(e)}')
+        raise
     except Exception as e:
-        logger.error(f'Erro ao enviar email de boas-vindas: {str(e)}')
+        # Captura informações detalhadas do erro
+        logger.error(f'Erro ao enviar email de boas-vindas para {usuario.email}')
+        logger.error(f'  Tipo de erro: {type(e).__name__}')
+        logger.error(f'  Mensagem: {str(e)}')
+        
+        # Log adicional para erros SMTP
+        if hasattr(e, 'smtp_code'):
+            logger.error(f'  Código SMTP: {e.smtp_code}')
+        if hasattr(e, 'smtp_error'):
+            logger.error(f'  Erro SMTP: {e.smtp_error}')
+        
+        # Re-lança a exceção para que o chamador saiba que falhou
         raise
