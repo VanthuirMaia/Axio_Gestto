@@ -93,11 +93,29 @@
             <p>
                 Por favor, tente novamente em breve ou entre em contato diretamente.
             </p>
+        {% elif motivo == 'nao_encontrada' %}
+            <div class="icon">🔍</div>
+            <h1>Empresa não encontrada</h1>
+            <p>
+                Não encontramos nenhuma empresa com o identificador <strong>{{ slug }}</strong>.
+            </p>
+            <p>
+                Verifique se o link está correto ou entre em contato com a empresa.
+            </p>
+        {% elif motivo == 'erro_sistema' %}
+            <div class="icon">⚠️</div>
+            <h1>Erro temporário</h1>
+            <p>
+                Ocorreu um erro ao carregar a página de agendamentos.
+            </p>
+            <p>
+                Por favor, tente novamente em alguns instantes. Se o problema persistir, entre em contato com a empresa.
+            </p>
         {% else %}
             <div class="icon">❌</div>
             <h1>Não disponível</h1>
             <p>
-                Não foi possível acessar o sistema de agendamentos da <span class="empresa-nome">{{ empresa.nome }}</span>.
+                Não foi possível acessar o sistema de agendamentos{% if empresa %} da <span class="empresa-nome">{{ empresa.nome }}</span>{% endif %}.
             </p>
         {% endif %}
 

@@ -502,6 +502,11 @@ def ativar_conta(request, token):
     """
     from .utils import token_ativacao_valido
     
+    # Fazer logout se houver sessão ativa para evitar conflitos
+    # (ex: admin logado clicando no link de ativação de outro usuário)
+    if request.user.is_authenticated:
+        logout(request)
+    
     # Buscar usuário pelo token
     try:
         usuario = Usuario.objects.get(activation_token=token, is_activated=False)
