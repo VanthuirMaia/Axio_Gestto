@@ -5,11 +5,17 @@ from core.views import alterar_senha
 urlpatterns = [
     path('', views.configuracoes_dashboard, name='configuracoes_dashboard'),
 
+    # Dados da Empresa
+    path('empresa/', views.empresa_dados, name='empresa_dados'),
+
     # Alterar Senha
     path('alterar-senha/', alterar_senha, name='alterar_senha'),
 
     # Assinatura e Plano (SaaS)
     path('assinatura/', views.assinatura_gerenciar, name='configuracoes_assinatura'),
+    path('assinatura/alterar-plano/', views.assinatura_alterar_plano, name='assinatura_alterar_plano'),
+    path('assinatura/cancelar/', views.assinatura_cancelar, name='assinatura_cancelar'),
+    path('assinatura/reativar/', views.assinatura_reativar, name='assinatura_reativar'),
 
     # Serviços
     path('servicos/', views.servicos_lista, name='servicos_lista'),

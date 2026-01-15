@@ -7,16 +7,21 @@
 
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-    <div class="page-header mb-0">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb breadcrumb-clean">
-          <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
-          <li class="breadcrumb-item"><a href="{% url 'horarios_funcionamento' %}">Horarios</a></li>
-          <li class="breadcrumb-item active">Datas Especiais</li>
-        </ol>
-      </nav>
-      <h2>Datas Especiais</h2>
-      <p class="text-muted mb-0">Feriados e horarios diferenciados</p>
+    <div class="d-flex align-items-center">
+      <a href="{% url 'horarios_funcionamento' %}" class="btn btn-link text-decoration-none me-2 p-0">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div class="page-header mb-0">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb breadcrumb-clean">
+            <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'horarios_funcionamento' %}">Horarios</a></li>
+            <li class="breadcrumb-item active">Datas Especiais</li>
+          </ol>
+        </nav>
+        <h2>Datas Especiais</h2>
+        <p class="text-muted mb-0">Feriados e horarios diferenciados</p>
+      </div>
     </div>
     <a href="{% url 'data_especial_criar' %}" class="btn btn-primary btn-sm-clean">
       <i class="bi bi-plus me-1"></i>Nova Data

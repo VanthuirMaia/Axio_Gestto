@@ -136,6 +136,120 @@ class EvolutionAPIService:
             logger.error(f"Erro ao buscar instância na API: {e}")
             return {'exists': False, 'instance': None, 'status': None, 'error': str(e)}
 
+    def _buscar_dados_perfil(self):
+        """
+        Busca o número e nome do perfil conectado na Evolution API.
+        Atualiza self.config com os dados encontrados.
+        """
+        if not self.config.instance_name:
+            logger.warning("_buscar_dados_perfil: instance_name vazio")
+            return
+
+        api_url = getattr(settings, 'EVOLUTION_API_URL', '')
+        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+
+        if not api_url or not api_key:
+            logger.warning("_buscar_dados_perfil: API URL ou KEY não configuradas")
+            return
+
+        try:
+            # Buscar informações da instância
+            response = requests.get(
+                f"{api_url.rstrip('/')}/instance/fetchInstances",
+                headers={'Content-Type': 'application/json', 'apikey': api_key},
+                params={'instanceName': self.config.instance_name},
+                timeout=15
+            )
+            response.raise_for_status()
+            instances = response.json()
+
+            logger.info(f"_buscar_dados_perfil: Resposta da API: {instances}")
+
+            # Procurar a instância correta
+            for inst in instances:
+                logger.info(f"_buscar_dados_perfil: Analisando instância: {inst}")
+
+                inst_name = inst.get('name') or inst.get('instance', {}).get('instanceName')
+                if inst_name == self.config.instance_name:
+                    # Tentar extrair owner de diferentes locais na estrutura
+                    owner = (
+                        inst.get('owner', '') or
+                        inst.get('instance', {}).get('owner', '') or
+                        inst.get('ownerJid', '') or
+                        inst.get('instance', {}).get('ownerJid', '')
+                    )
+
+                    logger.info(f"_buscar_dados_perfil: owner encontrado: {owner}")
+
+                    if owner:
+                        # owner geralmente vem como "5511999999999@s.whatsapp.net"
+                        numero = owner.split('@')[0] if '@' in owner else owner
+                        # Formatar número para exibição
+                        if len(numero) >= 12:
+                            # Formato: +55 (11) 99999-9999
+                            self.config.numero_conectado = f"+{numero[:2]} ({numero[2:4]}) {numero[4:9]}-{numero[9:]}"
+                        else:
+                            self.config.numero_conectado = numero
+
+                    # Tentar extrair nome do perfil de diferentes locais
+                    profile_name = (
+                        inst.get('profileName', '') or
+                        inst.get('instance', {}).get('profileName', '') or
+                        inst.get('pushName', '') or
+                        inst.get('instance', {}).get('pushName', '') or
+                        inst.get('profileStatus', '') or
+                        inst.get('instance', {}).get('profileStatus', '')
+                    )
+
+                    logger.info(f"_buscar_dados_perfil: profileName encontrado: {profile_name}")
+
+                    if profile_name:
+                        self.config.nome_perfil = profile_name
+                    elif owner:
+                        # Se não tem nome do perfil, usar o número como fallback
+                        self.config.nome_perfil = self.config.numero_conectado
+
+                    # Extrair foto do perfil
+                    profile_pic = (
+                        inst.get('profilePictureUrl', '') or
+                        inst.get('instance', {}).get('profilePictureUrl', '') or
+                        inst.get('profilePicUrl', '') or
+                        inst.get('instance', {}).get('profilePicUrl', '')
+                    )
+
+                    if profile_pic:
+                        self.config.foto_perfil_url = profile_pic
+
+                    logger.info(f"Dados do perfil atualizados: {self.config.numero_conectado} - {self.config.nome_perfil}")
+                    break
+
+            # Se não encontrou o nome do perfil, tentar endpoint específico
+            if not self.config.nome_perfil or self.config.nome_perfil == self.config.numero_conectado:
+                self._buscar_nome_perfil_alternativo(api_url, api_key)
+
+        except Exception as e:
+            logger.warning(f"Erro ao buscar dados do perfil: {e}")
+
+    def _buscar_nome_perfil_alternativo(self, api_url, api_key):
+        """Tenta buscar o nome do perfil via endpoint alternativo"""
+        try:
+            # Tentar endpoint de fetch profile
+            response = requests.get(
+                f"{api_url.rstrip('/')}/chat/fetchProfile/{self.config.instance_name}",
+                headers={'Content-Type': 'application/json', 'apikey': api_key},
+                params={'number': self.config.numero_conectado.replace('+', '').replace(' ', '').replace('(', '').replace(')', '').replace('-', '')},
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"_buscar_nome_perfil_alternativo: Resposta: {data}")
+                name = data.get('name') or data.get('pushName') or data.get('profileName', '')
+                if name:
+                    self.config.nome_perfil = name
+                    logger.info(f"Nome do perfil encontrado via endpoint alternativo: {name}")
+        except Exception as e:
+            logger.debug(f"Endpoint alternativo de perfil não disponível: {e}")
+
     def _obter_qrcode_com_retry(self, instance_name, max_tentativas=5, intervalo=2):
         """
         Tenta obter o QR Code com retry.
@@ -628,8 +742,27 @@ class EvolutionAPIService:
 
         if result['success']:
             state_data = result['data']
-            instance_state = state_data.get('instance', {})
-            connection_state = instance_state.get('state', 'unknown')
+
+            # Tentar extrair estado de conexão em diferentes formatos possíveis da API
+            # Formato 1: {'instance': {'state': 'open'}}
+            # Formato 2: {'state': 'open'}
+            # Formato 3: {'connectionStatus': 'open'}
+            connection_state = None
+            instance_state = {}
+
+            if isinstance(state_data, dict):
+                instance_state = state_data.get('instance', {})
+                if isinstance(instance_state, dict):
+                    connection_state = instance_state.get('state')
+
+                # Fallback para outros formatos
+                if not connection_state:
+                    connection_state = state_data.get('state')
+                if not connection_state:
+                    connection_state = state_data.get('connectionStatus')
+
+            connection_state = connection_state or 'unknown'
+            logger.info(f"Status de conexão obtido para {self.config.instance_name}: {connection_state}")
 
             # Mapear estados da Evolution para nossos estados
             status_map = {
@@ -647,8 +780,11 @@ class EvolutionAPIService:
 
             # Se conectado, buscar dados do perfil
             if novo_status == 'conectado':
-                profile_data = instance_state.get('profilePictureUrl', '')
+                profile_data = instance_state.get('profilePictureUrl', '') if isinstance(instance_state, dict) else ''
                 self.config.foto_perfil_url = profile_data
+
+                # Buscar número e nome do perfil
+                self._buscar_dados_perfil()
 
             self.config.save()
 
@@ -823,9 +959,15 @@ class EvolutionAPIService:
             if isinstance(data, dict):
                 data = [data]
 
+            # Verificar em ambos os formatos possíveis da API:
+            # Formato 1: {'name': 'instance_name', 'connectionStatus': '...'}
+            # Formato 2: {'instance': {'instanceName': 'instance_name'}}
             instance_exists = any(
                 isinstance(inst, dict)
-                and inst.get('instance', {}).get('instanceName') == self.config.instance_name
+                and (
+                    inst.get('name') == self.config.instance_name
+                    or inst.get('instance', {}).get('instanceName') == self.config.instance_name
+                )
                 for inst in data
             )
 
@@ -1006,9 +1148,10 @@ class EvolutionAPIService:
             self.config.status = novo_status
             self.config.ultima_sincronizacao = now()
 
-            # Se conectou, limpar QR Code
+            # Se conectou, limpar QR Code e buscar dados do perfil
             if novo_status == 'conectado':
                 self.config.qr_code = ''
+                self._buscar_dados_perfil()
 
             self.config.save()
 

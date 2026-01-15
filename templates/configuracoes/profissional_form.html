@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{# URL Fix: Force template recompile - configuracoes_dashboard should resolve to /app/configuracoes/ #}
-{% block title %}{% if editando %}Editar{% else %}Novo{% endif %} Profissional – {{ empresa.nome }}{% endblock %}
+
+{% block title %}{% if editando %}Editar{% else %}Novo{% endif %} Profissional - {{ empresa.nome }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4 px-4">
-  
+
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12">
@@ -15,7 +15,7 @@
         <div>
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-2">
-              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configurações</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
               <li class="breadcrumb-item"><a href="{% url 'profissionais_lista' %}">Profissionais</a></li>
               <li class="breadcrumb-item active">{% if editando %}Editar{% else %}Novo{% endif %}</li>
             </ol>
@@ -26,7 +26,7 @@
     </div>
   </div>
 
-  <!-- Formulário -->
+  <!-- Formulario -->
   <div class="row">
     <div class="col-12 col-lg-8 mx-auto">
       <div class="card shadow-sm">
@@ -36,39 +36,66 @@
 
             <div class="mb-3">
               <label for="nome" class="form-label">Nome Completo *</label>
-              <input type="text" name="nome" id="nome" class="form-control" 
-                     value="{% if editando %}{{ profissional.nome }}{% endif %}" 
+              <input type="text" name="nome" id="nome" class="form-control"
+                     value="{% if editando %}{{ profissional.nome }}{% endif %}"
                      placeholder="Ex: Maria Silva" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="especialidade" class="form-label">Especialidade</label>
-              <input type="text" name="especialidade" id="especialidade" class="form-control" 
-                     value="{% if editando %}{{ profissional.especialidade }}{% endif %}" 
-                     placeholder="Ex: Cabeleireira, Manicure, Barbeiro">
-              <small class="text-muted">Área de atuação do profissional</small>
             </div>
 
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="telefone" class="form-label">Telefone</label>
-                <input type="tel" name="telefone" id="telefone" class="form-control" 
-                       value="{% if editando %}{{ profissional.telefone }}{% endif %}" 
+                <input type="tel" name="telefone" id="telefone" class="form-control"
+                       value="{% if editando %}{{ profissional.telefone }}{% endif %}"
                        placeholder="(81) 99999-9999">
               </div>
 
               <div class="col-md-6 mb-3">
                 <label for="email" class="form-label">E-mail</label>
-                <input type="email" name="email" id="email" class="form-control" 
-                       value="{% if editando %}{{ profissional.email }}{% endif %}" 
+                <input type="email" name="email" id="email" class="form-control"
+                       value="{% if editando %}{{ profissional.email }}{% endif %}"
                        placeholder="profissional@email.com">
               </div>
+            </div>
+
+            <!-- Servicos -->
+            <div class="mb-3">
+              <label class="form-label">Servicos que realiza</label>
+              <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                {% for servico in servicos %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="servicos"
+                         value="{{ servico.id }}" id="servico_{{ servico.id }}"
+                         {% if editando and servico in profissional.servicos.all %}checked{% endif %}>
+                  <label class="form-check-label" for="servico_{{ servico.id }}">
+                    {{ servico.nome }}
+                    <small class="text-muted">(R$ {{ servico.preco|floatformat:2 }} - {{ servico.duracao_minutos }}min)</small>
+                  </label>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Nenhum servico cadastrado. <a href="{% url 'servico_criar' %}">Cadastre um servico primeiro.</a></p>
+                {% endfor %}
+              </div>
+              <small class="text-muted">Selecione os servicos que este profissional pode realizar</small>
+            </div>
+
+            <!-- Cor no Calendario -->
+            <div class="mb-3">
+              <label for="cor_hex" class="form-label">Cor no Calendario</label>
+              <div class="d-flex align-items-center gap-2">
+                <input type="color" name="cor_hex" id="cor_hex" class="form-control form-control-color"
+                       value="{% if editando %}{{ profissional.cor_hex }}{% else %}#1e3a8a{% endif %}"
+                       title="Escolha a cor">
+                <input type="text" id="cor_hex_text" class="form-control" style="width: 100px;"
+                       value="{% if editando %}{{ profissional.cor_hex }}{% else %}#1e3a8a{% endif %}"
+                       readonly>
+              </div>
+              <small class="text-muted">Esta cor sera usada para identificar os agendamentos deste profissional no calendario</small>
             </div>
 
             {% if editando %}
             <div class="mb-4">
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="ativo" id="ativo" 
+                <input class="form-check-input" type="checkbox" name="ativo" id="ativo"
                        {% if profissional.ativo %}checked{% endif %}>
                 <label class="form-check-label" for="ativo">
                   Profissional ativo
@@ -80,7 +107,7 @@
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-circle me-2"></i>
-                {% if editando %}Salvar Alterações{% else %}Adicionar Profissional{% endif %}
+                {% if editando %}Salvar Alteracoes{% else %}Adicionar Profissional{% endif %}
               </button>
               <a href="{% url 'profissionais_lista' %}" class="btn btn-outline-secondary">
                 Cancelar
@@ -94,4 +121,12 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('cor_hex').addEventListener('input', function() {
+  document.getElementById('cor_hex_text').value = this.value;
+});
+</script>
 {% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Dados da Empresa - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+              <li class="breadcrumb-item active">Dados da Empresa</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0">
+            <i class="bi bi-building me-2"></i>
+            Dados da Empresa
+          </h2>
+          <p class="text-muted mb-0">Informacoes que serao usadas pelo agente de atendimento</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="row">
+    <div class="col-12 col-lg-10 mx-auto">
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- Dados Basicos -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0 fw-semibold">
+              <i class="bi bi-info-circle me-2 text-primary"></i>
+              Dados Basicos
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="nome" class="form-label">Nome do Estabelecimento *</label>
+                <input type="text" name="nome" id="nome" class="form-control"
+                       value="{{ empresa.nome }}"
+                       placeholder="Ex: Barbearia do Joao" required>
+                <small class="text-muted">Nome que o agente usara para se apresentar</small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="telefone" class="form-label">Telefone *</label>
+                <input type="tel" name="telefone" id="telefone" class="form-control"
+                       value="{{ empresa.telefone }}"
+                       placeholder="(11) 99999-9999" required>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="email" class="form-label">E-mail *</label>
+                <input type="email" name="email" id="email" class="form-control"
+                       value="{{ empresa.email }}"
+                       placeholder="contato@empresa.com" required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="descricao" class="form-label">Descricao do Negocio</label>
+                <input type="text" name="descricao" id="descricao" class="form-control"
+                       value="{{ empresa.descricao }}"
+                       placeholder="Ex: Barbearia especializada em cortes modernos">
+                <small class="text-muted">Breve descricao para o agente informar aos clientes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Endereco -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0 fw-semibold">
+              <i class="bi bi-geo-alt me-2 text-danger"></i>
+              Endereco e Localizacao
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-robot me-2"></i>
+              <strong>Dica:</strong> Essas informacoes serao usadas pelo agente de atendimento para informar aos clientes como chegar ao seu estabelecimento.
+            </div>
+
+            <div class="mb-3">
+              <label for="endereco" class="form-label">Endereco Completo</label>
+              <input type="text" name="endereco" id="endereco" class="form-control"
+                     value="{{ empresa.endereco }}"
+                     placeholder="Ex: Rua das Flores, 123 - Centro">
+            </div>
+
+            <div class="row">
+              <div class="col-md-5 mb-3">
+                <label for="cidade" class="form-label">Cidade</label>
+                <input type="text" name="cidade" id="cidade" class="form-control"
+                       value="{{ empresa.cidade }}"
+                       placeholder="Ex: Sao Paulo">
+              </div>
+
+              <div class="col-md-3 mb-3">
+                <label for="estado" class="form-label">Estado</label>
+                <select name="estado" id="estado" class="form-select">
+                  <option value="">Selecione...</option>
+                  <option value="AC" {% if empresa.estado == 'AC' %}selected{% endif %}>AC</option>
+                  <option value="AL" {% if empresa.estado == 'AL' %}selected{% endif %}>AL</option>
+                  <option value="AP" {% if empresa.estado == 'AP' %}selected{% endif %}>AP</option>
+                  <option value="AM" {% if empresa.estado == 'AM' %}selected{% endif %}>AM</option>
+                  <option value="BA" {% if empresa.estado == 'BA' %}selected{% endif %}>BA</option>
+                  <option value="CE" {% if empresa.estado == 'CE' %}selected{% endif %}>CE</option>
+                  <option value="DF" {% if empresa.estado == 'DF' %}selected{% endif %}>DF</option>
+                  <option value="ES" {% if empresa.estado == 'ES' %}selected{% endif %}>ES</option>
+                  <option value="GO" {% if empresa.estado == 'GO' %}selected{% endif %}>GO</option>
+                  <option value="MA" {% if empresa.estado == 'MA' %}selected{% endif %}>MA</option>
+                  <option value="MT" {% if empresa.estado == 'MT' %}selected{% endif %}>MT</option>
+                  <option value="MS" {% if empresa.estado == 'MS' %}selected{% endif %}>MS</option>
+                  <option value="MG" {% if empresa.estado == 'MG' %}selected{% endif %}>MG</option>
+                  <option value="PA" {% if empresa.estado == 'PA' %}selected{% endif %}>PA</option>
+                  <option value="PB" {% if empresa.estado == 'PB' %}selected{% endif %}>PB</option>
+                  <option value="PR" {% if empresa.estado == 'PR' %}selected{% endif %}>PR</option>
+                  <option value="PE" {% if empresa.estado == 'PE' %}selected{% endif %}>PE</option>
+                  <option value="PI" {% if empresa.estado == 'PI' %}selected{% endif %}>PI</option>
+                  <option value="RJ" {% if empresa.estado == 'RJ' %}selected{% endif %}>RJ</option>
+                  <option value="RN" {% if empresa.estado == 'RN' %}selected{% endif %}>RN</option>
+                  <option value="RS" {% if empresa.estado == 'RS' %}selected{% endif %}>RS</option>
+                  <option value="RO" {% if empresa.estado == 'RO' %}selected{% endif %}>RO</option>
+                  <option value="RR" {% if empresa.estado == 'RR' %}selected{% endif %}>RR</option>
+                  <option value="SC" {% if empresa.estado == 'SC' %}selected{% endif %}>SC</option>
+                  <option value="SP" {% if empresa.estado == 'SP' %}selected{% endif %}>SP</option>
+                  <option value="SE" {% if empresa.estado == 'SE' %}selected{% endif %}>SE</option>
+                  <option value="TO" {% if empresa.estado == 'TO' %}selected{% endif %}>TO</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="cep" class="form-label">CEP</label>
+                <input type="text" name="cep" id="cep" class="form-control"
+                       value="{{ empresa.cep }}"
+                       placeholder="00000-000" maxlength="10">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="google_maps_link" class="form-label">
+                <i class="bi bi-google text-primary me-1"></i>
+                Link do Google Maps
+              </label>
+              <input type="url" name="google_maps_link" id="google_maps_link" class="form-control"
+                     value="{{ empresa.google_maps_link }}"
+                     placeholder="https://maps.google.com/...">
+              <small class="text-muted">
+                Cole aqui o link de compartilhamento do Google Maps do seu estabelecimento.
+                O agente podera enviar este link para os clientes.
+              </small>
+            </div>
+
+            {% if empresa.google_maps_link %}
+            <div class="mt-3">
+              <a href="{{ empresa.google_maps_link }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-box-arrow-up-right me-1"></i>
+                Ver no Google Maps
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Botoes -->
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-2"></i>
+            Salvar Alteracoes
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -38,6 +38,41 @@ def configuracoes_dashboard(request):
 
 
 # ==========================================
+# DADOS DA EMPRESA
+# ==========================================
+
+@login_required
+def empresa_dados(request):
+    """Edita os dados da empresa (nome, endereço, contato, etc.)"""
+    empresa = request.user.empresa
+
+    if request.method == 'POST':
+        # Dados básicos
+        empresa.nome = request.POST.get('nome', empresa.nome)
+        empresa.descricao = request.POST.get('descricao', '')
+        empresa.telefone = request.POST.get('telefone', empresa.telefone)
+        empresa.email = request.POST.get('email', empresa.email)
+
+        # Endereço
+        empresa.endereco = request.POST.get('endereco', '')
+        empresa.cidade = request.POST.get('cidade', '')
+        empresa.estado = request.POST.get('estado', '')
+        empresa.cep = request.POST.get('cep', '')
+        empresa.google_maps_link = request.POST.get('google_maps_link', '')
+
+        empresa.save()
+
+        messages.success(request, 'Dados da empresa atualizados com sucesso!')
+        return redirect('empresa_dados')
+
+    context = {
+        'empresa': empresa,
+    }
+
+    return render(request, 'configuracoes/empresa_dados.html', context)
+
+
+# ==========================================
 # SERVIÇOS
 # ==========================================
 
@@ -507,25 +542,31 @@ def profissionais_lista(request):
 def profissional_criar(request):
     """Cria um novo profissional"""
     empresa = request.user.empresa
-    
+
     if request.method == 'POST':
         nome = request.POST.get('nome')
         telefone = request.POST.get('telefone', '')
         email = request.POST.get('email', '')
-        especialidade = request.POST.get('especialidade', '')
-        
-        Profissional.objects.create(
+        cor_hex = request.POST.get('cor_hex', '#1e3a8a')
+
+        profissional = Profissional.objects.create(
             empresa=empresa,
             nome=nome,
             telefone=telefone,
             email=email,
-            especialidade=especialidade
+            cor_hex=cor_hex
         )
-        
+
+        # Associar servicos selecionados
+        servicos_ids = request.POST.getlist('servicos')
+        if servicos_ids:
+            profissional.servicos.set(servicos_ids)
+
         messages.success(request, f'Profissional "{nome}" adicionado com sucesso!')
         return redirect('profissionais_lista')
-    
-    return render(request, 'configuracoes/profissional_form.html', {'empresa': empresa})
+
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True)
+    return render(request, 'configuracoes/profissional_form.html', {'empresa': empresa, 'servicos': servicos})
 
 
 @login_required
@@ -533,24 +574,30 @@ def profissional_editar(request, pk):
     """Edita um profissional"""
     empresa = request.user.empresa
     profissional = get_object_or_404(Profissional, pk=pk, empresa=empresa)
-    
+
     if request.method == 'POST':
         profissional.nome = request.POST.get('nome')
         profissional.telefone = request.POST.get('telefone', '')
         profissional.email = request.POST.get('email', '')
-        profissional.especialidade = request.POST.get('especialidade', '')
+        profissional.cor_hex = request.POST.get('cor_hex', '#1e3a8a')
         profissional.ativo = request.POST.get('ativo') == 'on'
         profissional.save()
-        
+
+        # Atualizar servicos
+        servicos_ids = request.POST.getlist('servicos')
+        profissional.servicos.set(servicos_ids)
+
         messages.success(request, f'Profissional "{profissional.nome}" atualizado!')
         return redirect('profissionais_lista')
-    
+
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True)
     context = {
         'empresa': empresa,
         'profissional': profissional,
+        'servicos': servicos,
         'editando': True,
     }
-    
+
     return render(request, 'configuracoes/profissional_form.html', context)
 
 
@@ -641,6 +688,176 @@ def assinatura_gerenciar(request):
     }
 
     return render(request, 'configuracoes/assinatura.html', context)
+
+
+@login_required
+def assinatura_alterar_plano(request):
+    """
+    Altera o plano da assinatura (upgrade ou downgrade)
+    """
+    from django.http import JsonResponse
+    from assinaturas.models import Plano, HistoricoPagamento
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+    plano_atual = assinatura.plano
+
+    # Obter novo plano
+    novo_plano_id = request.POST.get('plano_id')
+    if not novo_plano_id:
+        return JsonResponse({'success': False, 'error': 'Plano nao informado'}, status=400)
+
+    try:
+        novo_plano = Plano.objects.get(id=novo_plano_id, ativo=True)
+    except Plano.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Plano nao encontrado'}, status=404)
+
+    # Verificar se e o mesmo plano
+    if novo_plano.id == plano_atual.id:
+        return JsonResponse({'success': False, 'error': 'Voce ja esta neste plano'}, status=400)
+
+    # Verificar limites antes de downgrade
+    if novo_plano.preco_mensal < plano_atual.preco_mensal:
+        # E um downgrade - verificar se o uso atual permite
+        profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+        servicos_ativos = Servico.objects.filter(empresa=empresa, ativo=True).count()
+
+        erros = []
+        if profissionais_ativos > novo_plano.max_profissionais:
+            erros.append(f'Voce tem {profissionais_ativos} profissionais ativos, mas o plano permite apenas {novo_plano.max_profissionais}')
+        if servicos_ativos > novo_plano.max_servicos:
+            erros.append(f'Voce tem {servicos_ativos} servicos ativos, mas o plano permite apenas {novo_plano.max_servicos}')
+
+        if erros:
+            return JsonResponse({
+                'success': False,
+                'error': 'Nao e possivel fazer downgrade',
+                'detalhes': erros
+            }, status=400)
+
+    # Registrar plano anterior para historico
+    plano_anterior = plano_atual.get_nome_display()
+    preco_anterior = plano_atual.preco_mensal
+
+    # Alterar o plano
+    assinatura.plano = novo_plano
+    assinatura.save()
+
+    # Determinar tipo de alteracao
+    tipo = 'upgrade' if novo_plano.preco_mensal > preco_anterior else 'downgrade'
+
+    logger.info(f"Plano alterado: {empresa.nome} - {plano_anterior} -> {novo_plano.get_nome_display()} ({tipo})")
+
+    messages.success(
+        request,
+        f'{tipo.capitalize()} realizado com sucesso! Seu plano foi alterado para {novo_plano.get_nome_display()}.'
+    )
+
+    return JsonResponse({
+        'success': True,
+        'tipo': tipo,
+        'plano_anterior': plano_anterior,
+        'plano_novo': novo_plano.get_nome_display(),
+        'preco_novo': float(novo_plano.preco_mensal)
+    })
+
+
+@login_required
+def assinatura_cancelar(request):
+    """
+    Cancela a assinatura da empresa
+    """
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+
+    # Verificar se ja esta cancelada
+    if assinatura.status == 'cancelada':
+        return JsonResponse({'success': False, 'error': 'Assinatura ja esta cancelada'}, status=400)
+
+    # Obter motivo do cancelamento
+    motivo = request.POST.get('motivo', '')
+
+    # Cancelar assinatura
+    assinatura.cancelar(motivo=motivo)
+
+    logger.info(f"Assinatura cancelada: {empresa.nome} - Motivo: {motivo}")
+
+    messages.warning(
+        request,
+        'Sua assinatura foi cancelada. Voce mantera acesso ao sistema ate o final do periodo pago.'
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Assinatura cancelada com sucesso',
+        'data_acesso_final': assinatura.data_expiracao.strftime('%d/%m/%Y') if assinatura.data_expiracao else None
+    })
+
+
+@login_required
+def assinatura_reativar(request):
+    """
+    Reativa uma assinatura cancelada (dentro do periodo de 90 dias)
+    """
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+
+    # Verificar se esta cancelada ou suspensa
+    if assinatura.status not in ['cancelada', 'suspensa']:
+        return JsonResponse({'success': False, 'error': 'Assinatura nao pode ser reativada'}, status=400)
+
+    # Verificar periodo de 90 dias para canceladas
+    if assinatura.status == 'cancelada' and assinatura.cancelada_em:
+        dias_desde_cancelamento = (now() - assinatura.cancelada_em).days
+        if dias_desde_cancelamento > 90:
+            return JsonResponse({
+                'success': False,
+                'error': 'Periodo de reativacao expirado (90 dias)'
+            }, status=400)
+
+    # Reativar - volta para trial se ainda tinha dias, senao vai para ativa
+    assinatura.status = 'ativa'
+    assinatura.cancelada_em = None
+    assinatura.motivo_cancelamento = ''
+
+    # Renovar por mais 30 dias
+    assinatura.data_expiracao = now() + timedelta(days=30)
+    assinatura.proximo_vencimento = (now() + timedelta(days=30)).date()
+    assinatura.save()
+
+    logger.info(f"Assinatura reativada: {empresa.nome}")
+
+    messages.success(request, 'Sua assinatura foi reativada com sucesso!')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Assinatura reativada com sucesso'
+    })
 
 
 # ==========================================

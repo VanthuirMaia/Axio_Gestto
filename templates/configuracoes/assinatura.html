@@ -8,8 +8,15 @@
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12">
-      <h2 class="fw-bold mb-1">Gerenciar Assinatura</h2>
-      <p class="text-muted mb-0">Visualize seu plano, uso e histórico de pagamentos</p>
+      <div class="d-flex align-items-center">
+        <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-link text-decoration-none me-2 p-0">
+          <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        <div>
+          <h2 class="fw-bold mb-1">Gerenciar Assinatura</h2>
+          <p class="text-muted mb-0">Visualize seu plano, uso e historico de pagamentos</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -328,14 +335,17 @@
         <div class="card-body">
           <p class="text-muted mb-4">Compare e escolha o plano que melhor atende suas necessidades</p>
 
-          <div class="row g-3">
+          <div class="row g-3 justify-content-center">
             {% for plano_disponivel in planos_disponiveis %}
-            <div class="col-md-4">
-              <div class="card h-100 {% if plano_disponivel.id == plano.id %}border-primary{% else %}border-0{% endif %}"
-                   style="{% if plano_disponivel.id == plano.id %}border-width: 2px !important;{% endif %}">
+            {% if plano_disponivel.nome == 'essencial' or plano_disponivel.nome == 'profissional' %}
+            <div class="col-md-5">
+              <div class="card h-100 {% if plano_disponivel.id == plano.id %}border-primary{% elif plano_disponivel.nome == 'profissional' %}border-success{% else %}border-0{% endif %}"
+                   style="{% if plano_disponivel.id == plano.id or plano_disponivel.nome == 'profissional' %}border-width: 2px !important;{% endif %}">
                 <div class="card-body">
                   {% if plano_disponivel.id == plano.id %}
                     <span class="badge bg-primary mb-2">Plano Atual</span>
+                  {% elif plano_disponivel.nome == 'profissional' %}
+                    <span class="badge bg-success mb-2">Mais Popular</span>
                   {% endif %}
 
                   <h5 class="fw-bold">{{ plano_disponivel.get_nome_display }}</h5>
@@ -347,35 +357,64 @@
                   <ul class="list-unstyled small mb-3">
                     <li class="mb-2">
                       <i class="bi bi-check-circle-fill text-success me-2"></i>
-                      {{ plano_disponivel.max_profissionais }} profissionais
+                      {{ plano_disponivel.max_profissionais }} profissiona{{ plano_disponivel.max_profissionais|pluralize:"l,is" }}
                     </li>
                     <li class="mb-2">
                       <i class="bi bi-check-circle-fill text-success me-2"></i>
-                      {{ plano_disponivel.max_agendamentos_mes }} agendamentos/mês
+                      {% if plano_disponivel.max_agendamentos_mes >= 999999 %}Agendamentos ilimitados{% else %}{{ plano_disponivel.max_agendamentos_mes }} agendamentos/mes{% endif %}
                     </li>
                     <li class="mb-2">
                       <i class="bi bi-check-circle-fill text-success me-2"></i>
-                      {{ plano_disponivel.max_usuarios }} usuário(s)
+                      Bot WhatsApp automatico
                     </li>
                     <li class="mb-2">
                       <i class="bi bi-check-circle-fill text-success me-2"></i>
-                      {{ plano_disponivel.max_servicos }} serviços
+                      Agenda inteligente
+                    </li>
+                    {% if plano_disponivel.permite_relatorios_avancados or plano_disponivel.permite_financeiro %}
+                    <li class="mb-2">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Gestao financeira completa
+                    </li>
+                    <li class="mb-2">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Relatorios e analises
+                    </li>
+                    {% else %}
+                    <li class="mb-2">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Gestao basica de agendamentos
+                    </li>
+                    {% endif %}
+                    <li class="mb-2">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      {% if plano_disponivel.nome == 'essencial' %}Suporte email (24h){% else %}Suporte email + WhatsApp{% endif %}
                     </li>
                   </ul>
 
                   {% if plano_disponivel.id != plano.id %}
                     {% if plano_disponivel.preco_mensal > plano.preco_mensal %}
-                      <button class="btn btn-primary w-100" disabled>
+                      <button class="btn btn-primary w-100 btn-alterar-plano"
+                              data-plano-id="{{ plano_disponivel.id }}"
+                              data-plano-nome="{{ plano_disponivel.get_nome_display }}"
+                              data-plano-preco="{{ plano_disponivel.preco_mensal }}"
+                              data-max-profissionais="{{ plano_disponivel.max_profissionais }}"
+                              data-max-servicos="{{ plano_disponivel.max_servicos }}"
+                              data-tipo="upgrade">
                         <i class="bi bi-arrow-up me-2"></i>
                         Fazer Upgrade
                       </button>
-                      <small class="text-muted d-block mt-2 text-center">Em breve</small>
                     {% else %}
-                      <button class="btn btn-outline-secondary w-100" disabled>
+                      <button class="btn btn-outline-secondary w-100 btn-alterar-plano"
+                              data-plano-id="{{ plano_disponivel.id }}"
+                              data-plano-nome="{{ plano_disponivel.get_nome_display }}"
+                              data-plano-preco="{{ plano_disponivel.preco_mensal }}"
+                              data-max-profissionais="{{ plano_disponivel.max_profissionais }}"
+                              data-max-servicos="{{ plano_disponivel.max_servicos }}"
+                              data-tipo="downgrade">
                         <i class="bi bi-arrow-down me-2"></i>
                         Fazer Downgrade
                       </button>
-                      <small class="text-muted d-block mt-2 text-center">Em breve</small>
                     {% endif %}
                   {% else %}
                     <button class="btn btn-outline-primary w-100" disabled>
@@ -385,7 +424,23 @@
                 </div>
               </div>
             </div>
+            {% endif %}
             {% endfor %}
+          </div>
+
+          <!-- Plano Personalizado -->
+          <div class="mt-4 p-4 rounded-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="text-center text-white">
+              <span class="badge bg-light text-dark mb-2">PLANO PERSONALIZADO</span>
+              <h5 class="mb-2">Mais de 4 profissionais?</h5>
+              <p class="mb-3 small opacity-75">
+                Oferecemos solucoes personalizadas a partir de R$ 1.000/mes
+              </p>
+              <a href="{% url 'landing:contato' %}" class="btn btn-light btn-sm">
+                <i class="bi bi-chat-dots me-1"></i>
+                Falar com Comercial
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -424,11 +479,31 @@
             <li>Você pode reativar sua conta a qualquer momento dentro desse período</li>
           </ul>
 
-          <button class="btn btn-outline-danger" disabled>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalCancelar">
             <i class="bi bi-x-circle me-2"></i>
             Cancelar Assinatura
           </button>
-          <small class="text-muted d-block mt-2">Em breve</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Reativar (se cancelada) -->
+  {% if assinatura.status == 'cancelada' %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-success">
+        <div class="card-body text-center py-4">
+          <i class="bi bi-arrow-repeat text-success" style="font-size: 3rem;"></i>
+          <h4 class="mt-3">Quer voltar?</h4>
+          <p class="text-muted mb-3">
+            Voce pode reativar sua assinatura a qualquer momento dentro de 90 dias.
+          </p>
+          <button class="btn btn-success btn-lg" id="btn-reativar">
+            <i class="bi bi-arrow-repeat me-2"></i>
+            Reativar Assinatura
+          </button>
         </div>
       </div>
     </div>
@@ -436,6 +511,99 @@
   {% endif %}
 
 </div>
+
+<!-- Modal Alterar Plano -->
+<div class="modal fade" id="modalAlterarPlano" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-arrow-up-circle me-2" id="modal-plano-icon"></i>
+          <span id="modal-plano-titulo">Alterar Plano</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Voce esta prestes a alterar seu plano para:</p>
+        <div class="alert alert-info">
+          <h5 class="mb-1" id="modal-plano-nome">-</h5>
+          <p class="mb-0">R$ <span id="modal-plano-preco">0,00</span>/mes</p>
+        </div>
+        <div id="modal-plano-aviso-downgrade" class="alert alert-warning d-none">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Atencao:</strong> Ao fazer downgrade, verifique se seu uso atual esta dentro dos limites do novo plano.
+        </div>
+        <div id="modal-plano-bloqueio" class="alert alert-danger d-none">
+          <i class="bi bi-x-circle me-2"></i>
+          <strong>Downgrade bloqueado!</strong>
+          <div id="modal-plano-bloqueio-detalhes" class="mt-2 small"></div>
+          <hr class="my-2">
+          <small>Desative os itens excedentes em <a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a> antes de fazer o downgrade.</small>
+        </div>
+        <p class="text-muted small mb-0">
+          A alteracao sera aplicada imediatamente. Em caso de upgrade, a diferenca sera cobrada proporcionalmente.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-plano">
+          <i class="bi bi-check-circle me-2"></i>
+          Confirmar Alteracao
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cancelar Assinatura -->
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Cancelar Assinatura
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Tem certeza?</strong> Esta acao nao pode ser desfeita facilmente.
+        </div>
+
+        <p>Ao cancelar sua assinatura:</p>
+        <ul class="text-muted">
+          <li>Voce mantera acesso ate <strong>{{ assinatura.data_expiracao|date:"d/m/Y" }}</strong></li>
+          <li>Nao havera novas cobrancas</li>
+          <li>Seus dados serao mantidos por 90 dias</li>
+          <li>Voce pode reativar dentro desse periodo</li>
+        </ul>
+
+        <div class="mb-3">
+          <label for="motivo-cancelamento" class="form-label">Motivo do cancelamento (opcional)</label>
+          <select class="form-select" id="motivo-cancelamento">
+            <option value="">Selecione um motivo...</option>
+            <option value="Preco muito alto">Preco muito alto</option>
+            <option value="Nao uso mais o servico">Nao uso mais o servico</option>
+            <option value="Encontrei alternativa melhor">Encontrei alternativa melhor</option>
+            <option value="Funcionalidades insuficientes">Funcionalidades insuficientes</option>
+            <option value="Problemas tecnicos">Problemas tecnicos</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmar-cancelamento">
+          <i class="bi bi-x-circle me-2"></i>
+          Confirmar Cancelamento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_css %}
@@ -465,4 +633,197 @@
     font-family: 'Courier New', monospace;
   }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let planoSelecionado = null;
+
+  // Dados de uso atual (do servidor)
+  const usoAtual = {
+    profissionais: {{ profissionais_ativos }},
+    servicos: {{ servicos_ativos|default:0 }}
+  };
+
+  // Botões de alterar plano
+  document.querySelectorAll('.btn-alterar-plano').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      planoSelecionado = {
+        id: this.dataset.planoId,
+        nome: this.dataset.planoNome,
+        preco: this.dataset.planoPreco,
+        maxProfissionais: parseInt(this.dataset.maxProfissionais),
+        maxServicos: parseInt(this.dataset.maxServicos),
+        tipo: this.dataset.tipo
+      };
+
+      // Atualizar modal
+      document.getElementById('modal-plano-nome').textContent = planoSelecionado.nome;
+      document.getElementById('modal-plano-preco').textContent = parseFloat(planoSelecionado.preco).toFixed(2).replace('.', ',');
+
+      const icon = document.getElementById('modal-plano-icon');
+      const titulo = document.getElementById('modal-plano-titulo');
+      const avisoDowngrade = document.getElementById('modal-plano-aviso-downgrade');
+      const bloqueioDowngrade = document.getElementById('modal-plano-bloqueio');
+      const bloqueioDetalhes = document.getElementById('modal-plano-bloqueio-detalhes');
+      const btnConfirmar = document.getElementById('btn-confirmar-plano');
+
+      // Resetar estados
+      avisoDowngrade.classList.add('d-none');
+      bloqueioDowngrade.classList.add('d-none');
+      btnConfirmar.disabled = false;
+
+      if (planoSelecionado.tipo === 'upgrade') {
+        icon.className = 'bi bi-arrow-up-circle me-2 text-success';
+        titulo.textContent = 'Fazer Upgrade';
+        btnConfirmar.className = 'btn btn-success';
+      } else {
+        icon.className = 'bi bi-arrow-down-circle me-2 text-warning';
+        titulo.textContent = 'Fazer Downgrade';
+        btnConfirmar.className = 'btn btn-warning';
+
+        // Verificar se downgrade e possivel
+        let bloqueios = [];
+        if (usoAtual.profissionais > planoSelecionado.maxProfissionais) {
+          bloqueios.push('Voce tem <strong>' + usoAtual.profissionais + ' profissionais ativos</strong>, mas o plano ' + planoSelecionado.nome + ' permite apenas <strong>' + planoSelecionado.maxProfissionais + '</strong>.');
+        }
+        if (usoAtual.servicos > planoSelecionado.maxServicos) {
+          bloqueios.push('Voce tem <strong>' + usoAtual.servicos + ' servicos ativos</strong>, mas o plano ' + planoSelecionado.nome + ' permite apenas <strong>' + planoSelecionado.maxServicos + '</strong>.');
+        }
+
+        if (bloqueios.length > 0) {
+          // Mostrar bloqueio
+          bloqueioDetalhes.innerHTML = bloqueios.map(b => '• ' + b).join('<br>');
+          bloqueioDowngrade.classList.remove('d-none');
+          btnConfirmar.disabled = true;
+          btnConfirmar.className = 'btn btn-secondary';
+        } else {
+          // Apenas aviso
+          avisoDowngrade.classList.remove('d-none');
+        }
+      }
+
+      // Abrir modal
+      new bootstrap.Modal(document.getElementById('modalAlterarPlano')).show();
+    });
+  });
+
+  // Confirmar alteração de plano
+  document.getElementById('btn-confirmar-plano').addEventListener('click', function() {
+    if (!planoSelecionado) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+
+    fetch('{% url "assinatura_alterar_plano" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: 'plano_id=' + planoSelecionado.id
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Fechar modal e recarregar página
+        bootstrap.Modal.getInstance(document.getElementById('modalAlterarPlano')).hide();
+        window.location.reload();
+      } else {
+        // Mostrar erro detalhado para downgrade
+        let mensagemErro = data.error || 'Erro ao alterar plano';
+        if (data.detalhes && data.detalhes.length > 0) {
+          mensagemErro += '\n\n';
+          data.detalhes.forEach(function(detalhe) {
+            mensagemErro += '• ' + detalhe + '\n';
+          });
+          mensagemErro += '\nPara fazer downgrade, primeiro desative os itens excedentes em Configuracoes.';
+        }
+        alert(mensagemErro);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirmar Alteracao';
+      }
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      alert('Erro ao processar solicitacao');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirmar Alteracao';
+    });
+  });
+
+  // Confirmar cancelamento
+  document.getElementById('btn-confirmar-cancelamento').addEventListener('click', function() {
+    const btn = this;
+    const motivo = document.getElementById('motivo-cancelamento').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+
+    fetch('{% url "assinatura_cancelar" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: 'motivo=' + encodeURIComponent(motivo)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modalCancelar')).hide();
+        window.location.reload();
+      } else {
+        alert(data.error || 'Erro ao cancelar assinatura');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-x-circle me-2"></i>Confirmar Cancelamento';
+      }
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      alert('Erro ao processar solicitacao');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-x-circle me-2"></i>Confirmar Cancelamento';
+    });
+  });
+
+  // Reativar assinatura
+  const btnReativar = document.getElementById('btn-reativar');
+  if (btnReativar) {
+    btnReativar.addEventListener('click', function() {
+      if (!confirm('Deseja reativar sua assinatura?')) return;
+
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reativando...';
+
+      fetch('{% url "assinatura_reativar" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.error || 'Erro ao reativar assinatura');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Reativar Assinatura';
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao processar solicitacao');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Reativar Assinatura';
+      });
+    });
+  }
+});
+</script>
 {% endblock %}
