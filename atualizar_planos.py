@@ -22,6 +22,32 @@ def atualizar_planos():
     print("[*] Atualizando planos de assinatura...")
     print("-" * 50)
 
+    # Plano Básico
+    basico, created = Plano.objects.update_or_create(
+        nome='basico',
+        defaults={
+            'descricao': 'Ideal para começar! Gerencie sua agenda e clientes de forma simples e organizada.',
+            'preco_mensal': Decimal('19.99'),
+            'max_profissionais': 1,
+            'max_agendamentos_mes': 999999,
+            'max_usuarios': 1,
+            'max_servicos': 3,
+            'trial_dias': 7,
+            'permite_financeiro': True,  # Financeiro básico
+            'permite_dashboard_clientes': False,
+            'permite_recorrencias': False,
+            'permite_relatorios_avancados': False,
+            'permite_integracao_contabil': False,
+            'permite_multi_unidades': False,
+            'permite_lembrete_1_dia': False,
+            'permite_lembrete_1_hora': False,
+            'permite_whatsapp_bot': False,  # SEM WhatsApp
+            'ativo': True,
+            'ordem_exibicao': 1
+        }
+    )
+    print(f"[OK] Plano Básico: {'criado' if created else 'atualizado'} - R$ 19,99/mes")
+
     # Plano Essencial
     essencial, created = Plano.objects.update_or_create(
         nome='essencial',
@@ -39,8 +65,11 @@ def atualizar_planos():
             'permite_relatorios_avancados': False,
             'permite_integracao_contabil': False,
             'permite_multi_unidades': False,
+            'permite_lembrete_1_dia': True,
+            'permite_lembrete_1_hora': False,
+            'permite_whatsapp_bot': True,
             'ativo': True,
-            'ordem_exibicao': 1
+            'ordem_exibicao': 2
         }
     )
     print(f"[OK] Plano Essencial: {'criado' if created else 'atualizado'} - R$ 79,99/mes")
@@ -62,8 +91,11 @@ def atualizar_planos():
             'permite_relatorios_avancados': True,
             'permite_integracao_contabil': False,
             'permite_multi_unidades': False,
+            'permite_lembrete_1_dia': True,
+            'permite_lembrete_1_hora': True,
+            'permite_whatsapp_bot': True,
             'ativo': True,
-            'ordem_exibicao': 2
+            'ordem_exibicao': 3
         }
     )
     print(f"[OK] Plano Profissional: {'criado' if created else 'atualizado'} - R$ 199,99/mes")
@@ -94,7 +126,8 @@ def atualizar_planos():
     print("-" * 50)
     print("[SUCCESS] Planos atualizados com sucesso!")
     print("\nResumo dos planos:")
-    print("   - Essencial: R$ 79,99/mes (1 profissional)")
+    print("   - Básico: R$ 19,99/mes (1 profissional, sem WhatsApp)")
+    print("   - Essencial: R$ 79,99/mes (1 profissional, com WhatsApp)")
     print("   - Profissional: R$ 199,99/mes (ate 4 profissionais)")
     print("   - Empresarial: R$ 1.000,00/mes (recursos ilimitados)")
 

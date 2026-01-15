@@ -90,6 +90,22 @@ class Plano(models.Model):
         help_text="Permite criar agendamentos recorrentes"
     )
 
+    # Follow-up / Lembretes
+    permite_lembrete_1_dia = models.BooleanField(
+        default=True,
+        help_text="Permite enviar lembrete 1 dia (24h) antes do agendamento"
+    )
+    permite_lembrete_1_hora = models.BooleanField(
+        default=False,
+        help_text="Permite enviar lembrete 1 hora antes do agendamento (plano superior)"
+    )
+
+    # WhatsApp Bot
+    permite_whatsapp_bot = models.BooleanField(
+        default=True,
+        help_text="Permite usar o WhatsApp Bot para agendamentos automáticos"
+    )
+
     # FLAGS ANTIGAS (manter por compatibilidade, serão removidas futuramente)
     permite_relatorios_avancados = models.BooleanField(
         default=False,

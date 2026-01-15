@@ -1,196 +1,189 @@
 """
-Tasks Celery para agendamentos recorrentes
+Tasks Celery para agendamentos
 """
 from celery import shared_task
 from django.utils import timezone
-from django.utils.timezone import make_aware
-from datetime import datetime, timedelta
-from .models import AgendamentoRecorrente, Agendamento
+from datetime import timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
-def gerar_agendamentos_recorrentes():
+def enviar_lembretes_agendamentos():
     """
-    Task que roda diariamente às 00:00
-    Gera agendamentos para os próximos 60 dias baseado nas recorrências ativas
-
-    Configurar no celery beat:
-    CELERY_BEAT_SCHEDULE = {
-        'gerar-agendamentos-recorrentes': {
-            'task': 'agendamentos.tasks.gerar_agendamentos_recorrentes',
-            'schedule': crontab(hour=0, minute=0),  # Diariamente à meia-noite
-        },
-    }
+    Envia lembretes de agendamentos conforme configuração do plano.
+    
+    Executa a cada 10 minutos via Celery Beat.
+    
+    Lógica:
+    - Lembrete 1 dia antes (24h): Todos os planos
+    - Lembrete 1 hora antes: Apenas planos que permitem
     """
-    from django.db import transaction
-
-    hoje = timezone.now().date()
-    limite = hoje + timedelta(days=60)  # Gerar para os próximos 60 dias
-
-    recorrencias = AgendamentoRecorrente.objects.filter(
-        ativo=True,
-        data_inicio__lte=limite  # Começou antes do limite
-    ).select_related('empresa', 'cliente', 'servico', 'profissional')
-
-    total_criados = 0
-    total_pulados = 0
-
-    for rec in recorrencias:
-        # Se tem data_fim e já passou, desativar
-        if rec.data_fim and rec.data_fim < hoje:
-            rec.ativo = False
-            rec.save()
-            continue
-
-        # Gerar datas baseado na frequência
-        datas_para_gerar = calcular_datas_recorrencia(rec, hoje, limite)
-
-        for data in datas_para_gerar:
-            # Criar data/hora completa
-            data_hora_inicio = make_aware(datetime.combine(data, rec.hora_inicio))
-            data_hora_fim = data_hora_inicio + timedelta(minutes=rec.servico.duracao_minutos)
-
-            # Verificar se já existe agendamento exatamente igual
-            existe = Agendamento.objects.filter(
-                empresa=rec.empresa,
-                cliente=rec.cliente,
-                profissional=rec.profissional,
-                data_hora_inicio=data_hora_inicio
-            ).exists()
-
-            if existe:
-                total_pulados += 1
-                continue
-
-            # Criar agendamento com proteção contra race condition
-            with transaction.atomic():
-                # Lock pessimista: bloqueia outros agendamentos durante a verificação
-                conflito = Agendamento.objects.select_for_update().filter(
-                    empresa=rec.empresa,
-                    profissional=rec.profissional,
-                    data_hora_inicio__lt=data_hora_fim,
-                    data_hora_fim__gt=data_hora_inicio,
-                    status__in=['pendente', 'confirmado']
-                ).exists()
-
-                if conflito:
-                    total_pulados += 1
-                    continue
-
-                # Criar agendamento (dentro da transação, lock ainda ativo)
-                Agendamento.objects.create(
-                    empresa=rec.empresa,
-                    cliente=rec.cliente,
-                    servico=rec.servico,
-                    profissional=rec.profissional,
-                    data_hora_inicio=data_hora_inicio,
-                    data_hora_fim=data_hora_fim,
-                    status='confirmado',  # Recorrentes já são confirmados
-                    valor_cobrado=rec.servico.preco,
-                    notas=f'📅 Agendamento recorrente gerado automaticamente\n'
-                          f'Recorrência: {rec.get_descricao_frequencia()}\n'
-                          f'ID: {rec.id}'
-                )
-                total_criados += 1
-
-    return {
-        'total_criados': total_criados,
-        'total_pulados': total_pulados,
-        'data_execucao': timezone.now().isoformat()
-    }
-
-
-def calcular_datas_recorrencia(recorrencia, data_inicio, data_limite):
-    """
-    Calcula todas as datas em que o agendamento deve ocorrer
-
-    Args:
-        recorrencia: Instância de AgendamentoRecorrente
-        data_inicio: Data inicial para buscar (normalmente hoje)
-        data_limite: Data limite (normalmente hoje + 60 dias)
-
-    Returns:
-        Lista de datas (date objects)
-    """
-    datas = []
-
-    # Começar da data de início da recorrência ou hoje (o que for maior)
-    data_atual = max(recorrencia.data_inicio, data_inicio)
-
-    # Limitar pela data_fim da recorrência se existir
-    if recorrencia.data_fim:
-        data_limite = min(data_limite, recorrencia.data_fim)
-
-    if recorrencia.frequencia == 'diaria':
-        # Todos os dias
-        while data_atual <= data_limite:
-            datas.append(data_atual)
-            data_atual += timedelta(days=1)
-
-    elif recorrencia.frequencia == 'semanal':
-        # Dias específicos da semana
-        if not recorrencia.dias_semana:
-            return []  # Sem dias definidos
-
-        # Garantir que dias_semana é uma lista
-        dias_semana = recorrencia.dias_semana if isinstance(recorrencia.dias_semana, list) else []
-
-        while data_atual <= data_limite:
-            # Verificar se o dia da semana está na lista (0=segunda, 6=domingo)
-            if data_atual.weekday() in dias_semana:
-                datas.append(data_atual)
-            data_atual += timedelta(days=1)
-
-    elif recorrencia.frequencia == 'mensal':
-        # Dia específico do mês
-        if not recorrencia.dia_mes:
-            return []  # Sem dia definido
-
-        # Começar do primeiro dia do mês atual
-        data_atual = data_atual.replace(day=1)
-
-        while data_atual <= data_limite:
-            try:
-                # Tentar criar data com o dia especificado
-                data_mes = data_atual.replace(day=recorrencia.dia_mes)
-
-                # Se a data está dentro do range e não passou ainda
-                if data_inicio <= data_mes <= data_limite:
-                    datas.append(data_mes)
-
-            except ValueError:
-                # Dia inválido para este mês (ex: 31 em fevereiro)
-                pass
-
-            # Próximo mês
-            if data_atual.month == 12:
-                data_atual = data_atual.replace(year=data_atual.year + 1, month=1)
-            else:
-                data_atual = data_atual.replace(month=data_atual.month + 1)
-
-    return datas
-
-
-@shared_task
-def limpar_recorrencias_expiradas():
-    """
-    Task opcional para desativar recorrências expiradas
-    Roda semanalmente
-    """
-    from django.utils import timezone
-
-    hoje = timezone.now().date()
-
-    # Desativar recorrências que já expiraram
-    expiradas = AgendamentoRecorrente.objects.filter(
-        ativo=True,
-        data_fim__lt=hoje
+    from agendamentos.models import Agendamento
+    from empresas.services.evolution_api import EvolutionAPIService
+    
+    agora = timezone.now()
+    lembretes_enviados = {'1_dia': 0, '1_hora': 0, 'erros': 0}
+    
+    # ========== LEMBRETE 1 DIA ANTES (24h) ==========
+    # Busca agendamentos entre 23h50min e 24h10min no futuro
+    inicio_janela_1dia = agora + timedelta(hours=23, minutes=50)
+    fim_janela_1dia = agora + timedelta(hours=24, minutes=10)
+    
+    agendamentos_1_dia = Agendamento.objects.filter(
+        data_hora_inicio__gte=inicio_janela_1dia,
+        data_hora_inicio__lte=fim_janela_1dia,
+        status='confirmado',
+        notificado_1dia=False
+    ).select_related(
+        'empresa__assinatura__plano',
+        'empresa__configuracao_whatsapp',
+        'cliente',
+        'servico',
+        'profissional'
     )
+    
+    logger.info(f"Encontrados {agendamentos_1_dia.count()} agendamentos para lembrete de 1 dia")
+    
+    for agendamento in agendamentos_1_dia:
+        try:
+            plano = agendamento.empresa.assinatura.plano
+            
+            # Verificar se plano permite lembrete de 1 dia
+            if not plano.permite_lembrete_1_dia:
+                logger.debug(f"Plano {plano.nome} não permite lembrete de 1 dia")
+                continue
+            
+            # Enviar lembrete
+            sucesso = _enviar_mensagem_lembrete(agendamento, tipo='1_dia')
+            
+            if sucesso:
+                agendamento.notificado_1dia = True
+                agendamento.save(update_fields=['notificado_1dia'])
+                lembretes_enviados['1_dia'] += 1
+                logger.info(f"Lembrete 1 dia enviado: Agendamento #{agendamento.id}")
+            else:
+                lembretes_enviados['erros'] += 1
+                
+        except Exception as e:
+            logger.error(f"Erro ao enviar lembrete 1 dia para agendamento #{agendamento.id}: {e}")
+            lembretes_enviados['erros'] += 1
+    
+    # ========== LEMBRETE 1 HORA ANTES ==========
+    # Busca agendamentos entre 50min e 1h10min no futuro
+    inicio_janela_1hora = agora + timedelta(minutes=50)
+    fim_janela_1hora = agora + timedelta(hours=1, minutes=10)
+    
+    agendamentos_1_hora = Agendamento.objects.filter(
+        data_hora_inicio__gte=inicio_janela_1hora,
+        data_hora_inicio__lte=fim_janela_1hora,
+        status='confirmado',
+        notificado_1hora=False
+    ).select_related(
+        'empresa__assinatura__plano',
+        'empresa__configuracao_whatsapp',
+        'cliente',
+        'servico',
+        'profissional'
+    )
+    
+    logger.info(f"Encontrados {agendamentos_1_hora.count()} agendamentos para lembrete de 1 hora")
+    
+    for agendamento in agendamentos_1_hora:
+        try:
+            plano = agendamento.empresa.assinatura.plano
+            
+            # Verificar se plano permite lembrete de 1 hora (apenas planos superiores)
+            if not plano.permite_lembrete_1_hora:
+                logger.debug(f"Plano {plano.nome} não permite lembrete de 1 hora")
+                continue
+            
+            # Enviar lembrete
+            sucesso = _enviar_mensagem_lembrete(agendamento, tipo='1_hora')
+            
+            if sucesso:
+                agendamento.notificado_1hora = True
+                agendamento.save(update_fields=['notificado_1hora'])
+                lembretes_enviados['1_hora'] += 1
+                logger.info(f"Lembrete 1 hora enviado: Agendamento #{agendamento.id}")
+            else:
+                lembretes_enviados['erros'] += 1
+                
+        except Exception as e:
+            logger.error(f"Erro ao enviar lembrete 1 hora para agendamento #{agendamento.id}: {e}")
+            lembretes_enviados['erros'] += 1
+    
+    # Log resumo
+    logger.info(
+        f"Lembretes enviados: {lembretes_enviados['1_dia']} (1 dia), "
+        f"{lembretes_enviados['1_hora']} (1 hora), "
+        f"{lembretes_enviados['erros']} erros"
+    )
+    
+    return lembretes_enviados
 
-    total = expiradas.count()
-    expiradas.update(ativo=False)
 
-    return {
-        'total_desativadas': total,
-        'data_execucao': timezone.now().isoformat()
-    }
+def _enviar_mensagem_lembrete(agendamento, tipo='1_dia'):
+    """
+    Envia mensagem de lembrete via Evolution API (WhatsApp)
+    
+    Args:
+        agendamento: Instância de Agendamento
+        tipo: '1_dia' ou '1_hora'
+    
+    Returns:
+        bool: True se enviou com sucesso
+    """
+    config_whatsapp = agendamento.empresa.configuracao_whatsapp
+    
+    # Verificar se WhatsApp está conectado
+    if not config_whatsapp or config_whatsapp.status != 'conectado':
+        logger.warning(
+            f"WhatsApp não conectado para empresa {agendamento.empresa.nome} "
+            f"(ID: {agendamento.empresa.id})"
+        )
+        return False
+    
+    # Montar mensagem conforme tipo
+    if tipo == '1_dia':
+        mensagem = f"""🔔 *Lembrete de Agendamento*
+
+Olá {agendamento.cliente.nome}! 
+
+Você tem um agendamento amanhã:
+
+📅 Data: {agendamento.data_hora_inicio.strftime('%d/%m/%Y')}
+🕐 Horário: {agendamento.data_hora_inicio.strftime('%H:%M')}
+✂️ Serviço: {agendamento.servico.nome}
+👤 Profissional: {agendamento.profissional.nome if agendamento.profissional else 'A definir'}
+
+Nos vemos lá! 😊
+
+_Para cancelar ou reagendar, responda esta mensagem._"""
+    
+    else:  # 1_hora
+        mensagem = f"""⏰ *Lembrete: Seu horário é daqui a 1 hora!*
+
+Olá {agendamento.cliente.nome}!
+
+Seu agendamento é às *{agendamento.data_hora_inicio.strftime('%H:%M')}*
+
+✂️ {agendamento.servico.nome}
+👤 Com {agendamento.profissional.nome if agendamento.profissional else 'nosso profissional'}
+
+Até já! 🚀"""
+    
+    # Enviar via Evolution API
+    try:
+        service = EvolutionAPIService(config_whatsapp)
+        resultado = service.enviar_mensagem(
+            numero=agendamento.cliente.telefone,
+            mensagem=mensagem
+        )
+        
+        return resultado.get('success', False)
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar mensagem via Evolution API: {e}")
+        return False

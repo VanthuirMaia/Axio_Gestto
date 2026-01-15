@@ -146,7 +146,7 @@
                 <select id="plano" name="plano" required>
                     {% for plano_obj in planos %}
                     <option value="{{ plano_obj.nome }}" {% if request.GET.plano == plano_obj.nome %}selected{% endif %}>
-                        {{ plano_obj.get_nome_display }} - R$ {{ plano_obj.preco_mensal|floatformat:0 }}/mês ({{ plano_obj.max_profissionais }} prof)
+                        {{ plano_obj.get_nome_display }} - R$ {{ plano_obj.preco_mensal|floatformat:2 }}/mês ({{ plano_obj.max_profissionais }} prof)
                     </option>
                     {% endfor %}
                 </select>

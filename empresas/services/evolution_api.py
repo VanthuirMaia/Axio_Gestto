@@ -372,8 +372,47 @@ class EvolutionAPIService:
                 }
             else:
                 # Instância existe mas não conseguiu QR - tentar deletar e recriar
-                logger.warning(f"Instância existe mas QR não disponível. Deletando para recriar...")
-                self._deletar_instancia_na_api(instance_name)
+                logger.warning(f"Instância existe mas QR não disponível. Tentando deletar para recriar...")
+                
+                # Tentar deletar
+                deletou = self._deletar_instancia_na_api(instance_name)
+                
+                if not deletou:
+                    # Deleção falhou - retornar erro ao invés de criar duplicata
+                    logger.error(f"Falha ao deletar instância {instance_name}. Abortando para evitar duplicação.")
+                    self.config.status = 'erro'
+                    self.config.ultimo_erro = 'Erro ao resetar instância. Tente novamente em alguns minutos.'
+                    self.config.save()
+                    
+                    return {
+                        'success': False,
+                        'qrcode': None,
+                        'status': 'erro',
+                        'message': 'Erro ao resetar instância. Tente novamente em alguns minutos ou contate o suporte.',
+                        'action': 'error'
+                    }
+                
+                # Aguardar para garantir que API processou a deleção
+                logger.info(f"Aguardando 2 segundos para API processar deleção...")
+                time.sleep(2)
+                
+                # Verificar se realmente foi deletada
+                busca_confirmacao = self._buscar_instancia_na_api(instance_name)
+                if busca_confirmacao.get('exists'):
+                    logger.error(f"Instância {instance_name} ainda existe após deleção! Abortando para evitar duplicação.")
+                    self.config.status = 'erro'
+                    self.config.ultimo_erro = 'A instância antiga não pôde ser removida.'
+                    self.config.save()
+                    
+                    return {
+                        'success': False,
+                        'qrcode': None,
+                        'status': 'erro',
+                        'message': 'Erro ao resetar instância. A instância antiga não pôde ser removida. Contate o suporte.',
+                        'action': 'error'
+                    }
+                
+                logger.info(f"Instância {instance_name} deletada com sucesso. Prosseguindo com criação...")
                 # Continua para criar nova instância
 
         # 2. Criar nova instância

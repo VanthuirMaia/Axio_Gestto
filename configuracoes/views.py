@@ -574,13 +574,40 @@ def profissional_editar(request, pk):
     """Edita um profissional"""
     empresa = request.user.empresa
     profissional = get_object_or_404(Profissional, pk=pk, empresa=empresa)
+    
+    # Obter assinatura e plano para validação de limites
+    assinatura = getattr(empresa, 'assinatura', None)
+    plano = assinatura.plano if assinatura else None
 
     if request.method == 'POST':
+        # Capturar novo estado de 'ativo' antes de salvar
+        novo_ativo = request.POST.get('ativo') == 'on'
+        
+        # VALIDAÇÃO: Se está tentando ativar um profissional que estava desativado
+        if not profissional.ativo and novo_ativo and plano:
+            # Contar profissionais atualmente ativos (excluindo o atual)
+            profissionais_ativos = Profissional.objects.filter(
+                empresa=empresa,
+                ativo=True
+            ).count()
+            
+            # Se ativar este profissional, excederia o limite do plano?
+            if profissionais_ativos >= plano.max_profissionais:
+                messages.error(
+                    request,
+                    f'❌ Não é possível ativar este profissional. '
+                    f'Você já tem {profissionais_ativos} profissional(is) ativo(s) '
+                    f'e seu plano {plano.get_nome_display()} permite apenas {plano.max_profissionais}. '
+                    f'Faça upgrade do plano para ativar mais profissionais.'
+                )
+                return redirect('profissionais_lista')
+        
+        # Atualizar dados do profissional
         profissional.nome = request.POST.get('nome')
         profissional.telefone = request.POST.get('telefone', '')
         profissional.email = request.POST.get('email', '')
         profissional.cor_hex = request.POST.get('cor_hex', '#1e3a8a')
-        profissional.ativo = request.POST.get('ativo') == 'on'
+        profissional.ativo = novo_ativo
         profissional.save()
 
         # Atualizar servicos
@@ -745,8 +772,59 @@ def assinatura_alterar_plano(request):
     # Registrar plano anterior para historico
     plano_anterior = plano_atual.get_nome_display()
     preco_anterior = plano_atual.preco_mensal
+    
+    # Determinar tipo de alteracao
+    tipo = 'upgrade' if novo_plano.preco_mensal > preco_anterior else 'downgrade'
 
-    # Alterar o plano
+    # SINCRONIZAR COM STRIPE (se assinatura foi criada via Stripe)
+    if assinatura.gateway == 'stripe' and assinatura.subscription_id_externo:
+        try:
+            import stripe
+            from django.conf import settings
+            
+            # Configurar Stripe
+            stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+            
+            # Validar se novo plano tem stripe_price_id configurado
+            if not novo_plano.stripe_price_id:
+                logger.error(f'Plano {novo_plano.nome} sem stripe_price_id configurado!')
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Plano sem configuração de pagamento. Contate o suporte.'
+                }, status=400)
+            
+            # Buscar subscription atual no Stripe
+            subscription = stripe.Subscription.retrieve(assinatura.subscription_id_externo)
+            
+            # Atualizar subscription para novo plano
+            stripe.Subscription.modify(
+                assinatura.subscription_id_externo,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'price': novo_plano.stripe_price_id,
+                }],
+                proration_behavior='always_invoice',  # Cobrar diferença proporcional
+            )
+            
+            logger.info(
+                f"Subscription Stripe atualizada: {assinatura.subscription_id_externo} - "
+                f"{plano_anterior} → {novo_plano.get_nome_display()} ({tipo})"
+            )
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Erro ao atualizar subscription no Stripe: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro ao atualizar pagamento. Tente novamente ou contate o suporte.'
+            }, status=500)
+        except Exception as e:
+            logger.error(f"Erro inesperado ao atualizar Stripe: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro ao processar alteração. Contate o suporte.'
+            }, status=500)
+    
+    # Alterar o plano no banco local
     assinatura.plano = novo_plano
     assinatura.save()
 

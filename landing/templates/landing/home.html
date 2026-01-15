@@ -903,6 +903,11 @@
         .pricing-grid-home {
             grid-template-columns: 1fr;
         }
+        
+        /* Grid de 3 planos também fica 1 coluna em mobile */
+        #precos .container > div[style*="grid-template-columns: repeat(3"] {
+            grid-template-columns: 1fr !important;
+        }
     }
 </style>
 
@@ -946,7 +951,7 @@
             </div>
 
             <div class="trust-badges">
-                <div class="trust-badge">✅ Condições vitalícias</div>
+                <div class="trust-badge">✅ Condições especiais beta</div>
                 <div class="trust-badge">✅ Construção conjunta</div>
                 <div class="trust-badge">✅ Suporte direto</div>
             </div>
@@ -1061,9 +1066,37 @@
             <p>Participe da construção do melhor sistema para barbearias e nails design</p>
         </div>
 
-        <div class="pricing-grid-home">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1200px; margin: 3rem auto 0;">
+            <!-- PLANO BÁSICO -->
             <div class="pricing-card-home">
                 <div class="badge-placeholder-home"></div>
+                <div class="plan-header-home">
+                    <div class="plan-name-home">Básico</div>
+                    <div class="plan-price-home">
+                        R$ 19,99
+                        <small>/mês</small>
+                    </div>
+                </div>
+                <ul class="plan-features-home">
+                    <li>1 profissional (solo)</li>
+                    <li>Agendamentos ilimitados</li>
+                    <li>Agenda digital completa</li>
+                    <li>Cadastro de clientes</li>
+                    <li>Controle financeiro básico</li>
+                    <li style="opacity: 0.5; text-decoration: line-through;">Bot WhatsApp automático</li>
+                    <li style="opacity: 0.5; text-decoration: line-through;">Lembretes automáticos</li>
+                    <li>Suporte email (48h)</li>
+                </ul>
+                <div class="plan-footer-home">
+                    <a href="{% url 'landing:cadastro' %}?plano=basico" class="btn-plan-home">
+                        Começar Agora
+                    </a>
+                </div>
+            </div>
+
+            <!-- PLANO ESSENCIAL -->
+            <div class="pricing-card-home featured-home">
+                <span class="badge-home">Mais Popular</span>
                 <div class="plan-header-home">
                     <div class="plan-name-home">Essencial</div>
                     <div class="plan-price-home">
@@ -1074,9 +1107,10 @@
                 <ul class="plan-features-home">
                     <li>1 profissional (barbeiro ou manicure solo)</li>
                     <li>Agendamentos ilimitados</li>
-                    <li>Bot WhatsApp automático</li>
+                    <li>✅ Bot WhatsApp automático</li>
                     <li>Agenda inteligente</li>
                     <li>Gestão básica de agendamentos</li>
+                    <li>✅ Lembrete 1 dia antes</li>
                     <li>Suporte email (24h)</li>
                     <li>Condições especiais beta</li>
                 </ul>
@@ -1087,8 +1121,9 @@
                 </div>
             </div>
 
-            <div class="pricing-card-home featured-home">
-                <span class="badge-home">Mais Popular</span>
+            <!-- PLANO PROFISSIONAL -->
+            <div class="pricing-card-home">
+                <div class="badge-placeholder-home"></div>
                 <div class="plan-header-home">
                     <div class="plan-name-home">Profissional</div>
                     <div class="plan-price-home">
@@ -1099,11 +1134,12 @@
                 <ul class="plan-features-home">
                     <li>Até 4 profissionais (barbearia/studio com equipe)</li>
                     <li>Agendamentos ilimitados</li>
-                    <li>Bot WhatsApp automático</li>
+                    <li>✅ Bot WhatsApp automático</li>
                     <li>Agenda inteligente multi-profissional</li>
                     <li>Gestão financeira completa</li>
                     <li>Relatórios e análises avançadas</li>
                     <li>Comissões automáticas por profissional</li>
+                    <li>✅ Lembretes 1 dia + 1 hora antes</li>
                     <li>Suporte email + WhatsApp (12h)</li>
                     <li>Condições especiais beta</li>
                 </ul>
@@ -1117,7 +1153,7 @@
 
         <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: var(--light-gray); border-radius: 12px;">
             <h3 style="margin-bottom: 1rem;">Todos os planos incluem:</h3>
-            <p>✅ WhatsApp Bot com IA • ✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup</p>
+            <p>✅ Suporte técnico • ✅ Atualizações grátis • ✅ Sem taxa de setup • ✅ 7 dias de trial grátis</p>
         </div>
 
         <div style="text-align: center; margin-top: 2rem; padding: 3rem 2rem; background: var(--primary-gradient); border-radius: 12px; color: white; box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);">
@@ -1155,7 +1191,7 @@
                     Estamos procurando 10 estabelecimentos para co-criar o sistema ideal de agenda via WhatsApp.
                 </p>
                 <p>
-                    Como participante beta, você terá <strong>condições especiais vitalícias</strong>,
+                    Como participante beta, você terá <strong>condições especiais</strong>,
                     <strong>canal direto com o time</strong> de desenvolvimento e ajudará a moldar
                     as funcionalidades que realmente importam para o seu dia a dia.
                 </p>
@@ -1173,8 +1209,8 @@
 
                 <div class="roi-stat">
                     <div class="roi-stat-label">Benefício</div>
-                    <div class="roi-stat-value" style="font-size: 1.8rem;">Vitalício</div>
-                    <div class="roi-stat-detail">Condições especiais para sempre</div>
+                    <div class="roi-stat-value" style="font-size: 1.8rem;">Especial</div>
+                    <div class="roi-stat-detail">Condições exclusivas beta</div>
                 </div>
 
                 <div class="roi-stat">
@@ -1216,7 +1252,7 @@
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🤝</div>
                     <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--dark);">Co-criação</h3>
                     <p style="color: var(--gray); font-size: 0.95rem; margin: 0;">
-                        Você ajuda a moldar as funcionalidades e recebe condições especiais vitalícias
+                        Você ajuda a moldar as funcionalidades e recebe condições especiais
                     </p>
                 </div>
 
@@ -1254,7 +1290,7 @@
                 </div>
                 <div class="faq-answer">
                     Você entra como participante fundador do Gestto, ajuda a moldar as funcionalidades específicas
-                    para barbeiros e manicures, e recebe condições especiais vitalícias. O número de vagas é limitado
+                    para barbeiros e manicures, e recebe condições especiais. O número de vagas é limitado
                     para garantir que possamos ouvir e atender cada parceiro de perto.
                 </div>
             </div>
@@ -1392,7 +1428,7 @@
             </p>
 
             <div class="cta-features">
-                <div class="cta-feature">✅ Condições vitalícias</div>
+                <div class="cta-feature">✅ Condições especiais beta</div>
                 <div class="cta-feature">✅ Suporte direto com o time</div>
                 <div class="cta-feature">✅ Co-criação de funcionalidades</div>
             </div>
@@ -1402,7 +1438,7 @@
             </a>
 
             <p style="margin-top: 1.5rem; font-size: 0.95rem; opacity: 0.8;">
-                🎯 Apenas 10 vagas disponíveis • 🤝 Construção conjunta • 💎 Benefícios vitalícios
+                🎯 Apenas 10 vagas disponíveis • 🤝 Construção conjunta • 💎 Benefícios especiais beta
             </p>
         </div>
     </div>

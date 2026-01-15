@@ -68,6 +68,43 @@
   </div>
   {% endif %}
 
+  <!-- CARD DE LINK DE AGENDAMENTO -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+        <div class="card-body p-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h5 class="text-white mb-2 fw-bold">
+                <i class="bi bi-link-45deg me-2"></i>Seu Link de Agendamento Público
+              </h5>
+              <p class="text-white mb-3" style="opacity: 0.9; font-size: 0.95rem;">
+                Compartilhe com seus clientes para eles agendarem sozinhos, 24/7
+              </p>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="bg-white bg-opacity-10 rounded px-3 py-2 flex-grow-1" style="max-width: 500px;">
+                  <code class="text-white d-block text-truncate" id="link-agendamento" style="font-size: 0.95rem;">
+                    https://gestto.app.br/agendar/{{ empresa.slug }}
+                  </code>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+              <div class="d-flex flex-column flex-lg-row gap-2 justify-content-lg-end">
+                <button class="btn btn-light" onclick="copiarLinkAgendamento()">
+                  <i class="bi bi-clipboard me-2"></i>Copiar Link
+                </button>
+                <button class="btn btn-success" onclick="compartilharWhatsApp()">
+                  <i class="bi bi-whatsapp me-2"></i>Compartilhar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MÉTRICAS PRINCIPAIS - Grid 4 colunas -->
   <div class="row g-3 mb-4">
     
@@ -299,7 +336,59 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  // Gráfico de Faturamento
+  // ========== FUNÇÕES DE COMPARTILHAMENTO ==========
+  
+  function copiarLinkAgendamento() {
+    const linkElement = document.getElementById('link-agendamento');
+    const link = linkElement.textContent.trim();
+    
+    // Copiar para clipboard
+    navigator.clipboard.writeText(link).then(function() {
+      // Feedback visual com SweetAlert2 (se disponível) ou alert simples
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Link copiado!',
+          text: 'Cole onde quiser compartilhar com seus clientes',
+          timer: 2500,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      } else {
+        // Fallback: mudar temporariamente o texto do botão
+        const btn = event.target.closest('button');
+        const textoOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Copiado!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-light');
+        
+        setTimeout(function() {
+          btn.innerHTML = textoOriginal;
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-light');
+        }, 2000);
+      }
+    }).catch(function(err) {
+      console.error('Erro ao copiar:', err);
+      alert('Erro ao copiar link. Tente selecionar e copiar manualmente.');
+    });
+  }
+  
+  function compartilharWhatsApp() {
+    const linkElement = document.getElementById('link-agendamento');
+    const link = linkElement.textContent.trim();
+    
+    // Mensagem simples e funcional (sem emojis que podem dar problema)
+    const mensagem = 'Olá!\n\nAgora você pode agendar seu horário comigo de forma rápida e fácil:\n\n' + link + '\n\nSimples assim! Até breve!';
+    
+    // Abrir WhatsApp Web com mensagem pré-pronta
+    const urlWhatsApp = 'https://wa.me/?text=' + encodeURIComponent(mensagem);
+    window.open(urlWhatsApp, '_blank');
+  }
+  
+  // ========== GRÁFICO DE FATURAMENTO ==========
+  
   const ctx = document.getElementById('chartFaturamento');
   
   new Chart(ctx, {
