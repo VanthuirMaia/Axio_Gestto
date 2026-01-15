@@ -254,34 +254,34 @@
             </div>
 
             <p>
-                Sua conta no <strong>Axio Gestto</strong> está pronta para uso. Agora você pode começar a gerenciar seus agendamentos de forma automática e profissional.
+                Sua conta no <strong>Gestto</strong> está quase pronta! Para começar a usar o sistema, você precisa ativar sua conta e definir sua senha.
             </p>
 
             <div class="credentials-box">
-                <h3>🔐 Suas Credenciais de Acesso</h3>
+                <h3>🔐 Ative Sua Conta</h3>
 
                 <div class="credential-item">
                     <span class="credential-label">Email / Usuário</span>
                     <span class="credential-value">{{ usuario.email }}</span>
                 </div>
-
-                <div class="credential-item">
-                    <span class="credential-label">Senha Temporária</span>
-                    <span class="credential-value">{{ senha_temporaria }}</span>
-                </div>
             </div>
 
             <div class="warning-box">
                 <p>
-                    <strong>⚠️ IMPORTANTE:</strong> Altere sua senha no primeiro acesso por questões de segurança!
+                    <strong>⚠️ IMPORTANTE:</strong> Clique no botão abaixo para ativar sua conta e definir sua senha. O link é válido por 48 horas.
                 </p>
             </div>
 
             <div style="text-align: center;">
-                <a href="{{ site_url }}/app/login/" class="action-button">
-                    Acessar o Sistema Agora
+                <a href="{{ site_url }}/ativar-conta/{{ activation_token }}/" class="action-button">
+                    Ativar Minha Conta Agora
                 </a>
             </div>
+
+            <p style="margin-top: 20px; font-size: 14px; color: #6b7280; text-align: center;">
+                Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; display: inline-block; margin-top: 8px;">{{ site_url }}/ativar-conta/{{ activation_token }}/</code>
+            </p>
 
             {% if plano %}
             <div class="trial-info">

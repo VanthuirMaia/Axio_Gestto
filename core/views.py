@@ -489,6 +489,63 @@ def alterar_senha(request):
 
 
 # ==========================================
+# ATIVAÇÃO DE CONTA VIA EMAIL
+# ==========================================
+
+@require_http_methods(["GET", "POST"])
+def ativar_conta(request, token):
+    """
+    Ativa conta de usuário via link de email
+    
+    GET: Mostra formulário para definir senha
+    POST: Ativa conta e define senha
+    """
+    from .utils import token_ativacao_valido
+    
+    # Buscar usuário pelo token
+    try:
+        usuario = Usuario.objects.get(activation_token=token, is_activated=False)
+    except Usuario.DoesNotExist:
+        messages.error(request, 'Link de ativação inválido ou já utilizado.')
+        return render(request, 'ativar_conta.html', {'token_valido': False})
+    
+    # Verificar se token ainda é válido (48h)
+    if not token_ativacao_valido(usuario):
+        messages.error(request, 'Este link de ativação expirou. Entre em contato com o suporte.')
+        return render(request, 'ativar_conta.html', {'token_valido': False})
+    
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        # Validar senhas
+        if password != password_confirm:
+            messages.error(request, 'As senhas não coincidem.')
+            return render(request, 'ativar_conta.html', {'token_valido': True})
+        
+        # Validar força da senha
+        try:
+            password_validation.validate_password(password, usuario)
+        except ValidationError as e:
+            for error in e.messages:
+                messages.error(request, error)
+            return render(request, 'ativar_conta.html', {'token_valido': True})
+        
+        # Ativar conta e definir senha
+        usuario.set_password(password)
+        usuario.is_activated = True
+        usuario.activation_token = None  # Invalidar token
+        usuario.activation_token_created = None
+        usuario.save()
+        
+        messages.success(request, 'Conta ativada com sucesso! Você já pode fazer login.')
+        return redirect('login')
+    
+    # GET: Mostrar formulário
+    return render(request, 'ativar_conta.html', {'token_valido': True})
+
+
+# ==========================================
 # PWA - Service Worker e Offline
 # ==========================================
 
