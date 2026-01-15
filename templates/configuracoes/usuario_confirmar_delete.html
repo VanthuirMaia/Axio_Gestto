@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Desativar Usuario - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <a href="{% url 'usuarios_lista' %}" class="btn btn-link text-decoration-none me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+              <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'usuarios_lista' %}">Usuarios</a></li>
+              <li class="breadcrumb-item active">Desativar</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold mb-0 text-danger">
+            <i class="bi bi-person-x me-2"></i>
+            Desativar Usuario
+          </h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmacao -->
+  <div class="row">
+    <div class="col-12 col-lg-6 mx-auto">
+      <div class="card shadow-sm border-danger">
+        <div class="card-body text-center py-5">
+
+          <div class="mb-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center"
+                 style="width: 80px; height: 80px;">
+              <i class="bi bi-person-x text-danger" style="font-size: 2.5rem;"></i>
+            </div>
+          </div>
+
+          <h4 class="mb-3">Desativar {{ usuario.get_full_name|default:usuario.username }}?</h4>
+
+          <p class="text-muted mb-4">
+            O usuario <strong>{{ usuario.email }}</strong> nao podera mais acessar o sistema.
+            <br>
+            <small>Voce pode reativar o usuario depois, se necessario.</small>
+          </p>
+
+          <div class="alert alert-warning text-start">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Atencao:</strong> O usuario perdera acesso imediatamente.
+          </div>
+
+          <form method="post" class="d-flex gap-2 justify-content-center mt-4">
+            {% csrf_token %}
+            <a href="{% url 'usuarios_lista' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-1"></i>
+              Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-person-x me-1"></i>
+              Sim, Desativar Usuario
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

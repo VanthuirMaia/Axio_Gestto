@@ -8,11 +8,18 @@
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12">
-      <h2 class="fw-bold mb-1">
-        <i class="bi bi-whatsapp me-2"></i>
-        Configuração WhatsApp
-      </h2>
-      <p class="text-muted mb-0">Conecte seu WhatsApp e automatize o atendimento</p>
+      <div class="d-flex align-items-center">
+        <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-link text-decoration-none me-2 p-0">
+          <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        <div>
+          <h2 class="fw-bold mb-1">
+            <i class="bi bi-whatsapp me-2"></i>
+            Configuracao WhatsApp
+          </h2>
+          <p class="text-muted mb-0">Conecte seu WhatsApp e automatize o atendimento</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -55,10 +62,27 @@
                   Desconectar
                 </button>
               {% elif config.status == 'aguardando_qr' %}
-                <button class="btn btn-secondary" disabled>
-                  <i class="bi bi-qr-code me-2"></i>
-                  Aguardando QR Code...
-                </button>
+                <div class="d-flex flex-column gap-2 align-items-end">
+                  <button class="btn btn-secondary" disabled>
+                    <i class="bi bi-qr-code me-2"></i>
+                    Aguardando QR Code...
+                  </button>
+                  <button class="btn btn-outline-warning btn-sm" onclick="resetarConfiguracao()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    Problemas? Recomecar
+                  </button>
+                </div>
+              {% elif config.status == 'erro' %}
+                <div class="d-flex flex-column gap-2 align-items-end">
+                  <button class="btn btn-success btn-lg" onclick="conectarWhatsApp()" id="btn-conectar">
+                    <i class="bi bi-whatsapp me-2"></i>
+                    Tentar Novamente
+                  </button>
+                  <button class="btn btn-outline-warning btn-sm" onclick="resetarConfiguracao()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    Resetar Configuracao
+                  </button>
+                </div>
               {% else %}
                 <button class="btn btn-success btn-lg" onclick="conectarWhatsApp()" id="btn-conectar">
                   <i class="bi bi-whatsapp me-2"></i>
@@ -175,16 +199,21 @@
 
           <hr>
 
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-sm btn-outline-primary" onclick="verificarStatus()">
               <i class="bi bi-arrow-repeat me-1"></i>
               Atualizar Status
             </button>
 
+            <button class="btn btn-sm btn-outline-warning" onclick="resetarConfiguracao()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>
+              Resetar Config Local
+            </button>
+
             {% if config.instance_name %}
             <button class="btn btn-sm btn-outline-danger" onclick="deletarInstancia()">
               <i class="bi bi-trash me-1"></i>
-              Deletar Instância
+              Deletar Instancia
             </button>
             {% endif %}
           </div>
@@ -393,7 +422,36 @@
     }
   }
 
-  // Limpar polling ao sair da página
+  // Resetar configuracao local
+  async function resetarConfiguracao() {
+    if (!confirm('Isso vai limpar a configuracao local do WhatsApp.\n\nUse quando:\n- A instancia foi deletada manualmente na Evolution API\n- O QR Code nao aparece\n- Ha erros persistentes\n\nDeseja continuar?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('{% url "whatsapp_resetar" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Configuracao resetada! A pagina sera recarregada.');
+        window.location.reload();
+      } else {
+        alert('Erro ao resetar: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao resetar configuracao');
+    }
+  }
+
+  // Limpar polling ao sair da pagina
   window.addEventListener('beforeunload', () => {
     pararPolling();
   });

@@ -1,17 +1,51 @@
 /* ============================================
-   VARIÁVEIS E RESET
+   VARIÁVEIS GLOBAIS - DESIGN MINIMALISTA
    ============================================ */
 
 :root {
+  /* Layout */
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 80px;
+
+  /* Backgrounds */
+  --bg-primary: #fafbfc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+
+  /* Textos */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  /* Accent Colors */
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #2563eb;
+  --accent-success: #059669;
+  --accent-warning: #f59e0b;
+  --accent-danger: #dc2626;
+
+  /* Borders */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+
+  /* Botões (compatibilidade) */
+  --btn-primary: #3b82f6;
+  --btn-primary-hover: #2563eb;
+  --btn-success: #059669;
+  --btn-danger: #dc2626;
+  --btn-border: #e5e7eb;
+  --btn-text-muted: #6b7280;
+
+  /* Sidebar */
   --sidebar-bg: #ffffff;
   --sidebar-border: #e5e7eb;
   --sidebar-hover: #f3f4f6;
-  --sidebar-active: #0d6efd;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --sidebar-active: #3b82f6;
 }
 
 * {
@@ -23,23 +57,236 @@
 body {
   overflow-x: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* Tipografia Moderna */
+h1,
+.h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h2,
+.h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+h3,
+.h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+h4,
+.h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+h5,
+.h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+small,
+.small {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   SISTEMA DE BOTÕES CLEAN
+   ============================================ */
+
+/* Botão Base - Estilo Minimalista */
+.btn-clean {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+/* Variante Primary */
+.btn-clean-primary {
+  background: var(--btn-primary);
+  color: white;
+  border-color: var(--btn-primary);
+}
+
+.btn-clean-primary:hover {
+  background: var(--btn-primary-hover);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+}
+
+/* Variante Success */
+.btn-clean-success {
+  background: var(--btn-success);
+  color: white;
+  border-color: var(--btn-success);
+}
+
+.btn-clean-success:hover {
+  background: #0ea572;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+/* Variante Danger */
+.btn-clean-danger {
+  background: var(--btn-danger);
+  color: white;
+  border-color: var(--btn-danger);
+}
+
+.btn-clean-danger:hover {
+  background: #dc2626;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+
+/* Variante Secondary */
+.btn-clean-secondary {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.btn-clean-secondary:hover {
+  background: #5c636a;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+/* Variante Outline */
+.btn-clean-outline {
+  background: white;
+  border-color: var(--btn-border);
+  color: var(--btn-text-muted);
+}
+
+.btn-clean-outline:hover {
+  border-color: var(--btn-primary);
+  color: var(--btn-primary);
+  background: #f8f9fa;
+}
+
+/* Variante Ghost (sem borda) */
+.btn-clean-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--btn-text-muted);
+}
+
+.btn-clean-ghost:hover {
+  background: #f3f4f6;
+  color: var(--text-primary);
+}
+
+/* Tamanhos */
+.btn-clean-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.btn-clean-lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+}
+
+/* Botões Ícone Apenas */
+.btn-icon-clean {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid var(--btn-border);
+  background: white;
+  color: var(--btn-text-muted);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-icon-clean:hover {
+  border-color: var(--btn-primary);
+  color: var(--btn-primary);
+  background: #f8f9fa;
+}
+
+.btn-icon-clean-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.875rem;
+}
+
+/* Variantes de cor para ícones */
+.btn-icon-clean.btn-icon-danger:hover {
+  border-color: var(--btn-danger);
+  color: var(--btn-danger);
+  background: #fef2f2;
+}
+
+.btn-icon-clean.btn-icon-success:hover {
+  border-color: var(--btn-success);
+  color: var(--btn-success);
+  background: #f0fdf4;
+}
+
+.btn-icon-clean.btn-icon-info:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* Estado disabled */
+.btn-clean:disabled,
+.btn-icon-clean:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-clean:disabled:hover,
+.btn-icon-clean:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* ============================================
    SIDEBAR - VERSÃO CLARA PROFISSIONAL
    ============================================ */
-
-:root {
-  --sidebar-width: 260px;
-  --sidebar-collapsed-width: 80px;
-  --sidebar-bg: #ffffff;
-  --sidebar-border: #e5e7eb;
-  --sidebar-hover: #f3f4f6;
-  --sidebar-active: #0d6efd;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-}
 
 .sidebar {
   position: fixed;
@@ -60,13 +307,13 @@ body {
   width: var(--sidebar-collapsed-width);
 }
 
-/* Header da Sidebar - Logo */
+/* Header da Sidebar - Clean */
 .sidebar-header {
   position: relative;
-  padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid var(--sidebar-border);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 50px;
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,8 +333,8 @@ body {
 }
 
 .sidebar.collapsed .sidebar-header {
-  padding: 0.75rem 0;
-  min-height: 65px;
+  padding: 1rem 0;
+  min-height: 70px;
 }
 
 /* Logo Gestto */
@@ -96,11 +343,11 @@ body {
   width: 140px;
   height: auto;
   transition: all 0.3s ease;
-  filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.2)); /* Torna a logo branca com sombra */
-  margin-bottom: 0.15rem;
+  filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(206deg) brightness(97%) contrast(97%);
+  margin-bottom: 0.25rem;
 }
 
-/* Logo quando colapsado - reduz tamanho mas mantém visível */
+/* Logo quando colapsado */
 .sidebar.collapsed .sidebar-logo {
   max-width: 40px;
   width: 40px;
@@ -109,12 +356,12 @@ body {
 }
 
 .sidebar-empresa-nome {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
   font-weight: 500;
   display: block;
   margin-top: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.025em;
 }
 
 /* Botão de Toggle - MELHORADO */
@@ -169,14 +416,14 @@ body {
 
 .sidebar .nav-link {
   color: var(--text-secondary);
-  padding: 0.875rem 1rem;
-  margin-bottom: 0.375rem;
-  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.25rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   position: relative;
   white-space: nowrap;
 }
@@ -184,13 +431,13 @@ body {
 .sidebar .nav-link:hover {
   background-color: var(--sidebar-hover);
   color: var(--text-primary);
-  transform: translateX(4px);
+  transform: translateX(2px);
 }
 
 .sidebar .nav-link.active {
-  background-color: var(--sidebar-active);
-  color: white;
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  background-color: var(--bg-tertiary);
+  color: var(--sidebar-active);
+  font-weight: 600;
 }
 
 .sidebar .nav-link.active:hover {
@@ -198,9 +445,9 @@ body {
 }
 
 .sidebar .nav-link i {
-  font-size: 1.25rem;
-  width: 24px;
-  min-width: 24px;
+  font-size: 1.125rem;
+  width: 20px;
+  min-width: 20px;
   margin-right: 0.75rem;
   transition: all 0.2s ease;
 }
@@ -400,11 +647,11 @@ body {
 .main-content {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: var(--bg-primary);
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar.collapsed ~ .main-content {
+.sidebar.collapsed~.main-content {
   margin-left: var(--sidebar-collapsed-width);
 }
 
@@ -476,7 +723,7 @@ body {
   font-weight: 500;
 }
 
-.breadcrumb-item + .breadcrumb-item::before {
+.breadcrumb-item+.breadcrumb-item::before {
   content: "›";
   color: var(--text-muted);
   font-size: 1.1rem;
@@ -520,9 +767,12 @@ body {
 }
 
 @keyframes pulse-badge {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -548,5 +798,566 @@ body {
   font-size: 0.875rem;
   white-space: nowrap;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+/* ============================================
+   CONFIGURACOES - DESIGN CLEAN
+   ============================================ */
+
+/* Page Header Clean */
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1,
+.page-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.page-header .text-muted {
+  font-size: 0.8125rem;
+}
+
+/* Breadcrumb Compacto */
+.breadcrumb-clean {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.breadcrumb-clean .breadcrumb-item+.breadcrumb-item::before {
+  font-size: 0.875rem;
+}
+
+/* Botoes Compactos */
+.btn-sm-clean {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+}
+
+/* Cards Clean */
+.card-clean {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card-clean:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-clean .card-body {
+  padding: 1rem;
+}
+
+/* Card Item - Para listas de itens */
+.card-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.card-item:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.card-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Grid Clean para Dashboard */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.config-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+  text-align: center;
+  min-height: 120px;
+}
+
+.config-card:hover {
+  border-color: var(--sidebar-active);
+  background: #f8fafc;
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.config-card-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.config-card-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+.config-card-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--sidebar-active);
+}
+
+.config-card-subtitle {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* Status Badge Clean */
+.badge-clean {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Tabelas Clean */
+.table-clean {
+  font-size: 0.8125rem;
+}
+
+.table-clean th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.table-clean td {
+  padding: 0.625rem 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.table-clean tbody tr:hover {
+  background-color: #fafafa;
+}
+
+/* Form Clean */
+.form-label-clean {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.375rem;
+}
+
+.form-control-clean {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+.form-control-clean:focus {
+  border-color: var(--sidebar-active);
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+/* List Group Clean */
+.list-item-clean {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  margin-bottom: 0.375rem;
+  transition: all 0.15s ease;
+}
+
+.list-item-clean:hover {
+  background: #fafafa;
+  border-color: #d1d5db;
+}
+
+.list-item-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.list-item-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.list-item-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+/* Action Buttons - Icone apenas */
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+/* Empty State Clean */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  font-size: 0.8125rem;
+}
+
+/* Section Divider */
+.section-divider {
+  border: 0;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Alert Clean */
+.alert-clean {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  border-radius: 0.375rem;
+  border: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .config-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header h1,
+  .page-header h2 {
+    font-size: 1.125rem;
+  }
+}/* ============================================
+   COMPONENTES MODERNOS
+   ============================================ */
+
+/* Cards Modernos */
+.card-modern {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.card-modern:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-medium);
+}
+
+.card-accent {
+    border-left: 3px solid var(--accent-primary);
+}
+
+/* Metric Cards */
+.metric-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.metric-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.metric-change {
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.metric-change.positive {
+    color: var(--accent-success);
+}
+
+.metric-change.negative {
+    color: var(--accent-danger);
+}
+
+/* Hero Section */
+.hero-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.hero-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.hero-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Badges Modernos */
+.badge-modern {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+.badge-success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-secondary {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+/* Tabelas Modernas */
+.table-modern {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.table-modern thead {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.table-modern th {
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    text-align: left;
+}
+
+.table-modern td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.table-modern tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Formulários Modernos */
+.form-label-modern {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Alerts Modernos */
+.alert-modern {
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.alert-modern-success {
+    background: #d1fae5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+
+.alert-modern-warning {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.alert-modern-danger {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.alert-modern-info {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1e40af;
+}
+
+/* Empty States */
+.empty-state-modern {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    opacity: 0.4;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.empty-state-text {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
 }

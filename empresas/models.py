@@ -369,3 +369,24 @@ class ConfiguracaoWhatsApp(models.Model):
     def esta_conectado(self):
         """Verifica se WhatsApp está conectado"""
         return self.status == 'conectado'
+
+class WhatsAppInstance(models.Model):
+    """
+    Registra as instâncias do WhatsApp criadas via Evolution API.
+    Cada empresa pode ter 1 ou N instâncias.
+    """
+    empresa = models.ForeignKey('empresas.Empresa', on_delete=models.CASCADE, related_name="whatsapp_instances")
+    instance_name = models.CharField(max_length=255, unique=True)
+    evolution_instance_id = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=50, default="pending")
+    webhook_token = models.CharField(max_length=255, blank=True, null=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Instância WhatsApp"
+        verbose_name_plural = "Instâncias WhatsApp"
+        ordering = ["-criado_em"]
+
+    def __str__(self):
+        return f"{self.empresa.nome} ({self.instance_name})"

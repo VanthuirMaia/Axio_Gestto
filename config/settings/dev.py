@@ -98,6 +98,21 @@ SITE_URL = 'http://localhost:8000'
 ASAAS_SANDBOX = True
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_...')
 
+# Evolution API (WhatsApp Integration) - IMPORTANTE: Sobrescrever valores do base.py
+EVOLUTION_API_URL = config('EVOLUTION_API_URL', default='')
+EVOLUTION_API_KEY = config('EVOLUTION_API_KEY', default='')
+
+# Debug: Mostrar configurações da Evolution API no console
+if EVOLUTION_API_URL:
+    print(f"[OK] Evolution API URL configurada: {EVOLUTION_API_URL}")
+else:
+    print("[AVISO] EVOLUTION_API_URL nao configurada no .env!")
+
+if EVOLUTION_API_KEY:
+    print(f"[OK] Evolution API Key configurada: {EVOLUTION_API_KEY[:10]}...")
+else:
+    print("[AVISO] EVOLUTION_API_KEY nao configurada no .env!")
+
 print("""
 ============================================================
    AMBIENTE DE DESENVOLVIMENTO ATIVO

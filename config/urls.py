@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from whatsapp import views as whatsapp_views
 from core.views import (
     login_view, logout_view, dashboard_view,
     password_reset_request, password_reset_sent,
@@ -16,7 +17,8 @@ from agendamentos.api_n8n import (
     listar_profissionais,
     consultar_horarios_funcionamento,
     consultar_datas_especiais,
-    consultar_horarios_disponiveis
+    consultar_horarios_disponiveis,
+    buscar_empresa_por_instancia
 )
 from empresas.api_views import whatsapp_webhook
 from configuracoes.views import whatsapp_webhook_n8n
@@ -78,6 +80,10 @@ urlpatterns = [
     # Evolution API → Django → n8n (NOVO - webhook intermediário)
     path('api/webhooks/whatsapp-n8n/<int:empresa_id>/<str:secret>/', whatsapp_webhook_n8n, name='whatsapp_webhook_n8n'),
 
+    # Novo webhook global — todas as instâncias do WhatsApp passam por aqui
+    path('api/webhooks/teste/', lambda request: JsonResponse({'ok': True}), name='teste_whatsapp'),
+    path('api/webhooks/whatsapp/', include('whatsapp.urls')),
+
     # APIs n8n - Consultas
     path('api/bot/empresa/info/', consultar_informacoes_empresa, name='api_bot_info_empresa'),
     path('api/n8n/servicos/', listar_servicos, name='api_n8n_servicos'),
@@ -85,6 +91,10 @@ urlpatterns = [
     path('api/n8n/horarios-funcionamento/', consultar_horarios_funcionamento, name='api_n8n_horarios_funcionamento'),
     path('api/n8n/datas-especiais/', consultar_datas_especiais, name='api_n8n_datas_especiais'),
     path('api/n8n/horarios-disponiveis/', consultar_horarios_disponiveis, name='api_n8n_horarios_disponiveis'),
+
+    # API n8n - Buscar empresa por instance_name (usado para identificar empresa no webhook)
+    path('api/n8n/empresa-por-instancia/<str:instance_name>/', buscar_empresa_por_instancia, name='api_n8n_empresa_por_instancia'),
+    path('api/n8n/empresa-por-instancia/', buscar_empresa_por_instancia, name='api_n8n_empresa_por_instancia_post'),
 
     # ==========================================
     # PRIVADO - Sistema (só clientes autenticados)

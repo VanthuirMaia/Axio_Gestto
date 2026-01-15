@@ -5,9 +5,12 @@ from django.urls import reverse
 from django.utils.timezone import now
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import timedelta
 
-from empresas.models import Empresa, Servico, Profissional
+from empresas.models import Empresa, Servico, Profissional, HorarioFuncionamento, DataEspecial
 from financeiro.models import CategoriaFinanceira, FormaPagamento
 
 # Na view
@@ -16,18 +19,57 @@ from django.utils.safestring import mark_safe
 
 @login_required
 def configuracoes_dashboard(request):
-    """Dashboard de configurações"""
+    """Dashboard de configuracoes"""
+    from core.models import Usuario
+
     empresa = request.user.empresa
-    
+
     context = {
         'empresa': empresa,
         'total_servicos': Servico.objects.filter(empresa=empresa, ativo=True).count(),
         'total_profissionais': Profissional.objects.filter(empresa=empresa, ativo=True).count(),
         'total_categorias': CategoriaFinanceira.objects.filter(empresa=empresa, ativo=True).count(),
         'total_formas_pagamento': FormaPagamento.objects.filter(empresa=empresa, ativo=True).count(),
+        'total_usuarios': Usuario.objects.filter(empresa=empresa, ativo=True).count(),
+        'total_datas_especiais': DataEspecial.objects.filter(empresa=empresa).count(),
     }
-    
+
     return render(request, 'configuracoes/dashboard.html', context)
+
+
+# ==========================================
+# DADOS DA EMPRESA
+# ==========================================
+
+@login_required
+def empresa_dados(request):
+    """Edita os dados da empresa (nome, endereço, contato, etc.)"""
+    empresa = request.user.empresa
+
+    if request.method == 'POST':
+        # Dados básicos
+        empresa.nome = request.POST.get('nome', empresa.nome)
+        empresa.descricao = request.POST.get('descricao', '')
+        empresa.telefone = request.POST.get('telefone', empresa.telefone)
+        empresa.email = request.POST.get('email', empresa.email)
+
+        # Endereço
+        empresa.endereco = request.POST.get('endereco', '')
+        empresa.cidade = request.POST.get('cidade', '')
+        empresa.estado = request.POST.get('estado', '')
+        empresa.cep = request.POST.get('cep', '')
+        empresa.google_maps_link = request.POST.get('google_maps_link', '')
+
+        empresa.save()
+
+        messages.success(request, 'Dados da empresa atualizados com sucesso!')
+        return redirect('empresa_dados')
+
+    context = {
+        'empresa': empresa,
+    }
+
+    return render(request, 'configuracoes/empresa_dados.html', context)
 
 
 # ==========================================
@@ -245,6 +287,233 @@ def forma_pagamento_editar(request, pk):
     
     return render(request, 'configuracoes/forma_pagamento_form.html', context)
 
+
+# ==========================================
+# USUARIOS DA EMPRESA
+# ==========================================
+
+@login_required
+def usuarios_lista(request):
+    """Lista todos os usuarios da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuarios = Usuario.objects.filter(empresa=empresa).order_by('-criado_em')
+    usuarios_ativos = usuarios.filter(ativo=True).count()
+
+    # Verificar limite do plano
+    assinatura = getattr(empresa, 'assinatura', None)
+    if assinatura and assinatura.plano:
+        max_usuarios = assinatura.plano.max_usuarios
+        pode_criar = usuarios_ativos < max_usuarios
+    else:
+        max_usuarios = 1  # Sem plano = limite minimo
+        pode_criar = usuarios_ativos < max_usuarios
+
+    context = {
+        'empresa': empresa,
+        'usuarios': usuarios,
+        'total_usuarios': usuarios.count(),
+        'usuarios_ativos': usuarios_ativos,
+        'max_usuarios': max_usuarios,
+        'pode_criar': pode_criar,
+    }
+
+    return render(request, 'configuracoes/usuarios_lista.html', context)
+
+
+@login_required
+def usuario_criar(request):
+    """Cria um novo usuario para a empresa"""
+    from core.models import Usuario
+    from django.contrib.auth import password_validation
+    from django.core.exceptions import ValidationError
+
+    empresa = request.user.empresa
+
+    # Verificar limite do plano
+    usuarios_ativos = Usuario.objects.filter(empresa=empresa, ativo=True).count()
+    assinatura = getattr(empresa, 'assinatura', None)
+
+    if assinatura and assinatura.plano:
+        max_usuarios = assinatura.plano.max_usuarios
+        plano_nome = assinatura.plano.get_nome_display()
+    else:
+        max_usuarios = 1
+        plano_nome = 'Sem plano'
+
+    if usuarios_ativos >= max_usuarios:
+        messages.error(
+            request,
+            f'Limite de usuarios atingido! Seu plano ({plano_nome}) permite ate {max_usuarios} usuario(s). '
+            f'Faca upgrade do plano para adicionar mais usuarios.'
+        )
+        return redirect('usuarios_lista')
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        telefone = request.POST.get('telefone', '').strip()
+        senha = request.POST.get('senha', '')
+        confirmar_senha = request.POST.get('confirmar_senha', '')
+        is_admin = request.POST.get('is_admin') == 'on'
+
+        # Validacoes
+        erros = []
+
+        if not nome:
+            erros.append('Nome e obrigatorio.')
+
+        if not email:
+            erros.append('Email e obrigatorio.')
+        elif Usuario.objects.filter(email=email).exists():
+            erros.append('Ja existe um usuario com este email.')
+
+        if not senha:
+            erros.append('Senha e obrigatoria.')
+        elif senha != confirmar_senha:
+            erros.append('As senhas nao coincidem.')
+        else:
+            try:
+                password_validation.validate_password(senha)
+            except ValidationError as e:
+                erros.extend(e.messages)
+
+        if erros:
+            for erro in erros:
+                messages.error(request, erro)
+            return render(request, 'configuracoes/usuario_form.html', {
+                'empresa': empresa,
+                'form_data': request.POST,
+            })
+
+        # Criar usuario
+        username = email.split('@')[0]
+        # Garantir username unico
+        base_username = username
+        counter = 1
+        while Usuario.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        usuario = Usuario.objects.create_user(
+            username=username,
+            email=email,
+            password=senha,
+            first_name=nome.split()[0] if nome else '',
+            last_name=' '.join(nome.split()[1:]) if len(nome.split()) > 1 else '',
+            empresa=empresa,
+            telefone=telefone,
+            is_staff=is_admin,
+            ativo=True,
+        )
+
+        messages.success(request, f'Usuario "{nome}" criado com sucesso!')
+        return redirect('usuarios_lista')
+
+    return render(request, 'configuracoes/usuario_form.html', {'empresa': empresa})
+
+
+@login_required
+def usuario_editar(request, pk):
+    """Edita um usuario da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuario = get_object_or_404(Usuario, pk=pk, empresa=empresa)
+
+    # Nao permitir editar a si mesmo por esta tela (usar alterar senha)
+    if usuario == request.user:
+        messages.warning(request, 'Para editar seu proprio perfil, use a opcao "Alterar Senha".')
+        return redirect('usuarios_lista')
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        telefone = request.POST.get('telefone', '').strip()
+        is_admin = request.POST.get('is_admin') == 'on'
+        ativo = request.POST.get('ativo') == 'on'
+        nova_senha = request.POST.get('nova_senha', '').strip()
+
+        # Validacoes
+        erros = []
+
+        if not nome:
+            erros.append('Nome e obrigatorio.')
+
+        if not email:
+            erros.append('Email e obrigatorio.')
+        elif Usuario.objects.filter(email=email).exclude(pk=pk).exists():
+            erros.append('Ja existe outro usuario com este email.')
+
+        if nova_senha:
+            from django.contrib.auth import password_validation
+            from django.core.exceptions import ValidationError
+            try:
+                password_validation.validate_password(nova_senha)
+            except ValidationError as e:
+                erros.extend(e.messages)
+
+        if erros:
+            for erro in erros:
+                messages.error(request, erro)
+            return render(request, 'configuracoes/usuario_form.html', {
+                'empresa': empresa,
+                'usuario': usuario,
+                'editando': True,
+            })
+
+        # Atualizar usuario
+        usuario.first_name = nome.split()[0] if nome else ''
+        usuario.last_name = ' '.join(nome.split()[1:]) if len(nome.split()) > 1 else ''
+        usuario.email = email
+        usuario.telefone = telefone
+        usuario.is_staff = is_admin
+        usuario.ativo = ativo
+
+        if nova_senha:
+            usuario.set_password(nova_senha)
+
+        usuario.save()
+
+        messages.success(request, f'Usuario "{nome}" atualizado com sucesso!')
+        return redirect('usuarios_lista')
+
+    context = {
+        'empresa': empresa,
+        'usuario': usuario,
+        'editando': True,
+    }
+
+    return render(request, 'configuracoes/usuario_form.html', context)
+
+
+@login_required
+def usuario_deletar(request, pk):
+    """Deleta (desativa) um usuario da empresa"""
+    from core.models import Usuario
+
+    empresa = request.user.empresa
+    usuario = get_object_or_404(Usuario, pk=pk, empresa=empresa)
+
+    # Nao permitir deletar a si mesmo
+    if usuario == request.user:
+        messages.error(request, 'Voce nao pode deletar seu proprio usuario.')
+        return redirect('usuarios_lista')
+
+    # Nao deletar, apenas desativar
+    if request.method == 'POST':
+        usuario.ativo = False
+        usuario.save()
+        messages.success(request, f'Usuario "{usuario.get_full_name()}" desativado.')
+        return redirect('usuarios_lista')
+
+    return render(request, 'configuracoes/usuario_confirmar_delete.html', {
+        'empresa': empresa,
+        'usuario': usuario,
+    })
+
+
 # ==========================================
 # PROFISSIONAIS
 # ==========================================
@@ -273,25 +542,31 @@ def profissionais_lista(request):
 def profissional_criar(request):
     """Cria um novo profissional"""
     empresa = request.user.empresa
-    
+
     if request.method == 'POST':
         nome = request.POST.get('nome')
         telefone = request.POST.get('telefone', '')
         email = request.POST.get('email', '')
-        especialidade = request.POST.get('especialidade', '')
-        
-        Profissional.objects.create(
+        cor_hex = request.POST.get('cor_hex', '#1e3a8a')
+
+        profissional = Profissional.objects.create(
             empresa=empresa,
             nome=nome,
             telefone=telefone,
             email=email,
-            especialidade=especialidade
+            cor_hex=cor_hex
         )
-        
+
+        # Associar servicos selecionados
+        servicos_ids = request.POST.getlist('servicos')
+        if servicos_ids:
+            profissional.servicos.set(servicos_ids)
+
         messages.success(request, f'Profissional "{nome}" adicionado com sucesso!')
         return redirect('profissionais_lista')
-    
-    return render(request, 'configuracoes/profissional_form.html', {'empresa': empresa})
+
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True)
+    return render(request, 'configuracoes/profissional_form.html', {'empresa': empresa, 'servicos': servicos})
 
 
 @login_required
@@ -300,23 +575,56 @@ def profissional_editar(request, pk):
     empresa = request.user.empresa
     profissional = get_object_or_404(Profissional, pk=pk, empresa=empresa)
     
+    # Obter assinatura e plano para validação de limites
+    assinatura = getattr(empresa, 'assinatura', None)
+    plano = assinatura.plano if assinatura else None
+
     if request.method == 'POST':
+        # Capturar novo estado de 'ativo' antes de salvar
+        novo_ativo = request.POST.get('ativo') == 'on'
+        
+        # VALIDAÇÃO: Se está tentando ativar um profissional que estava desativado
+        if not profissional.ativo and novo_ativo and plano:
+            # Contar profissionais atualmente ativos (excluindo o atual)
+            profissionais_ativos = Profissional.objects.filter(
+                empresa=empresa,
+                ativo=True
+            ).count()
+            
+            # Se ativar este profissional, excederia o limite do plano?
+            if profissionais_ativos >= plano.max_profissionais:
+                messages.error(
+                    request,
+                    f'❌ Não é possível ativar este profissional. '
+                    f'Você já tem {profissionais_ativos} profissional(is) ativo(s) '
+                    f'e seu plano {plano.get_nome_display()} permite apenas {plano.max_profissionais}. '
+                    f'Faça upgrade do plano para ativar mais profissionais.'
+                )
+                return redirect('profissionais_lista')
+        
+        # Atualizar dados do profissional
         profissional.nome = request.POST.get('nome')
         profissional.telefone = request.POST.get('telefone', '')
         profissional.email = request.POST.get('email', '')
-        profissional.especialidade = request.POST.get('especialidade', '')
-        profissional.ativo = request.POST.get('ativo') == 'on'
+        profissional.cor_hex = request.POST.get('cor_hex', '#1e3a8a')
+        profissional.ativo = novo_ativo
         profissional.save()
-        
+
+        # Atualizar servicos
+        servicos_ids = request.POST.getlist('servicos')
+        profissional.servicos.set(servicos_ids)
+
         messages.success(request, f'Profissional "{profissional.nome}" atualizado!')
         return redirect('profissionais_lista')
-    
+
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True)
     context = {
         'empresa': empresa,
         'profissional': profissional,
+        'servicos': servicos,
         'editando': True,
     }
-    
+
     return render(request, 'configuracoes/profissional_form.html', context)
 
 
@@ -409,6 +717,227 @@ def assinatura_gerenciar(request):
     return render(request, 'configuracoes/assinatura.html', context)
 
 
+@login_required
+def assinatura_alterar_plano(request):
+    """
+    Altera o plano da assinatura (upgrade ou downgrade)
+    """
+    from django.http import JsonResponse
+    from assinaturas.models import Plano, HistoricoPagamento
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+    plano_atual = assinatura.plano
+
+    # Obter novo plano
+    novo_plano_id = request.POST.get('plano_id')
+    if not novo_plano_id:
+        return JsonResponse({'success': False, 'error': 'Plano nao informado'}, status=400)
+
+    try:
+        novo_plano = Plano.objects.get(id=novo_plano_id, ativo=True)
+    except Plano.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Plano nao encontrado'}, status=404)
+
+    # Verificar se e o mesmo plano
+    if novo_plano.id == plano_atual.id:
+        return JsonResponse({'success': False, 'error': 'Voce ja esta neste plano'}, status=400)
+
+    # Verificar limites antes de downgrade
+    if novo_plano.preco_mensal < plano_atual.preco_mensal:
+        # E um downgrade - verificar se o uso atual permite
+        profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+        servicos_ativos = Servico.objects.filter(empresa=empresa, ativo=True).count()
+
+        erros = []
+        if profissionais_ativos > novo_plano.max_profissionais:
+            erros.append(f'Voce tem {profissionais_ativos} profissionais ativos, mas o plano permite apenas {novo_plano.max_profissionais}')
+        if servicos_ativos > novo_plano.max_servicos:
+            erros.append(f'Voce tem {servicos_ativos} servicos ativos, mas o plano permite apenas {novo_plano.max_servicos}')
+
+        if erros:
+            return JsonResponse({
+                'success': False,
+                'error': 'Nao e possivel fazer downgrade',
+                'detalhes': erros
+            }, status=400)
+
+    # Registrar plano anterior para historico
+    plano_anterior = plano_atual.get_nome_display()
+    preco_anterior = plano_atual.preco_mensal
+    
+    # Determinar tipo de alteracao
+    tipo = 'upgrade' if novo_plano.preco_mensal > preco_anterior else 'downgrade'
+
+    # SINCRONIZAR COM STRIPE (se assinatura foi criada via Stripe)
+    if assinatura.gateway == 'stripe' and assinatura.subscription_id_externo:
+        try:
+            import stripe
+            from django.conf import settings
+            
+            # Configurar Stripe
+            stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+            
+            # Validar se novo plano tem stripe_price_id configurado
+            if not novo_plano.stripe_price_id:
+                logger.error(f'Plano {novo_plano.nome} sem stripe_price_id configurado!')
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Plano sem configuração de pagamento. Contate o suporte.'
+                }, status=400)
+            
+            # Buscar subscription atual no Stripe
+            subscription = stripe.Subscription.retrieve(assinatura.subscription_id_externo)
+            
+            # Atualizar subscription para novo plano
+            stripe.Subscription.modify(
+                assinatura.subscription_id_externo,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'price': novo_plano.stripe_price_id,
+                }],
+                proration_behavior='always_invoice',  # Cobrar diferença proporcional
+            )
+            
+            logger.info(
+                f"Subscription Stripe atualizada: {assinatura.subscription_id_externo} - "
+                f"{plano_anterior} → {novo_plano.get_nome_display()} ({tipo})"
+            )
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Erro ao atualizar subscription no Stripe: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro ao atualizar pagamento. Tente novamente ou contate o suporte.'
+            }, status=500)
+        except Exception as e:
+            logger.error(f"Erro inesperado ao atualizar Stripe: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Erro ao processar alteração. Contate o suporte.'
+            }, status=500)
+    
+    # Alterar o plano no banco local
+    assinatura.plano = novo_plano
+    assinatura.save()
+
+    # Determinar tipo de alteracao
+    tipo = 'upgrade' if novo_plano.preco_mensal > preco_anterior else 'downgrade'
+
+    logger.info(f"Plano alterado: {empresa.nome} - {plano_anterior} -> {novo_plano.get_nome_display()} ({tipo})")
+
+    messages.success(
+        request,
+        f'{tipo.capitalize()} realizado com sucesso! Seu plano foi alterado para {novo_plano.get_nome_display()}.'
+    )
+
+    return JsonResponse({
+        'success': True,
+        'tipo': tipo,
+        'plano_anterior': plano_anterior,
+        'plano_novo': novo_plano.get_nome_display(),
+        'preco_novo': float(novo_plano.preco_mensal)
+    })
+
+
+@login_required
+def assinatura_cancelar(request):
+    """
+    Cancela a assinatura da empresa
+    """
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+
+    # Verificar se ja esta cancelada
+    if assinatura.status == 'cancelada':
+        return JsonResponse({'success': False, 'error': 'Assinatura ja esta cancelada'}, status=400)
+
+    # Obter motivo do cancelamento
+    motivo = request.POST.get('motivo', '')
+
+    # Cancelar assinatura
+    assinatura.cancelar(motivo=motivo)
+
+    logger.info(f"Assinatura cancelada: {empresa.nome} - Motivo: {motivo}")
+
+    messages.warning(
+        request,
+        'Sua assinatura foi cancelada. Voce mantera acesso ao sistema ate o final do periodo pago.'
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Assinatura cancelada com sucesso',
+        'data_acesso_final': assinatura.data_expiracao.strftime('%d/%m/%Y') if assinatura.data_expiracao else None
+    })
+
+
+@login_required
+def assinatura_reativar(request):
+    """
+    Reativa uma assinatura cancelada (dentro do periodo de 90 dias)
+    """
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+
+    # Verificar se esta cancelada ou suspensa
+    if assinatura.status not in ['cancelada', 'suspensa']:
+        return JsonResponse({'success': False, 'error': 'Assinatura nao pode ser reativada'}, status=400)
+
+    # Verificar periodo de 90 dias para canceladas
+    if assinatura.status == 'cancelada' and assinatura.cancelada_em:
+        dias_desde_cancelamento = (now() - assinatura.cancelada_em).days
+        if dias_desde_cancelamento > 90:
+            return JsonResponse({
+                'success': False,
+                'error': 'Periodo de reativacao expirado (90 dias)'
+            }, status=400)
+
+    # Reativar - volta para trial se ainda tinha dias, senao vai para ativa
+    assinatura.status = 'ativa'
+    assinatura.cancelada_em = None
+    assinatura.motivo_cancelamento = ''
+
+    # Renovar por mais 30 dias
+    assinatura.data_expiracao = now() + timedelta(days=30)
+    assinatura.proximo_vencimento = (now() + timedelta(days=30)).date()
+    assinatura.save()
+
+    logger.info(f"Assinatura reativada: {empresa.nome}")
+
+    messages.success(request, 'Sua assinatura foi reativada com sucesso!')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Assinatura reativada com sucesso'
+    })
+
+
 # ==========================================
 # WHATSAPP / EVOLUTION API
 # ==========================================
@@ -464,7 +993,7 @@ def whatsapp_dashboard(request):
 @login_required
 def whatsapp_criar_instancia(request):
     """
-    Cria instância e retorna QR Code (AJAX)
+    Conecta WhatsApp usando método robusto com retry (AJAX)
     """
     from django.http import JsonResponse
     from empresas.models import ConfiguracaoWhatsApp
@@ -476,32 +1005,29 @@ def whatsapp_criar_instancia(request):
     empresa = request.user.empresa
     config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
 
-    # Criar service
+    # Criar service e usar método robusto
     service = EvolutionAPIService(config)
+    result = service.conectar_whatsapp()
 
-    # Criar instância
-    result = service.criar_instancia()
-
-    if not result['success']:
-        return JsonResponse({
-            'success': False,
-            'error': result.get('error', 'Erro ao criar instância')
-        })
-
-    # Obter QR Code
-    qr_result = service.obter_qrcode()
-
-    if qr_result['success']:
-        return JsonResponse({
+    if result['success']:
+        response_data = {
             'success': True,
-            'qrcode': qr_result['qrcode'],
-            'status': config.status,
+            'status': result['status'],
+            'message': result['message'],
+            'action': result['action'],
             'instance_name': config.instance_name
-        })
+        }
+
+        # Incluir QR Code se disponível
+        if result.get('qrcode'):
+            response_data['qrcode'] = result['qrcode']
+
+        return JsonResponse(response_data)
     else:
         return JsonResponse({
             'success': False,
-            'error': 'Instância criada mas QR Code não disponível. Tente novamente.'
+            'error': result.get('message', 'Erro ao conectar WhatsApp'),
+            'action': result.get('action', 'error')
         })
 
 
@@ -747,8 +1273,69 @@ def whatsapp_sincronizar(request):
         })
 
 
+@login_required
+def whatsapp_resetar_config(request):
+    """
+    Reseta completamente a configuracao local do WhatsApp.
+    AGORA TAMBEM deleta a instancia na Evolution API para evitar conflitos.
+    """
+    from django.http import JsonResponse
+    from empresas.models import ConfiguracaoWhatsApp, WhatsAppInstance
+    from empresas.services import EvolutionAPIService
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Metodo nao permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    try:
+        config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Configuracao nao encontrada'})
+
+    # ✅ NOVO: Tentar deletar a instância na Evolution API antes de resetar
+    if config.instance_name:
+        try:
+            service = EvolutionAPIService(config)
+            delete_result = service.deletar_instancia()
+            
+            if delete_result['success']:
+                logger.info(f"Instância {config.instance_name} deletada na Evolution API com sucesso")
+            else:
+                logger.warning(f"Não foi possível deletar instância na Evolution API: {delete_result.get('error')}")
+                # Continua mesmo se falhar - pode ser que já tenha sido deletada
+        except Exception as e:
+            logger.error(f"Erro ao tentar deletar instância: {e}")
+            # Continua mesmo com erro
+
+    # Resetar todos os campos
+    config.instance_name = ''
+    config.instance_token = ''
+    config.status = 'nao_configurado'
+    config.qr_code = ''
+    config.qr_code_expira_em = None
+    config.webhook_url = ''
+    config.webhook_secret = ''
+    config.numero_conectado = ''
+    config.nome_perfil = ''
+    config.foto_perfil_url = ''
+    config.metadados = {}
+    config.ultimo_erro = ''
+    config.save()
+
+    # Limpar instancias orfas
+    WhatsAppInstance.objects.filter(empresa=empresa).delete()
+
+    messages.success(request, 'Configuracao resetada com sucesso! Voce pode criar uma nova instancia.')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Configuracao resetada e instancia deletada'
+    })
+
+
 # ==========================================
-# WEBHOOK INTERMEDIÁRIO (Evolution → Django → n8n)
+# WEBHOOK INTERMEDIARIO (Evolution -> Django -> n8n)
 # ==========================================
 
 @csrf_exempt
@@ -874,3 +1461,183 @@ def whatsapp_webhook_n8n(request, empresa_id, secret):
             'success': False,
             'error': 'Erro interno do servidor'
         }, status=500)
+
+
+# ==========================================
+# HORÁRIOS DE FUNCIONAMENTO
+# ==========================================
+
+@login_required
+def horarios_funcionamento(request):
+    """
+    Gerencia horários de funcionamento da empresa.
+    Exibe todos os 7 dias da semana e permite editar cada um.
+    """
+    from datetime import time
+
+    empresa = request.user.empresa
+
+    DIAS_SEMANA = [
+        (0, 'Segunda-feira'),
+        (1, 'Terça-feira'),
+        (2, 'Quarta-feira'),
+        (3, 'Quinta-feira'),
+        (4, 'Sexta-feira'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+
+    if request.method == 'POST':
+        # Processar formulário
+        for dia_num, dia_nome in DIAS_SEMANA:
+            ativo = request.POST.get(f'ativo_{dia_num}') == 'on'
+            hora_abertura = request.POST.get(f'abertura_{dia_num}')
+            hora_fechamento = request.POST.get(f'fechamento_{dia_num}')
+            intervalo_inicio = request.POST.get(f'intervalo_inicio_{dia_num}') or None
+            intervalo_fim = request.POST.get(f'intervalo_fim_{dia_num}') or None
+
+            if ativo and hora_abertura and hora_fechamento:
+                # Criar ou atualizar horário
+                HorarioFuncionamento.objects.update_or_create(
+                    empresa=empresa,
+                    dia_semana=dia_num,
+                    defaults={
+                        'hora_abertura': hora_abertura,
+                        'hora_fechamento': hora_fechamento,
+                        'intervalo_inicio': intervalo_inicio if intervalo_inicio else None,
+                        'intervalo_fim': intervalo_fim if intervalo_fim else None,
+                        'ativo': True,
+                    }
+                )
+            else:
+                # Desativar ou remover horário do dia
+                HorarioFuncionamento.objects.filter(
+                    empresa=empresa,
+                    dia_semana=dia_num
+                ).update(ativo=False)
+
+        messages.success(request, 'Horários de funcionamento atualizados com sucesso!')
+        return redirect('horarios_funcionamento')
+
+    # Buscar horários existentes
+    horarios_existentes = {
+        h.dia_semana: h
+        for h in HorarioFuncionamento.objects.filter(empresa=empresa)
+    }
+
+    # Montar lista de dias com horários
+    dias = []
+    for dia_num, dia_nome in DIAS_SEMANA:
+        horario = horarios_existentes.get(dia_num)
+        dias.append({
+            'numero': dia_num,
+            'nome': dia_nome,
+            'ativo': horario.ativo if horario else False,
+            'abertura': horario.hora_abertura.strftime('%H:%M') if horario and horario.hora_abertura else '09:00',
+            'fechamento': horario.hora_fechamento.strftime('%H:%M') if horario and horario.hora_fechamento else '18:00',
+            'intervalo_inicio': horario.intervalo_inicio.strftime('%H:%M') if horario and horario.intervalo_inicio else '',
+            'intervalo_fim': horario.intervalo_fim.strftime('%H:%M') if horario and horario.intervalo_fim else '',
+        })
+
+    context = {
+        'empresa': empresa,
+        'dias': dias,
+    }
+
+    return render(request, 'configuracoes/horarios_funcionamento.html', context)
+
+
+@login_required
+def datas_especiais_lista(request):
+    """Lista datas especiais (feriados e horários diferenciados)"""
+    empresa = request.user.empresa
+    datas = DataEspecial.objects.filter(empresa=empresa).order_by('data')
+
+    context = {
+        'empresa': empresa,
+        'datas': datas,
+    }
+
+    return render(request, 'configuracoes/datas_especiais_lista.html', context)
+
+
+@login_required
+def data_especial_criar(request):
+    """Cria nova data especial"""
+    empresa = request.user.empresa
+
+    if request.method == 'POST':
+        data = request.POST.get('data')
+        descricao = request.POST.get('descricao')
+        tipo = request.POST.get('tipo', 'feriado')
+        hora_abertura = request.POST.get('hora_abertura') or None
+        hora_fechamento = request.POST.get('hora_fechamento') or None
+
+        DataEspecial.objects.create(
+            empresa=empresa,
+            data=data,
+            descricao=descricao,
+            tipo=tipo,
+            hora_abertura=hora_abertura if tipo == 'especial' else None,
+            hora_fechamento=hora_fechamento if tipo == 'especial' else None,
+        )
+
+        messages.success(request, f'Data especial "{descricao}" adicionada!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+    }
+
+    return render(request, 'configuracoes/data_especial_form.html', context)
+
+
+@login_required
+def data_especial_editar(request, pk):
+    """Edita data especial"""
+    empresa = request.user.empresa
+    data_especial = get_object_or_404(DataEspecial, pk=pk, empresa=empresa)
+
+    if request.method == 'POST':
+        data_especial.data = request.POST.get('data')
+        data_especial.descricao = request.POST.get('descricao')
+        data_especial.tipo = request.POST.get('tipo', 'feriado')
+
+        if data_especial.tipo == 'especial':
+            data_especial.hora_abertura = request.POST.get('hora_abertura') or None
+            data_especial.hora_fechamento = request.POST.get('hora_fechamento') or None
+        else:
+            data_especial.hora_abertura = None
+            data_especial.hora_fechamento = None
+
+        data_especial.save()
+
+        messages.success(request, f'Data especial "{data_especial.descricao}" atualizada!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+        'data_especial': data_especial,
+    }
+
+    return render(request, 'configuracoes/data_especial_form.html', context)
+
+
+@login_required
+def data_especial_deletar(request, pk):
+    """Deleta data especial"""
+    empresa = request.user.empresa
+    data_especial = get_object_or_404(DataEspecial, pk=pk, empresa=empresa)
+
+    if request.method == 'POST':
+        descricao = data_especial.descricao
+        data_especial.delete()
+        messages.success(request, f'Data especial "{descricao}" removida!')
+        return redirect('datas_especiais_lista')
+
+    context = {
+        'empresa': empresa,
+        'data_especial': data_especial,
+    }
+
+    return render(request, 'configuracoes/data_especial_confirmar_delete.html', context)

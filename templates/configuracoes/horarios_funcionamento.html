@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Horarios de Funcionamento - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div class="d-flex align-items-center">
+      <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-link text-decoration-none me-2 p-0">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div class="page-header mb-0">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb breadcrumb-clean">
+            <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+            <li class="breadcrumb-item active">Horarios</li>
+          </ol>
+        </nav>
+        <h2>Horarios de Funcionamento</h2>
+      </div>
+    </div>
+    <a href="{% url 'datas_especiais_lista' %}" class="btn btn-outline-secondary btn-sm-clean">
+      <i class="bi bi-calendar-event me-1"></i>Datas Especiais
+    </a>
+  </div>
+
+  <!-- Formulário -->
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="card card-clean">
+      <div class="card-body p-0">
+        {% for dia in dias %}
+        <div class="list-item-clean">
+          <div class="d-flex align-items-center gap-3 flex-grow-1 flex-wrap">
+            <!-- Checkbox Ativo -->
+            <div class="form-check form-switch mb-0" style="min-width: 140px;">
+              <input class="form-check-input" type="checkbox" role="switch"
+                     id="ativo_{{ dia.numero }}" name="ativo_{{ dia.numero }}"
+                     {% if dia.ativo %}checked{% endif %}
+                     onchange="toggleDia({{ dia.numero }})">
+              <label class="form-check-label fw-medium" for="ativo_{{ dia.numero }}">
+                {{ dia.nome }}
+              </label>
+            </div>
+
+            <!-- Horários -->
+            <div class="d-flex align-items-center gap-2 flex-wrap" id="horarios_{{ dia.numero }}"
+                 style="{% if not dia.ativo %}opacity: 0.5; pointer-events: none;{% endif %}">
+
+              <!-- Abertura -->
+              <div class="d-flex align-items-center gap-1">
+                <label class="form-label mb-0 text-muted small">Abre:</label>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;"
+                       name="abertura_{{ dia.numero }}" value="{{ dia.abertura }}">
+              </div>
+
+              <!-- Fechamento -->
+              <div class="d-flex align-items-center gap-1">
+                <label class="form-label mb-0 text-muted small">Fecha:</label>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;"
+                       name="fechamento_{{ dia.numero }}" value="{{ dia.fechamento }}">
+              </div>
+
+              <!-- Intervalo (opcional) -->
+              <div class="d-flex align-items-center gap-1 ms-2">
+                <label class="form-label mb-0 text-muted small">Intervalo:</label>
+                <input type="time" class="form-control form-control-sm" style="width: 100px;"
+                       name="intervalo_inicio_{{ dia.numero }}" value="{{ dia.intervalo_inicio }}"
+                       placeholder="Inicio">
+                <span class="text-muted">-</span>
+                <input type="time" class="form-control form-control-sm" style="width: 100px;"
+                       name="intervalo_fim_{{ dia.numero }}" value="{{ dia.intervalo_fim }}"
+                       placeholder="Fim">
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Botão Salvar -->
+    <div class="d-flex justify-content-end mt-3">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg me-1"></i>Salvar Horarios
+      </button>
+    </div>
+  </form>
+
+  <!-- Dica -->
+  <div class="alert alert-light mt-4">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Dica:</strong> O intervalo e opcional (ex: horario de almoco). Deixe em branco se nao houver pausa.
+  </div>
+
+</div>
+
+<script>
+function toggleDia(diaNum) {
+  const checkbox = document.getElementById('ativo_' + diaNum);
+  const horarios = document.getElementById('horarios_' + diaNum);
+
+  if (checkbox.checked) {
+    horarios.style.opacity = '1';
+    horarios.style.pointerEvents = 'auto';
+  } else {
+    horarios.style.opacity = '0.5';
+    horarios.style.pointerEvents = 'none';
+  }
+}
+</script>
+{% endblock %}

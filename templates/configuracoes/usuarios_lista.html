@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuarios - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div class="d-flex align-items-center">
+      <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-link text-decoration-none me-2 p-0">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div class="page-header mb-0">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb breadcrumb-clean">
+            <li class="breadcrumb-item"><a href="{% url 'configuracoes_dashboard' %}">Configuracoes</a></li>
+            <li class="breadcrumb-item active">Usuarios</li>
+          </ol>
+        </nav>
+        <h2 class="d-flex align-items-center gap-2">
+          Usuarios
+          <span class="badge-clean {% if usuarios_ativos >= max_usuarios %}bg-warning text-dark{% else %}bg-light text-secondary{% endif %}">
+            {{ usuarios_ativos }}/{{ max_usuarios }}
+          </span>
+        </h2>
+      </div>
+    </div>
+    <div>
+      {% if pode_criar %}
+        <a href="{% url 'usuario_criar' %}" class="btn btn-primary btn-sm-clean">
+          <i class="bi bi-plus me-1"></i>Novo
+        </a>
+      {% else %}
+        <a href="{% url 'configuracoes_assinatura' %}" class="btn btn-warning btn-sm-clean">
+          <i class="bi bi-arrow-up me-1"></i>Upgrade
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not pode_criar %}
+  <div class="alert alert-clean alert-warning d-flex align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <span>Limite atingido. <a href="{% url 'configuracoes_assinatura' %}" class="alert-link">Faca upgrade</a> para mais usuarios.</span>
+  </div>
+  {% endif %}
+
+  <!-- Lista de Usuarios -->
+  <div class="card card-clean">
+    <div class="card-body p-0">
+      {% for usuario in usuarios %}
+      <div class="list-item-clean {% if not usuario.ativo %}opacity-50{% endif %}">
+        <div class="list-item-avatar {% if usuario.ativo %}bg-primary{% else %}bg-secondary{% endif %} text-white">
+          <i class="bi bi-person"></i>
+        </div>
+        <div class="list-item-content">
+          <p class="list-item-title">
+            {{ usuario.get_full_name|default:usuario.username }}
+            {% if usuario == request.user %}<span class="badge-clean bg-info text-white ms-1">voce</span>{% endif %}
+            {% if usuario.is_staff %}<span class="badge-clean bg-warning text-dark ms-1">admin</span>{% endif %}
+            {% if not usuario.ativo %}<span class="badge-clean bg-secondary text-white ms-1">inativo</span>{% endif %}
+          </p>
+          <p class="list-item-subtitle">{{ usuario.email }}</p>
+        </div>
+        <div class="list-item-actions">
+          {% if usuario != request.user %}
+            <a href="{% url 'usuario_editar' usuario.id %}" class="btn btn-icon btn-outline-secondary" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% if usuario.ativo %}
+            <a href="{% url 'usuario_deletar' usuario.id %}" class="btn btn-icon btn-outline-danger" title="Desativar">
+              <i class="bi bi-person-x"></i>
+            </a>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'alterar_senha' %}" class="btn btn-icon btn-outline-secondary" title="Alterar senha">
+              <i class="bi bi-key"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="bi bi-people empty-state-icon"></i>
+        <p class="empty-state-text">Nenhum usuario cadastrado</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
