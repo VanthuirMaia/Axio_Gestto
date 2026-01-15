@@ -626,11 +626,20 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
         box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
         transition: all 0.3s ease;
         text-decoration: none;
         cursor: pointer;
+        padding: 0; /* Remove padding extra */
+        border: none;
+        outline: none;
+    }
+
+    .whatsapp-button svg {
+        width: 35px;
+        height: 35px;
+        fill: white;
+        display: block; /* Remove espaço extra de inline-block */
     }
 
     .whatsapp-button:hover {
@@ -1069,7 +1078,9 @@
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1200px; margin: 3rem auto 0;">
             <!-- PLANO BÁSICO -->
             <div class="pricing-card-home">
-                <div class="badge-placeholder-home"></div>
+                <div class="badge-placeholder-home">
+                    <span style="font-size: 0.8rem; background: #e5e7eb; color: #374151; padding: 4px 12px; border-radius: 12px; font-weight: 600;">📝 Ideal para sair do papel</span>
+                </div>
                 <div class="plan-header-home">
                     <div class="plan-name-home">Básico</div>
                     <div class="plan-price-home">
@@ -1107,10 +1118,10 @@
                 <ul class="plan-features-home">
                     <li>1 profissional (barbeiro ou manicure solo)</li>
                     <li>Agendamentos ilimitados</li>
-                    <li>✅ Bot WhatsApp automático</li>
+                    <li>Bot WhatsApp automático</li>
                     <li>Agenda inteligente</li>
                     <li>Gestão básica de agendamentos</li>
-                    <li>✅ Lembrete 1 dia antes</li>
+                    <li>Lembrete 1 dia antes</li>
                     <li>Suporte email (24h)</li>
                     <li>Condições especiais beta</li>
                 </ul>
@@ -1123,10 +1134,12 @@
 
             <!-- PLANO PROFISSIONAL -->
             <div class="pricing-card-home">
-                <div class="badge-placeholder-home"></div>
+                <div class="badge-placeholder-home">
+                    <span style="font-size: 0.8rem; background: #e5e7eb; color: #374151; padding: 4px 12px; border-radius: 12px; font-weight: 600;">🏢 Para Equipes</span>
+                </div>
                 <div class="plan-header-home">
                     <div class="plan-name-home">Profissional</div>
-                    <div class="plan-price-home">
+                    <div class="plan-price-home" style="white-space: nowrap;">
                         R$ 199,99
                         <small>/mês</small>
                     </div>
@@ -1134,12 +1147,12 @@
                 <ul class="plan-features-home">
                     <li>Até 4 profissionais (barbearia/studio com equipe)</li>
                     <li>Agendamentos ilimitados</li>
-                    <li>✅ Bot WhatsApp automático</li>
+                    <li>Bot WhatsApp automático</li>
                     <li>Agenda inteligente multi-profissional</li>
                     <li>Gestão financeira completa</li>
                     <li>Relatórios e análises avançadas</li>
                     <li>Comissões automáticas por profissional</li>
-                    <li>✅ Lembretes 1 dia + 1 hora antes</li>
+                    <li>Lembretes 1 dia + 1 hora antes</li>
                     <li>Suporte email + WhatsApp (12h)</li>
                     <li>Condições especiais beta</li>
                 </ul>
@@ -1266,9 +1279,12 @@
             </div>
 
             <div style="margin-top: 2.5rem; padding: 1.5rem; background: white; border-radius: 12px; border-left: 4px solid var(--primary-color);">
-                <p style="color: var(--dark); font-weight: 600; margin: 0; font-size: 1.05rem;">
+                <p style="color: var(--dark); font-weight: 600; margin-bottom: 1rem; font-size: 1.05rem;">
                     ✅ Sem provas sociais inventadas. Sem números exagerados. Apenas uma proposta honesta de construção conjunta.
                 </p>
+                <a href="{% url 'landing:cadastro' %}" class="btn btn-primary" style="background: var(--dark); color: white; border: none; font-size: 1rem; padding: 0.8rem 1.5rem;">
+                    🚀 Quero ser um Fundador
+                </a>
             </div>
         </div>
     </div>
@@ -1424,7 +1440,7 @@
 
             <p>
                 Participe do programa beta exclusivo para barbeiros, barbearias e profissionais de nails design.
-                Ajude a construir o melhor sistema de agendamento por WhatsApp do Brasil e garanta condições especiais vitalícias.
+                Ajude a construir o melhor sistema de agendamento por WhatsApp do Brasil e garanta condições especiais.
             </p>
 
             <div class="cta-features">
@@ -1451,7 +1467,9 @@
        target="_blank"
        class="whatsapp-button"
        aria-label="Fale conosco no WhatsApp">
-        💬
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382C17.119 14.205 15.396 13.359 15.08 13.251C14.766 13.141 14.508 13.106 14.249 13.497C13.989 13.887 13.252 14.75 13.042 15.009C12.833 15.263 12.607 15.297 12.254 15.121C11.902 14.945 10.767 14.572 9.42104 13.372C8.35404 12.42 7.63304 11.246 7.42404 10.887C7.21404 10.531 7.40104 10.337 7.57704 10.161C7.73704 10.003 7.93304 9.75 8.12704 9.524C8.30704 9.317 8.37104 9.167 8.49004 8.928C8.60804 8.687 8.54904 8.48 8.45504 8.289C8.36104 8.096 7.63204 6.307 7.32704 5.589C7.03404 4.888 6.72904 4.986 6.52004 4.986C6.32604 4.986 6.09004 4.978 5.85504 4.978C5.61904 4.978 5.23804 5.066 4.91404 5.42C4.59004 5.772 3.67404 6.632 3.67404 8.379C3.67404 10.126 4.94504 11.815 5.12204 12.052C5.30004 12.288 7.65304 15.918 11.258 17.476C12.115 17.846 12.784 18.067 13.308 18.232C14.218 18.52 15.038 18.477 15.688 18.38C16.406 18.273 17.904 17.474 18.217 16.591C18.529 15.709 18.529 14.957 18.435 14.796C18.341 14.636 18.069 14.558 17.472 14.382ZM11.118 20.306C9.07404 20.306 7.15704 19.758 5.48504 18.799L5.05604 18.545L2.89804 19.112L3.48604 17.009L3.19704 16.551C2.10004 14.805 1.52304 12.78 1.52304 10.686C1.52304 5.393 5.82804 1.088 11.121 1.088C13.682 1.088 16.091 2.086 17.901 3.899C19.711 5.711 20.709 8.117 20.708 10.684C20.708 15.979 16.405 20.306 11.118 20.306Z"/>
+        </svg>
     </a>
 </div>
 
