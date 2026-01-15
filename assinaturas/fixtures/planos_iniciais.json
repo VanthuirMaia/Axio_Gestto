@@ -70,7 +70,7 @@
       "max_servicos": 50,
       "stripe_price_id": "price_1SpsoUEOfuBf9VWtAE6wHiVM",
       "asaas_plan_id": null,
-      "trial_dias": 14,
+      "trial_dias": 7,
       "permite_financeiro": true,
       "permite_dashboard_clientes": true,
       "permite_recorrencias": true,
