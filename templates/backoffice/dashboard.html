@@ -7,65 +7,149 @@
 </div>
 
 <!-- Financial Stats (NOVO) -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-4">
-        <div class="card bg-success text-white p-4">
-            <h6 class="text-white-50 mb-0">MRR (Mensal)</h6>
-            <h2 class="fw-bold my-2 mono">R$ {{ financial.mrr|floatformat:2 }}</h2>
-            <small><i class="bi bi-graph-up-arrow me-1"></i>Receita Recorrente</small>
+        <div class="card bg-success text-white p-3">
+            <h6 class="text-white-50 mb-1 small">MRR (Mensal)</h6>
+            <h3 class="fw-bold my-1 mono">R$ {{ financial.mrr|floatformat:2 }}</h3>
+            <small class="small"><i class="bi bi-graph-up-arrow me-1"></i>Receita Recorrente</small>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-dark border-success p-4">
-            <h6 class="text-white-50 mb-0">ARR (Projeção Anual)</h6>
-            <h2 class="fw-bold my-2 mono text-success">R$ {{ financial.arr|floatformat:2 }}</h2>
-            <small class="text-muted">Run Rate (MRR x 12)</small>
+        <div class="card bg-dark border-success p-3">
+            <h6 class="text-white-50 mb-1 small">ARR (Projeção Anual)</h6>
+            <h3 class="fw-bold my-1 mono text-success">R$ {{ financial.arr|floatformat:2 }}</h3>
+            <small class="text-muted small">Run Rate (MRR x 12)</small>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-dark border-secondary p-4">
-            <h6 class="text-white-50 mb-0">Ticket Médio (ARPU)</h6>
-             <h2 class="fw-bold my-2 mono text-warning">R$ {{ financial.ticket_medio|floatformat:2 }}</h2>
-             <small class="text-muted">Por Assinante Ativo</small>
+        <div class="card bg-dark border-secondary p-3">
+            <h6 class="text-white-50 mb-1 small">Ticket Médio (ARPU)</h6>
+             <h3 class="fw-bold my-1 mono text-warning">R$ {{ financial.ticket_medio|floatformat:2 }}</h3>
+             <small class="text-muted small">Por Assinante Ativo</small>
         </div>
     </div>
 </div>
 
-<hr class="border-secondary my-4">
+<!-- BI / Insights (v3) -->
+<div class="row mb-3">
+    <!-- Status Funnel -->
+    <div class="col-md-3">
+        <div class="card p-2 bg-dark border-primary mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-primary small fw-bold">TRIAL</span>
+                <span class="badge bg-primary rounded-pill">{{ bi.funil.trial|default:"0" }}</span>
+            </div>
+        </div>
+        <div class="card p-2 bg-dark border-success mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-success small fw-bold">ATIVAS</span>
+                <span class="badge bg-success rounded-pill">{{ bi.funil.ativa|default:"0" }}</span>
+            </div>
+        </div>
+        <div class="card p-2 bg-dark border-danger mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-danger small fw-bold">CANCELADAS</span>
+                <span class="badge bg-danger rounded-pill">{{ bi.funil.cancelada|default:"0" }}</span>
+            </div>
+        </div>
+         <div class="card p-2 bg-dark border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-warning small fw-bold">SUSPENSAS</span>
+                <span class="badge bg-warning text-dark rounded-pill">{{ bi.funil.suspensa|default:"0" }}</span>
+            </div>
+        </div>
+    </div>
 
-<h5 class="text-muted mono mb-3">Infraestrutura & Operações</h5>
+    <!-- Top Clients -->
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header bg-dark border-bottom border-secondary py-2">
+                <small class="fw-bold text-success"><i class="bi bi-trophy me-1"></i>Top Clientes (VIP)</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Plano</th>
+                            <th class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in bi.top_clientes %}
+                        <tr>
+                            <td class="text-truncate" style="max-width: 120px;">{{ sub.empresa.nome }}</td>
+                            <td><span class="badge bg-secondary">{{ sub.plano.nome }}</span></td>
+                            <td class="text-end text-success fw-bold">R$ {{ sub.plano.preco_mensal }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-3">Sem clientes ativos.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Churn Risk -->
+    <div class="col-md-4">
+        <div class="card h-100 border-danger">
+            <div class="card-header bg-danger text-white py-2">
+                <small class="fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Risco de Churn (>7d sem login)</small>
+            </div>
+            <ul class="list-group list-group-flush bg-dark" style="font-size: 0.8rem;">
+                {% for user_risk in bi.risco_churn %}
+                <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                    <span class="text-truncate" style="max-width: 150px;">
+                        {{ user_risk.empresa.nome|default:"Sem Empresa" }}
+                        <br><small class="text-muted">{{ user_risk.email }}</small>
+                    </span>
+                    <span class="badge bg-danger">{{ user_risk.last_login|timesince }}</span>
+                </li>
+                 {% empty %}
+                <li class="list-group-item bg-dark text-muted text-center py-3">Nenhum risco detectado.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<hr class="border-secondary my-3">
+
+<h6 class="text-muted mono mb-3 small">Infraestrutura & Operações</h6>
 
 <!-- Hardware Metrics -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-4">
-        <div class="card p-3">
+        <div class="card p-2">
             <div class="d-flex justify-content-between align-items-center">
-                <h6 class="text-muted mb-0">CPU Load</h6>
+                <span class="text-muted small">CPU Load</span>
                 <div class="mono small">{{ infra.cpu_percent }}%</div>
             </div>
-            <div class="progress mt-2" style="height: 4px;">
+            <div class="progress mt-1" style="height: 3px;">
                 <div class="progress-bar {% if infra.cpu_percent > 80 %}bg-danger{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ infra.cpu_percent }}%"></div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-3">
+        <div class="card p-2">
             <div class="d-flex justify-content-between align-items-center">
-                <h6 class="text-muted mb-0">Memória RAM</h6>
+                <span class="text-muted small">Memória RAM</span>
                  <div class="mono small">{{ infra.ram_percent }}%</div>
             </div>
-            <div class="progress mt-2" style="height: 4px;">
+            <div class="progress mt-1" style="height: 3px;">
                 <div class="progress-bar bg-warning" role="progressbar" style="width: {{ infra.ram_percent }}%"></div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-3">
+        <div class="card p-2">
              <div class="d-flex justify-content-between align-items-center">
-                <h6 class="text-muted mb-0">Disco</h6>
+                <span class="text-muted small">Disco</span>
                  <div class="mono small">{{ infra.disk_percent }}%</div>
             </div>
-             <div class="progress mt-2" style="height: 4px;">
+             <div class="progress mt-1" style="height: 3px;">
                 <div class="progress-bar bg-light" role="progressbar" style="width: {{ infra.disk_percent }}%"></div>
             </div>
         </div>
@@ -75,27 +159,27 @@
 <!-- Business Metrics Cards -->
 <div class="row">
     <div class="col-md-3">
-        <div class="card text-center p-3 border-dark bg-dark bg-gradient">
-            <h3 class="fw-bold">{{ metrics.empresas_total }}</h3>
-            <span class="text-muted small">Empresas Totais</span>
+        <div class="card text-center p-2 border-dark bg-dark bg-gradient">
+            <h4 class="fw-bold my-1">{{ metrics.empresas_total }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Empresas Totais</span>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center p-3 border-success bg-dark bg-gradient">
-            <h3 class="fw-bold text-success">{{ metrics.empresas_ativas }}</h3>
-            <span class="text-muted small">Assinantes Ativos</span>
+        <div class="card text-center p-2 border-success bg-dark bg-gradient">
+            <h4 class="fw-bold text-success my-1">{{ metrics.empresas_ativas }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Assinantes Ativos</span>
         </div>
     </div>
     <div class="col-md-3">
-         <div class="card text-center p-3 border-dark bg-dark bg-gradient">
-            <h3 class="fw-bold">{{ metrics.profissionais }}</h3>
-            <span class="text-muted small">Profissionais</span>
+         <div class="card text-center p-2 border-dark bg-dark bg-gradient">
+            <h4 class="fw-bold my-1">{{ metrics.profissionais }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Profissionais</span>
         </div>
     </div>
     <div class="col-md-3">
-         <div class="card text-center p-3 border-info bg-dark bg-gradient">
-            <h3 class="fw-bold text-info">+{{ metrics.novas_empresas_30d }}</h3>
-            <span class="text-muted small">Novos (30d)</span>
+         <div class="card text-center p-2 border-info bg-dark bg-gradient">
+            <h4 class="fw-bold text-info my-1">+{{ metrics.novas_empresas_30d }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Novos (30d)</span>
         </div>
     </div>
 </div>

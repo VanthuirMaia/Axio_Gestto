@@ -38,13 +38,14 @@ def dashboard_view(request):
     total_profissionais = Profissional.objects.count()
     
     # Empresas ativas (com assinatura válida/ativa)
-    assinaturas_ativas = Assinatura.objects.filter(status='active')
+    # CORREÇÃO: Status no model é 'ativa', não 'active'
+    assinaturas_ativas = Assinatura.objects.filter(status='ativa')
     count_ativas = assinaturas_ativas.count()
     
     # 3. Financial Metrics (KPIs)
     # MRR = Soma dos valores mensais dos planos ativos
     # O modelo Plano deve ter um campo 'valor' (Decimal/Float)
-    mrr_data = assinaturas_ativas.aggregate(total_mrr=Sum('plano__valor'))
+    mrr_data = assinaturas_ativas.aggregate(total_mrr=Sum('plano__preco_mensal'))
     mrr = mrr_data['total_mrr'] or 0
     
     # ARR = MRR * 12
@@ -52,11 +53,32 @@ def dashboard_view(request):
     
     # Ticket Médio (ARPU)
     ticket_medio = mrr / count_ativas if count_ativas > 0 else 0
+
+    # 4. BI Insights (v3)
+    # A. Risco de Churn (Empresas sem login há > 7 dias)
+    data_limite_churn = timezone.now() - datetime.timedelta(days=7)
+    # Buscando usuários master (donos) inativos
+    risco_churn = Usuario.objects.filter(
+        empresa__isnull=False, 
+        last_login__lt=data_limite_churn,
+        is_active=True
+    ).select_related('empresa').order_by('last_login')[:10] # Top 10 riscos
+
+    # B. Segmentação de Planos (Funil)
+    status_counts = Assinatura.objects.values('status').annotate(total=Count('id'))
+    funil = {s['status']: s['total'] for s in status_counts}
     
+    # C. Top Payers (Clientes VIP)
+    top_clientes = Assinatura.objects.filter(status='ativa').select_related('empresa', 'plano').order_by('-plano__preco_mensal', '-criado_em')[:5]
+
+    # D. Distribuição de Planos
+    planos_dist = Assinatura.objects.values('plano__nome').annotate(total=Count('id')).order_by('-total')
+
     # Novos cadastros (últimos 30 dias)
     data_30_dias = timezone.now() - datetime.timedelta(days=30)
     novas_empresas = Empresa.objects.filter(criada_em__gte=data_30_dias).count()
-    
+
+    # Configurar contexto de retorno
     context = {
         'infra': infra,
         'metrics': {
@@ -64,12 +86,18 @@ def dashboard_view(request):
             'empresas_ativas': count_ativas,
             'usuarios': total_usuarios,
             'profissionais': total_profissionais,
-            'novas_empresas_30d': novas_empresas,
+            'novas_empresas_30d': novas_empresas, # Corrigido: usando a variável calculada anteriormente
         },
         'financial': {
-            'mrr': float(mrr), # Serializar Decimal para passar ao template se precisar de JS, ou template filter
+            'mrr': float(mrr),
             'arr': float(arr),
             'ticket_medio': float(ticket_medio)
+        },
+        'bi': {
+            'risco_churn': risco_churn,
+            'funil': funil,
+            'top_clientes': top_clientes,
+            'planos_dist': planos_dist
         },
         'menu_active': 'dashboard'
     }
