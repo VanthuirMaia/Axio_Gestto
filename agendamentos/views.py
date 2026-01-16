@@ -397,7 +397,12 @@ def listar_horarios_disponiveis(request):
         }
     """
     # Parâmetros (aceita tanto em query string quanto em headers)
-    instance_name = request.GET.get('instance') or request.headers.get('instance') or request.headers.get('Instance')
+    instance_name = (
+        request.GET.get('instance') or
+        request.headers.get('X-Instance-Name') or
+        request.headers.get('instance') or
+        request.headers.get('Instance')
+    )
     data_str = request.GET.get('data') or request.headers.get('data') or request.headers.get('Data')
     servico_id = request.GET.get('servico_id') or request.headers.get('servico_id')
     profissional_id = request.GET.get('profissional_id') or request.headers.get('profissional_id')
@@ -525,8 +530,13 @@ def listar_horarios_disponiveis(request):
     except ValueError as e:
         return JsonResponse({"error": f"Formato inválido: {str(e)}"}, status=400)
     except Exception as e:
-        logger.error(f"Erro ao listar horários disponíveis: {e}")
-        return JsonResponse({"error": "Erro interno"}, status=500)
+        import traceback
+        logger.error(f"Erro ao listar horários disponíveis: {e}\n{traceback.format_exc()}")
+        return JsonResponse({
+            "error": "Erro interno",
+            "detalhes": str(e),
+            "tipo": type(e).__name__
+        }, status=500)
 
 
 
