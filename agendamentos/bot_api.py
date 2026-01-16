@@ -243,17 +243,25 @@ def processar_agendamento(empresa, telefone, dados, log):
             }
 
         # 7. Criar agendamento (dentro da transação, lock ainda ativo)
-        agendamento = Agendamento.objects.create(
-            empresa=empresa,
-            cliente=cliente,
-            servico=servico,
-            profissional=profissional,
-            data_hora_inicio=data_hora_inicio,
-            data_hora_fim=data_hora_fim,
-            status='pendente',
-            valor_cobrado=servico.preco,
-            notas=f'Agendado via WhatsApp. Código: {codigo}'
-        )
+        try:
+            agendamento = Agendamento.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                servico=servico,
+                profissional=profissional,
+                data_hora_inicio=data_hora_inicio,
+                data_hora_fim=data_hora_fim,
+                status='pendente',
+                valor_cobrado=servico.preco,
+                notas=f'Agendado via WhatsApp. Código: {codigo}'
+            )
+        except Exception as e:
+            # Capturar erro de validação (ex: tenant inválido)
+            logger.error(f"Erro ao criar agendamento: {e}")
+            return {
+                'sucesso': False,
+                'mensagem': f'Ocorreu um erro ao criar o agendamento: {str(e)}'
+            }
         
         # 📊 LOG DE AUDITORIA
         logger.info(
