@@ -28,7 +28,7 @@ def agendamento_publico(request, slug):
         
         # Buscar empresa pelo slug
         try:
-            empresa = Empresa.objects.get(slug=slug, ativo=True)
+            empresa = Empresa.objects.get(slug=slug, ativa=True)
             logger.info(f'Empresa encontrada: {empresa.nome} (ID: {empresa.id})')
         except Empresa.DoesNotExist:
             logger.warning(f'Empresa não encontrada ou inativa - slug: {slug}')
