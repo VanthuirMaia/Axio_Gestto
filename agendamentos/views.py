@@ -177,12 +177,12 @@ def api_agendamentos(request):
             start_date = parser.parse(start_str).date()
             end_date = parser.parse(end_str).date()
 
-            # Buscar agendamentos no intervalo
+            # Buscar agendamentos no intervalo (excluir cancelados)
             ags = Agendamento.objects.filter(
                 empresa=empresa,
                 data_hora_inicio__date__gte=start_date,
                 data_hora_inicio__date__lt=end_date
-            ).select_related("cliente", "servico", "profissional")
+            ).exclude(status='cancelado').select_related("cliente", "servico", "profissional")
         except:
             # Se der erro no parse, usar método antigo
             mes = request.GET.get("mes")
@@ -191,7 +191,7 @@ def api_agendamentos(request):
                 empresa=empresa,
                 data_hora_inicio__month=mes,
                 data_hora_inicio__year=ano
-            ).select_related("cliente", "servico", "profissional")
+            ).exclude(status='cancelado').select_related("cliente", "servico", "profissional")
     else:
         # Método antigo para compatibilidade
         mes = request.GET.get("mes")
@@ -200,7 +200,7 @@ def api_agendamentos(request):
             empresa=empresa,
             data_hora_inicio__month=mes,
             data_hora_inicio__year=ano
-        ).select_related("cliente", "servico", "profissional")
+        ).exclude(status='cancelado').select_related("cliente", "servico", "profissional")
 
     # Filtro de profissionais (NOVO)
     profissionais_ids = request.GET.get("profissionais", "")
