@@ -17,17 +17,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'Pasta docs não encontrada em {docs_path}'))
             return
 
-        # Pastas permitidas para virarem categorias
+        # Pastas permitidas para virarem categorias (CASE INSENSITIVE)
+        # APENAS documentação de usuário final
         pastas_permitidas = [
             'configuracao',
             'operacao',
             'integracao',
             'financeiro',
             'agendamentos',
-            'relatorios'
+            'relatorios',
         ]
 
-        # Mapeamento de nomes amigáveis para categorias
+        # Mapeamento de nomes amigáveis
         nomes_categorias = {
             'configuracao': 'Configurações',
             'operacao': 'Operação do Sistema',
@@ -36,28 +37,26 @@ class Command(BaseCommand):
             'agendamentos': 'Agendamentos',
             'relatorios': 'Relatórios',
         }
-        
-        # Ícones para cada categoria
-        icones_categorias = {
-            'configuracao': 'bi-gear',
-            'operacao': 'bi-display',
-            'integracao': 'bi-puzzle',
-            'financeiro': 'bi-cash-coin',
-            'agendamentos': 'bi-calendar-check',
-            'relatorios': 'bi-bar-chart',
-        }
 
         # 1. Processar arquivos na raiz do docs (Categoria Geral)
-        self.processar_pasta(docs_path, 'Geral', ordem=99)
+        # DESATIVADO POR SEGURANÇA - Docs na raiz geralmente são técnicos (README, deploy, etc)
+        # self.processar_pasta(docs_path, 'Geral', ordem=99)
 
-        # 2. Processar subpastas permitidas
+        # 2. Processar APENAS subpastas permitidas (Recursivo 1 nível)
         ordem = 1
         for item in docs_path.iterdir():
-            if item.is_dir() and item.name in pastas_permitidas:
-                nome_cat = nomes_categorias.get(item.name, item.name.title())
-                icone_cat = icones_categorias.get(item.name, 'bi-folder')
-                self.processar_pasta(item, nome_cat, ordem=ordem, icone=icone_cat)
-                ordem += 1
+            if item.is_dir():
+                nome_lower = item.name.lower()
+                
+                # Se for uma pasta permitida (WHITELIST)
+                # Não importa se tem MD, só importa se é permitida
+                if nome_lower in pastas_permitidas:
+                    
+                    # Nome amigável
+                    nome_cat = nomes_categorias.get(nome_lower, item.name.replace('_', ' ').title())
+                    
+                    self.processar_pasta(item, nome_cat, ordem=ordem)
+                    ordem += 1
 
         self.stdout.write(self.style.SUCCESS('Importação concluída com sucesso!'))
 
@@ -81,46 +80,43 @@ class Command(BaseCommand):
         
         if created:
             self.stdout.write(self.style.SUCCESS(f'Categoria criada: {nome_categoria}'))
-        else:
-            # Atualizar ordem se mudou
-            if categoria.ordem != ordem:
-                categoria.ordem = ordem
-                categoria.save()
-
+        
         # Processar arquivos
+        count = 0
         for arquivo in arquivos_md:
-            # Ignorar arquivos de sistema ou controle
-            if arquivo.name.upper() in ['README.MD', 'TODO.MD']:
+            # Ignorar arquivos de sistema
+            if arquivo.name.upper() in ['README.MD', 'TODO.MD', 'REQUIREMENTS.TXT']:
                 continue
                 
-            self.importar_arquivo(arquivo, categoria)
+            if self.importar_arquivo(arquivo, categoria):
+                count += 1
+        
+        if count > 0:
+            self.stdout.write(f'  - {nome_categoria}: {count} artigos importados')
 
     def importar_arquivo(self, arquivo_path, categoria):
         """Lê arquivo e cria artigo"""
         try:
             content = arquivo_path.read_text(encoding='utf-8')
             
-            # Extrair título (Primeira linha com # ou nome do arquivo)
+            # Extrair título
             lines = content.split('\n')
             titulo = None
             
-            # Tentar pegar do primeiro H1
             for line in lines:
                 if line.startswith('# '):
                     titulo = line.replace('# ', '').strip()
                     break
             
-            # Se não achou, usa o nome do arquivo formatado
             if not titulo:
                 titulo = arquivo_path.stem.replace('_', ' ').replace('-', ' ').title()
             
-            # Remover o título do conteúdo se ele estiver na primeira linha (para não duplicar)
+            # Limpar título do corpo
             if lines and lines[0].startswith('# '):
                 content_body = '\n'.join(lines[1:]).strip()
             else:
                 content_body = content
 
-            # Criar ou atualizar artigo
             artigo, created = Artigo.objects.update_or_create(
                 slug=slugify(titulo),
                 defaults={
@@ -130,9 +126,8 @@ class Command(BaseCommand):
                     'publicado': True
                 }
             )
-            
-            action = 'Criado' if created else 'Atualizado'
-            self.stdout.write(f'  - {action}: {titulo}')
+            return True
             
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Erro ao importar {arquivo_path.name}: {str(e)}'))
+            return False

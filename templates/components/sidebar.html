@@ -78,6 +78,18 @@
 
       <hr />
 
+      <!-- Central de Ajuda -->
+      <li class="nav-item">
+        <a
+          href="{% url 'ajuda_home' %}"
+          class="nav-link {% if 'ajuda' in request.path %}active{% endif %}"
+          data-title="Ajuda"
+        >
+          <i class="bi bi-question-circle"></i>
+          <span class="sidebar-text ms-2">Central de Ajuda</span>
+        </a>
+      </li>
+
       <!-- Configurações -->
       <li class="nav-item">
         <a
