@@ -530,10 +530,30 @@ def profissionais_lista(request):
         {'label': 'Profissionais', 'url': '#'},
     ]
     
+    # Verificar limites do plano
+    assinatura = getattr(empresa, 'assinatura', None)
+    
+    # Defaults (sem plano = limite 1 apenas por segurança)
+    max_profissionais = 1
+    pode_criar = False
+    
+    if assinatura and assinatura.plano:
+        max_profissionais = assinatura.plano.max_profissionais
+        # Contar APENAS ATIVOS para o limite
+        profissionais_ativos = profissionais.filter(ativo=True).count()
+        pode_criar = profissionais_ativos < max_profissionais
+    else:
+        # Sem plano ou trial expirado, verificar regra
+        profissionais_ativos = profissionais.filter(ativo=True).count()
+        pode_criar = profissionais_ativos < 1
+
     context = {
         'empresa': empresa,
         'profissionais': profissionais,
         'breadcrumb_items': breadcrumb_items,
+        'pode_criar': pode_criar,
+        'max_profissionais': max_profissionais,
+        'profissionais_ativos': profissionais_ativos,
     }
     
     return render(request, 'configuracoes/profissionais_lista.html', context)
@@ -543,8 +563,22 @@ def profissional_criar(request):
     """Cria um novo profissional"""
     empresa = request.user.empresa
 
+    # Validar limite do plano (GET e POST)
+    assinatura = getattr(empresa, 'assinatura', None)
+    if assinatura and assinatura.plano:
+        max_profissionais = assinatura.plano.max_profissionais
+        profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+        
+        if profissionais_ativos >= max_profissionais:
+            messages.error(
+                request,
+                f'❌ Seu plano permite apenas {max_profissionais} profissional(is) ativo(s). '
+                f'Faça upgrade do plano para adicionar mais.'
+            )
+            return redirect('profissionais_lista')
+
     if request.method == 'POST':
-        # Validar limite do plano
+        # Validar limite do plano novamente (segurança extra)
         assinatura = getattr(empresa, 'assinatura', None)
         if assinatura and assinatura.plano:
             max_profissionais = assinatura.plano.max_profissionais
