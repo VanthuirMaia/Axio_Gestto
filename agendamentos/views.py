@@ -567,6 +567,7 @@ def deletar_agendamento(request, id):
 
 @login_required
 @plano_required(feature_flag='permite_recorrencias', feature_name='Agendamentos Recorrentes')
+@login_required
 def listar_recorrencias(request):
     """Lista todas as recorrências da empresa"""
     from .models import AgendamentoRecorrente
