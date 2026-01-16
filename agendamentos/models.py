@@ -83,8 +83,10 @@ class Agendamento(models.Model):
             })
     
     def save(self, *args, **kwargs):
-        """Override save para garantir validação"""
-        self.full_clean()
+        """Override save para garantir validação apenas na criação"""
+        # Validar apenas ao criar (não ao atualizar)
+        if not self.pk:  # Se não tem ID, é criação
+            self.full_clean()
         super().save(*args, **kwargs)
 
 
