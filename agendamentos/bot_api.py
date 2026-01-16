@@ -62,6 +62,17 @@ def processar_comando_bot(request):
     intencao = request.data.get('intencao')
     dados = request.data.get('dados', {})
     empresa = request.empresa  # Vem da autenticação
+    
+    # 🔒 VALIDAÇÃO CRÍTICA: Garantir que empresa foi identificada
+    if not empresa:
+        logger.error("[SECURITY] Tentativa de acesso sem empresa identificada")
+        return Response({
+            'sucesso': False,
+            'erro': 'Empresa não identificada. Configure X-Instance-Name no n8n.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 📊 LOG DE AUDITORIA
+    logger.info(f"[AUDIT] Request recebido | Empresa: {empresa.nome} (ID: {empresa.id}) | Telefone: {telefone} | Intenção: {intencao}")
 
     # Criar log da interação
     log = LogMensagemBot.objects.create(
@@ -242,6 +253,17 @@ def processar_agendamento(empresa, telefone, dados, log):
             status='pendente',
             valor_cobrado=servico.preco,
             notas=f'Agendado via WhatsApp. Código: {codigo}'
+        )
+        
+        # 📊 LOG DE AUDITORIA
+        logger.info(
+            f"[AUDIT] Agendamento criado | "
+            f"ID: {agendamento.id} | "
+            f"Empresa: {empresa.nome} (ID: {empresa.id}) | "
+            f"Cliente: {cliente.nome} | "
+            f"Serviço: {servico.nome} | "
+            f"Profissional: {profissional.nome if profissional else 'N/A'} | "
+            f"Data: {data_hora_inicio.strftime('%d/%m/%Y %H:%M')}"
         )
 
         # Vincular log ao agendamento
@@ -656,7 +678,24 @@ def buscar_ou_criar_cliente(empresa, telefone, dados):
     if telefone_limpo.startswith('55') and len(telefone_limpo) > 10:
         telefone_limpo = telefone_limpo[2:]
 
-    nome = dados.get('nome_cliente', 'Cliente WhatsApp')
+
+    # Extrair nome do cliente (tentar múltiplos campos)
+    nome = (
+        dados.get('nome_cliente') or 
+        dados.get('nome') or 
+        dados.get('cliente') or
+        'Cliente WhatsApp'
+    )
+    
+    # Remover espaços extras e validar
+    nome = nome.strip() if nome else 'Cliente WhatsApp'
+    
+    # Se nome estiver vazio ou for muito curto, usar fallback
+    if not nome or len(nome) < 2 or nome.lower() in ['cliente', 'whatsapp']:
+        nome = 'Cliente WhatsApp'
+    
+    # 📊 LOG DE DEBUG
+    logger.info(f"[DEBUG] Criando/buscando cliente | Telefone: {telefone_limpo} | Nome extraído: {nome} | Dados recebidos: {dados}")
 
     # get_or_create é atômico e previne violação de constraint única
     cliente, criado = Cliente.objects.get_or_create(

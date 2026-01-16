@@ -651,16 +651,24 @@ class EvolutionAPIService:
 
         if result['success']:
             instance_data = result['data'].get('instance', {})
+            
+            # CORREÇÃO CRÍTICA: Usar o instance_name retornado pela Evolution API
+            # A Evolution API adiciona sufixos (_1, _2, etc) ao nome da instância
+            # Precisamos salvar o nome REAL retornado pela API, não o que geramos localmente
+            instance_name_real = instance_data.get('instanceName') or instance_data.get('instance_name') or instance_name
+            
+            logger.info(f"Instance name gerado localmente: {instance_name}")
+            logger.info(f"Instance name retornado pela API: {instance_name_real}")
 
-            # Atualiza a configuração local
-            self.config.instance_name = instance_name
+            # Atualiza a configuração local com o nome REAL da API
+            self.config.instance_name = instance_name_real
             self.config.instance_token = instance_data.get('token', webhook_secret)
             self.config.webhook_url = webhook_url
             self.config.status = 'aguardando_qr'
             self.config.metadados = instance_data
             self.config.save()
 
-            logger.info(f"Instância criada com sucesso: {instance_name}")
+            logger.info(f"Instância criada com sucesso: {instance_name_real}")
 
             # ✅ Salva registro da instância vinculada à empresa
             from empresas.models import WhatsAppInstance
