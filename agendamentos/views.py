@@ -396,18 +396,26 @@ def listar_horarios_disponiveis(request):
             "total_disponiveis": 10
         }
     """
-    # Parâmetros
-    instance_name = request.GET.get('instance')
-    data_str = request.GET.get('data')
-    servico_id = request.GET.get('servico_id', None)
-    profissional_id = request.GET.get('profissional_id', None)
-    intervalo = int(request.GET.get('intervalo', 30))
+    # Parâmetros (aceita tanto em query string quanto em headers)
+    instance_name = request.GET.get('instance') or request.headers.get('instance') or request.headers.get('Instance')
+    data_str = request.GET.get('data') or request.headers.get('data') or request.headers.get('Data')
+    servico_id = request.GET.get('servico_id') or request.headers.get('servico_id')
+    profissional_id = request.GET.get('profissional_id') or request.headers.get('profissional_id')
+    
+    try:
+        intervalo = int(request.GET.get('intervalo', 30) or request.headers.get('intervalo', 30))
+    except (ValueError, TypeError):
+        intervalo = 30
     
     # Validações
     if not all([instance_name, data_str]):
         return JsonResponse({
             "error": "Parâmetros obrigatórios: instance, data",
-            "exemplo": "?instance=empresa_slug&data=2026-01-17&api_key=SUA_CHAVE"
+            "hint": "Envie via query string (?instance=X&data=Y) ou headers (Instance: X, Data: Y)",
+            "recebido": {
+                "instance": instance_name,
+                "data": data_str
+            }
         }, status=400)
     
     try:
