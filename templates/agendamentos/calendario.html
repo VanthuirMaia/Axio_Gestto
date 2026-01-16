@@ -392,6 +392,51 @@
         </div>
     </div>
 
+    <!-- Filtro de Profissionais -->
+    {% if profissionais %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
+                        <small class="text-muted fw-semibold">
+                            <i class="bi bi-funnel me-1"></i>Filtrar por profissional:
+                        </small>
+                        
+                        <!-- Checkboxes de profissionais -->
+                        <div class="d-flex flex-wrap gap-3" id="filtro-profissionais">
+                            {% for prof in profissionais %}
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input profissional-checkbox" 
+                                    type="checkbox" 
+                                    value="{{ prof.id }}" 
+                                    id="prof-{{ prof.id }}"
+                                    checked
+                                >
+                                <label class="form-check-label" for="prof-{{ prof.id }}">
+                                    {{ prof.nome }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Botões de ação -->
+                        <div class="ms-auto d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="selecionarTodos()">
+                                <i class="bi bi-check-all"></i> Todos
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="limparSelecao()">
+                                <i class="bi bi-x"></i> Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Calendário -->
     <div class="row">
         <div class="col-12">
@@ -522,12 +567,22 @@ document.addEventListener("DOMContentLoaded", function () {
             const startStr = info.start.toISOString().split('T')[0];
             const endStr = info.end.toISOString().split('T')[0];
 
-            console.log(`[Calendar] Buscando eventos de ${startStr} até ${endStr}`);
+            // Obter profissionais selecionados
+            const checkboxes = document.querySelectorAll('.profissional-checkbox:checked');
+            const profissionaisIds = Array.from(checkboxes).map(cb => cb.value).join(',');
 
-            fetch(`/app/agendamentos/api/?start=${startStr}&end=${endStr}`)
+            // Montar URL com filtros
+            let url = `/app/agendamentos/api/?start=${startStr}&end=${endStr}`;
+            if (profissionaisIds) {
+                url += `&profissionais=${profissionaisIds}`;
+            }
+
+            console.log(`[Calendar] Buscando eventos: ${url}`);
+
+            fetch(url)
                 .then(r => r.json())
                 .then(lista => {
-                    console.log(`[Calendar] Recebidos ${lista.length} agendamentos:`, lista);
+                    console.log(`[Calendar] Recebidos ${lista.length} agendamentos`);
                     const eventos = lista.map(ev => ({
                         id: ev.id,
                         title: ev.title,
@@ -615,6 +670,35 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     calendar.render();
+
+    // Adicionar listeners aos checkboxes de filtro
+    document.querySelectorAll('.profissional-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            console.log('[Filtro] Profissional alterado, atualizando calendário...');
+            calendar.refetchEvents();
+        });
+    });
 });
+
+// Funções de controle do filtro
+function selecionarTodos() {
+    document.querySelectorAll('.profissional-checkbox').forEach(cb => {
+        cb.checked = true;
+    });
+    const calendar = document.querySelector('#calendar')?._calendar;
+    if (calendar) {
+        calendar.refetchEvents();
+    }
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.profissional-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    const calendar = document.querySelector('#calendar')?._calendar;
+    if (calendar) {
+        calendar.refetchEvents();
+    }
+}
 </script>
 {% endblock %}

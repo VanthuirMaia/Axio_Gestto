@@ -176,6 +176,17 @@ def api_agendamentos(request):
             data_hora_inicio__year=ano
         ).select_related("cliente", "servico", "profissional")
 
+    # Filtro de profissionais (NOVO)
+    profissionais_ids = request.GET.get("profissionais", "")
+    if profissionais_ids:
+        try:
+            ids_list = [int(id.strip()) for id in profissionais_ids.split(',') if id.strip()]
+            if ids_list:
+                ags = ags.filter(profissional_id__in=ids_list)
+        except ValueError:
+            # Se houver erro ao converter IDs, ignora o filtro
+            pass
+
     eventos = []
 
     # ------------------------------

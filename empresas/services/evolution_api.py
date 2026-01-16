@@ -582,8 +582,8 @@ class EvolutionAPIService:
         # Gerar webhook secret
         webhook_secret = self.config.gerar_webhook_secret()
 
-        # Configurar webhook URL (global)
-        webhook_url = f"{settings.SITE_URL}/api/webhooks/whatsapp/"
+        # Configurar webhook URL (prioriza N8N_WEBHOOK_URL se disponível)
+        webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', '') or f"{settings.SITE_URL}/api/webhooks/whatsapp/"
 
         data = {
             "instanceName": instance_name,
