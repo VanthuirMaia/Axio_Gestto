@@ -374,9 +374,9 @@ def listar_horarios_disponiveis(request):
     Lista todos os horários disponíveis para um dia específico
     
     Query Parameters:
-        - empresa_id: ID da empresa (obrigatório)
+        - instance: Nome da instância WhatsApp (identifica a empresa)
         - data: Data no formato YYYY-MM-DD
-        - servico_id: ID do serviço (obrigatório)
+        - servico_id: ID do serviço (opcional - se não informado, usa duração padrão de 60min)
         - profissional_id: ID do profissional (opcional)
         - intervalo: Intervalo entre horários em minutos (padrão: 30)
         - api_key: Chave de API (obrigatório)
@@ -384,11 +384,12 @@ def listar_horarios_disponiveis(request):
     Returns:
         {
             "data": "2026-01-17",
+            "empresa": "Nome da Empresa",
             "horarios_disponiveis": [
                 {
                     "hora": "09:00",
                     "disponivel": true,
-                    "profissionais": [{" id": 1, "nome": "João"}]
+                    "profissionais": [{"id": 1, "nome": "João"}]
                 },
                 ...
             ],
@@ -396,27 +397,38 @@ def listar_horarios_disponiveis(request):
         }
     """
     # Parâmetros
-    empresa_id = request.GET.get('empresa_id')
-    data_str = request.GET.get('data')  # YYYY-MM-DD
-    servico_id = request.GET.get('servico_id')
+    instance_name = request.GET.get('instance')
+    data_str = request.GET.get('data')
+    servico_id = request.GET.get('servico_id', None)
     profissional_id = request.GET.get('profissional_id', None)
-    intervalo = int(request.GET.get('intervalo', 30))  # minutos
+    intervalo = int(request.GET.get('intervalo', 30))
     
     # Validações
-    if not all([empresa_id, data_str, servico_id]):
+    if not all([instance_name, data_str]):
         return JsonResponse({
-            "error": "Parâmetros obrigatórios: empresa_id, data, servico_id"
+            "error": "Parâmetros obrigatórios: instance, data",
+            "exemplo": "?instance=empresa_slug&data=2026-01-17&api_key=SUA_CHAVE"
         }, status=400)
     
     try:
         # Parse data
         data = datetime.strptime(data_str, '%Y-%m-%d').date()
         
-        # Buscar empresa
-        empresa = Empresa.objects.get(id=empresa_id)
+        # Buscar empresa pelo instance_name
+        from empresas.models import ConfiguracaoWhatsApp
+        config = ConfiguracaoWhatsApp.objects.select_related('empresa').get(instance_name=instance_name)
+        empresa = config.empresa
         
-        # Buscar serviço
-        servico = Servico.objects.get(id=servico_id, empresa=empresa)
+        # Buscar serviço (se fornecido) ou usar duração padrão
+        duracao_minutos = 60  # Padrão
+        if servico_id:
+            servico = Servico.objects.get(id=servico_id, empresa=empresa)
+            duracao_minutos = servico.duracao_minutos
+        else:
+            # Usar primeiro serviço ativo como referência ou duração padrão
+            servico_padrao = empresa.servicos.filter(ativo=True).first()
+            if servico_padrao:
+                duracao_minutos = servico_padrao.duracao_minutos
         
         # Buscar horário de funcionamento
         dia_semana = data.weekday()
@@ -456,7 +468,7 @@ def listar_horarios_disponiveis(request):
         
         while hora_atual < hora_fim_expediente:
             # Verificar se o serviço cabe neste horário
-            hora_fim_servico = hora_atual + timedelta(minutes=servico.duracao_minutos)
+            hora_fim_servico = hora_atual + timedelta(minutes=duracao_minutos)
             
             if hora_fim_servico.time() <= horario_func.hora_fechamento:
                 # Converter para timezone aware
@@ -468,7 +480,7 @@ def listar_horarios_disponiveis(request):
                     empresa=empresa,
                     data_hora_inicio=data_hora_inicio,
                     data_hora_fim=data_hora_fim,
-                    servico=servico,
+                    servico=None,  # Não precisa do objeto servico completo
                     profissional_id=profissional_id
                 )
                 
@@ -487,6 +499,7 @@ def listar_horarios_disponiveis(request):
         
         return JsonResponse({
             "data": data_str,
+            "empresa": empresa.nome,
             "horarios_disponiveis": horarios_disponiveis,
             "total_disponiveis": total_disponiveis,
             "horario_funcionamento": {
@@ -495,6 +508,8 @@ def listar_horarios_disponiveis(request):
             }
         })
         
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        return JsonResponse({"error": "Instância WhatsApp não encontrada"}, status=404)
     except Empresa.DoesNotExist:
         return JsonResponse({"error": "Empresa não encontrada"}, status=404)
     except Servico.DoesNotExist:
