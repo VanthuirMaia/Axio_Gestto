@@ -291,6 +291,13 @@ def dashboard_view(request):
         dias_valores.append(float(faturamento_dia))
 
     # ============================================
+    # ONBOARDING (NOVO)
+    # ============================================
+    from .onboarding import calcular_progresso_onboarding
+    
+    onboarding = calcular_progresso_onboarding(empresa)
+    
+    # ============================================
     # CONTEXTO
     # ============================================
     
@@ -300,6 +307,9 @@ def dashboard_view(request):
         'saudacao': saudacao,
         'hoje': hoje,
         'agora': agora,
+        
+        # Onboarding
+        'onboarding': onboarding,
 
         # Agendamentos
         'agendamentos_hoje': agendamentos_hoje,
@@ -617,3 +627,35 @@ def manifest_json(request):
             content_type='application/manifest+json',
             status=404
         )
+
+
+@login_required
+def upgrade_required(request):
+    """
+    Página de upgrade mostrada quando usuário tenta acessar feature bloqueada
+    """
+    feature_name = request.GET.get('feature', 'Este recurso')
+    plano_atual = request.GET.get('plano_atual', 'basico')
+    
+    # Mapear nomes de planos
+    planos_display = {
+        'basico': 'Básico',
+        'essencial': 'Essencial',
+        'profissional': 'Profissional'
+    }
+    
+    # Preços dos planos
+    precos = {
+        'basico': '19,99',
+        'essencial': '79,99',
+        'profissional': '199,99'
+    }
+    
+    context = {
+        'feature_name': feature_name,
+        'plano_atual': plano_atual,
+        'plano_atual_display': planos_display.get(plano_atual, plano_atual.title()),
+        'preco_atual': precos.get(plano_atual, '0,00')
+    }
+    
+    return render(request, 'core/upgrade_required.html', context)

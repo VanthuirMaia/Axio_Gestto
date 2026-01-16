@@ -8,7 +8,7 @@ from core.views import (
     login_view, logout_view, dashboard_view,
     password_reset_request, password_reset_sent,
     password_reset_confirm, password_reset_complete,
-    service_worker, offline_view, ativar_conta
+    service_worker, offline_view, ativar_conta, upgrade_required
 )
 from core.health import health_check
 from agendamentos.bot_api import processar_comando_bot, whatsapp_webhook_saas, consultar_informacoes_empresa
@@ -122,6 +122,7 @@ urlpatterns = [
 
     # Sistema principal
     path('app/dashboard/', dashboard_view, name='dashboard'),
+    path('app/upgrade/', upgrade_required, name='upgrade_required'),
     path('app/agendamentos/', include('agendamentos.urls')),
     path('app/clientes/', include('clientes.urls')),
     path('app/financeiro/', include('financeiro.urls')),

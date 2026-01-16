@@ -29,6 +29,9 @@
     </div>
   </div>
 
+  <!-- Barra de Onboarding -->
+  {% include 'components/onboarding_bar.html' %}
+
   <!-- Alertas Importantes -->
   {% if contas_vencidas > 0 or agendamentos_pendentes > 0 or clientes_risco > 0 %}
   <div class="row mb-4">

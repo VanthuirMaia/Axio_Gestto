@@ -77,6 +77,90 @@ def dashboard_view(request):
     # Novos cadastros (últimos 30 dias)
     data_30_dias = timezone.now() - datetime.timedelta(days=30)
     novas_empresas = Empresa.objects.filter(criada_em__gte=data_30_dias).count()
+    
+    # ============================================
+    # 5. ANALYTICS AVANÇADO (NOVO)
+    # ============================================
+    
+    # A. Evolução MRR (últimos 30 dias)
+    mrr_historico = []
+    hoje = timezone.now().date()
+    for i in range(29, -1, -1):  # 30 dias (de 29 dias atrás até hoje)
+        data = hoje - datetime.timedelta(days=i)
+        mrr_dia = Assinatura.objects.filter(
+            status='ativa',
+            data_inicio__lte=data
+        ).aggregate(total=Sum('plano__preco_mensal'))['total'] or 0
+        mrr_historico.append({
+            'data': data.strftime('%d/%m'),
+            'mrr': float(mrr_dia)
+        })
+    
+    # B. Taxa de Conversão Trial → Pago (últimos 30 dias)
+    trials_iniciados = Assinatura.objects.filter(
+        status='trial',
+        data_inicio__gte=data_30_dias
+    ).count()
+    
+    # Convertidos = assinaturas que eram trial e viraram ativas
+    # (simplificação: contar ativas criadas nos últimos 30 dias)
+    convertidos = Assinatura.objects.filter(
+        status='ativa',
+        data_inicio__gte=data_30_dias
+    ).count()
+    
+    taxa_conversao = (convertidos / trials_iniciados * 100) if trials_iniciados > 0 else 0
+    
+    # C. Churn Rate (últimos 30 dias)
+    inicio_mes = (timezone.now() - datetime.timedelta(days=30)).replace(day=1)
+    fim_mes = timezone.now()
+    
+    assinaturas_inicio_periodo = Assinatura.objects.filter(
+        status='ativa',
+        data_inicio__lte=inicio_mes
+    ).count()
+    
+    canceladas_periodo = Assinatura.objects.filter(
+        status='cancelada',
+        data_cancelamento__gte=inicio_mes,
+        data_cancelamento__lte=fim_mes
+    ).count() if hasattr(Assinatura, 'data_cancelamento') else 0
+    
+    churn_rate = (canceladas_periodo / assinaturas_inicio_periodo * 100) if assinaturas_inicio_periodo > 0 else 0
+    
+    # Assinaturas em risco (expandido - sem login há 7 dias)
+    # Contar assinaturas ativas cujas empresas têm usuários inativos
+    empresas_com_usuarios_inativos = Usuario.objects.filter(
+        last_login__lt=data_limite_churn,
+        is_active=True,
+        empresa__isnull=False
+    ).values_list('empresa_id', flat=True).distinct()
+    
+    assinaturas_risco = Assinatura.objects.filter(
+        status='ativa',
+        empresa_id__in=empresas_com_usuarios_inativos
+    ).count()
+    
+    # D. Comparação com Período Anterior (MRR mês anterior)
+    inicio_mes_anterior = inicio_mes - datetime.timedelta(days=30)
+    mrr_mes_anterior = Assinatura.objects.filter(
+        status='ativa',
+        data_inicio__lte=inicio_mes_anterior
+    ).aggregate(total=Sum('plano__preco_mensal'))['total'] or 0
+    
+    crescimento_mrr = ((mrr - mrr_mes_anterior) / mrr_mes_anterior * 100) if mrr_mes_anterior > 0 else 0
+    
+    # E. Top 5 Clientes com % de Receita
+    receita_total = mrr
+    top_clientes_expandido = []
+    for assinatura in top_clientes:
+        percentual = (assinatura.plano.preco_mensal / receita_total * 100) if receita_total > 0 else 0
+        top_clientes_expandido.append({
+            'empresa': assinatura.empresa,
+            'plano': assinatura.plano,
+            'valor': assinatura.plano.preco_mensal,
+            'percentual': round(percentual, 1)
+        })
 
     # Configurar contexto de retorno
     context = {
@@ -91,13 +175,24 @@ def dashboard_view(request):
         'financial': {
             'mrr': float(mrr),
             'arr': float(arr),
-            'ticket_medio': float(ticket_medio)
+            'ticket_medio': float(ticket_medio),
+            'crescimento_mrr': round(crescimento_mrr, 1),  # NOVO
+            'mrr_mes_anterior': float(mrr_mes_anterior)  # NOVO
         },
         'bi': {
             'risco_churn': risco_churn,
             'funil': funil,
-            'top_clientes': top_clientes,
-            'planos_dist': planos_dist
+            'top_clientes': top_clientes_expandido,  # ATUALIZADO
+            'planos_dist': planos_dist,
+            # NOVOS
+            'taxa_conversao': round(taxa_conversao, 1),
+            'churn_rate': round(churn_rate, 1),
+            'assinaturas_risco': assinaturas_risco,
+            'trials_iniciados': trials_iniciados,
+            'convertidos': convertidos
+        },
+        'analytics': {  # NOVO
+            'mrr_historico': mrr_historico
         },
         'menu_active': 'dashboard'
     }
