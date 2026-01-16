@@ -770,6 +770,9 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
     '''Lógica principal de verificação de disponibilidade'''
     dia_semana = data_hora_inicio.weekday()  # 0=Segunda, 6=Domingo
     
+    # Calcular duração em minutos para usar nas sugestões caso servico seja None
+    duracao_minutos = int((data_hora_fim - data_hora_inicio).total_seconds() / 60)
+    
     # 1. Verificar se é data especial (feriado)
     data_especial = DataEspecial.objects.filter(
         empresa=empresa,
@@ -782,7 +785,7 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
             'disponivel': False,
             'motivo': f'Fechado - {data_especial.descricao}',
             'profissionais_disponiveis': [],
-            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id, duracao_minutos)
         }
     
     # 2. Verificar horário de funcionamento da empresa
@@ -797,7 +800,7 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
             'disponivel': False,
             'motivo': 'Empresa fechada neste dia',
             'profissionais_disponiveis': [],
-            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id, duracao_minutos)
         }
     
     # Verificar se horário está dentro do expediente
@@ -813,7 +816,7 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
             'disponivel': False,
             'motivo': f'Fora do horário de funcionamento ({hora_abre} - {hora_fecha})',
             'profissionais_disponiveis': [],
-            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id, duracao_minutos)
         }
     
     # 3. Verificar disponibilidade de profissionais
@@ -838,7 +841,7 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
                     'disponivel': False,
                     'motivo': f'{profissional.nome} não está disponível neste horário',
                     'profissionais_disponiveis': [],
-                    'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+                    'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id, duracao_minutos)
                 }
         except Profissional.DoesNotExist:
             return {
@@ -871,7 +874,7 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
                 'disponivel': False,
                 'motivo': 'Nenhum profissional disponível neste horário',
                 'profissionais_disponiveis': [],
-                'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+                'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id, duracao_minutos)
             }
 
 
@@ -903,8 +906,15 @@ def _profissional_disponivel(profissional, data_hora_inicio, data_hora_fim, dia_
     return not conflito
 
 
-def _gerar_sugestoes_horarios(empresa, data_hora_solicitada, servico, profissional_id=None):
+def _gerar_sugestoes_horarios(empresa, data_hora_solicitada, servico, profissional_id=None, duracao_minutos=None):
     '''Gera sugestões de horários próximos disponíveis'''
+    
+    if duracao_minutos is None:
+        if servico:
+            duracao_minutos = servico.duracao_minutos
+        else:
+            return []  # Não é possível calcular sem duração
+            
     sugestoes = []
     data_base = data_hora_solicitada.date()
     
@@ -916,7 +926,7 @@ def _gerar_sugestoes_horarios(empresa, data_hora_solicitada, servico, profission
             resultado = _verificar_disponibilidade_horario(
                 empresa=empresa,
                 data_hora_inicio=nova_hora,
-                data_hora_fim=nova_hora + timedelta(minutes=servico.duracao_minutos),
+                data_hora_fim=nova_hora + timedelta(minutes=duracao_minutos),
                 servico=servico,
                 profissional_id=profissional_id
             )
