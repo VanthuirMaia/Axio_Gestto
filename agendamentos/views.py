@@ -302,6 +302,141 @@ def verificar_disponibilidade(request):
         return JsonResponse({"error": "Erro interno"}, status=500)
 
 
+@login_required
+def listar_horarios_disponiveis(request):
+    """
+    Lista todos os horários disponíveis para um dia específico
+    
+    Query Parameters:
+        - data: Data no formato YYYY-MM-DD
+        - servico_id: ID do serviço (obrigatório)
+        - profissional_id: ID do profissional (opcional)
+        - intervalo: Intervalo entre horários em minutos (padrão: 30)
+        
+    Returns:
+        {
+            "data": "2026-01-17",
+            "horarios_disponiveis": [
+                {
+                    "hora": "09:00",
+                    "disponivel": true,
+                    "profissionais": [{"id": 1, "nome": "João"}]
+                },
+                ...
+            ],
+            "total_disponiveis": 10
+        }
+    """
+    empresa = request.user.empresa
+    if not empresa:
+        return JsonResponse({"error": "Não autorizado"}, status=403)
+    
+    # Parâmetros
+    data_str = request.GET.get('data')  # YYYY-MM-DD
+    servico_id = request.GET.get('servico_id')
+    profissional_id = request.GET.get('profissional_id', None)
+    intervalo = int(request.GET.get('intervalo', 30))  # minutos
+    
+    # Validações
+    if not all([data_str, servico_id]):
+        return JsonResponse({
+            "error": "Parâmetros obrigatórios: data, servico_id"
+        }, status=400)
+    
+    try:
+        # Parse data
+        data = datetime.strptime(data_str, '%Y-%m-%d').date()
+        
+        # Buscar serviço
+        servico = Servico.objects.get(id=servico_id, empresa=empresa)
+        
+        # Buscar horário de funcionamento
+        dia_semana = data.weekday()
+        horario_func = HorarioFuncionamento.objects.filter(
+            empresa=empresa,
+            dia_semana=dia_semana,
+            ativo=True
+        ).first()
+        
+        if not horario_func:
+            return JsonResponse({
+                "data": data_str,
+                "horarios_disponiveis": [],
+                "total_disponiveis": 0,
+                "motivo": "Empresa fechada neste dia"
+            })
+        
+        # Verificar se é feriado
+        data_especial = DataEspecial.objects.filter(
+            empresa=empresa,
+            data=data,
+            tipo='feriado'
+        ).first()
+        
+        if data_especial:
+            return JsonResponse({
+                "data": data_str,
+                "horarios_disponiveis": [],
+                "total_disponiveis": 0,
+                "motivo": f"Fechado - {data_especial.descricao}"
+            })
+        
+        # Gerar lista de horários
+        horarios_disponiveis = []
+        hora_atual = datetime.combine(data, horario_func.hora_abertura)
+        hora_fim_expediente = datetime.combine(data, horario_func.hora_fechamento)
+        
+        while hora_atual < hora_fim_expediente:
+            # Verificar se o serviço cabe neste horário
+            hora_fim_servico = hora_atual + timedelta(minutes=servico.duracao_minutos)
+            
+            if hora_fim_servico.time() <= horario_func.hora_fechamento:
+                # Converter para timezone aware
+                data_hora_inicio = timezone.make_aware(hora_atual, timezone.get_current_timezone())
+                data_hora_fim = timezone.make_aware(hora_fim_servico, timezone.get_current_timezone())
+                
+                # Verificar disponibilidade
+                resultado = _verificar_disponibilidade_horario(
+                    empresa=empresa,
+                    data_hora_inicio=data_hora_inicio,
+                    data_hora_fim=data_hora_fim,
+                    servico=servico,
+                    profissional_id=profissional_id
+                )
+                
+                horarios_disponiveis.append({
+                    "hora": hora_atual.strftime("%H:%M"),
+                    "disponivel": resultado['disponivel'],
+                    "profissionais": resultado['profissionais_disponiveis'] if resultado['disponivel'] else [],
+                    "motivo": resultado['motivo'] if not resultado['disponivel'] else ""
+                })
+            
+            # Próximo horário
+            hora_atual += timedelta(minutes=intervalo)
+        
+        # Contar disponíveis
+        total_disponiveis = sum(1 for h in horarios_disponiveis if h['disponivel'])
+        
+        return JsonResponse({
+            "data": data_str,
+            "horarios_disponiveis": horarios_disponiveis,
+            "total_disponiveis": total_disponiveis,
+            "horario_funcionamento": {
+                "abertura": horario_func.hora_abertura.strftime("%H:%M"),
+                "fechamento": horario_func.hora_fechamento.strftime("%H:%M")
+            }
+        })
+        
+    except Servico.DoesNotExist:
+        return JsonResponse({"error": "Serviço não encontrado"}, status=404)
+    except ValueError as e:
+        return JsonResponse({"error": f"Formato inválido: {str(e)}"}, status=400)
+    except Exception as e:
+        logger.error(f"Erro ao listar horários disponíveis: {e}")
+        return JsonResponse({"error": "Erro interno"}, status=500)
+
+
+
 
 @login_required
 def editar_agendamento(request, id):
