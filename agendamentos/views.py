@@ -8,9 +8,12 @@ from django.db import transaction
 from dateutil import parser
 from datetime import datetime, timedelta
 from .models import Agendamento, DisponibilidadeProfissional
-from empresas.models import Servico, Profissional
+from empresas.models import Servico, Profissional, HorarioFuncionamento, DataEspecial
 from clientes.models import Cliente
 from core.decorators import plano_required
+import logging
+
+logger = logging.getLogger(__name__)
 
 STATUS_COLORS = {
     "pendente": "#facc15",       # amarelo
@@ -230,6 +233,77 @@ def api_agendamentos(request):
 
 
 @login_required
+def verificar_disponibilidade(request):
+    """
+    Verifica se um horário está disponível para agendamento
+    
+    Query Parameters:
+        - data: Data no formato YYYY-MM-DD
+        - hora: Hora no formato HH:MM
+        - servico_id: ID do serviço (obrigatório para calcular duração)
+        - profissional_id: ID do profissional (opcional)
+        
+    Returns:
+        {
+            "disponivel": true/false,
+            "motivo": "string explicando por que não está disponível",
+            "profissionais_disponiveis": [lista de profissionais se não especificado],
+            "sugestoes": [horários próximos disponíveis]
+        }
+    """
+    empresa = request.user.empresa
+    if not empresa:
+        return JsonResponse({"error": "Não autorizado"}, status=403)
+    
+    # Parâmetros
+    data_str = request.GET.get('data')  # YYYY-MM-DD
+    hora_str = request.GET.get('hora')  # HH:MM
+    servico_id = request.GET.get('servico_id')
+    profissional_id = request.GET.get('profissional_id', None)
+    
+    # Validações
+    if not all([data_str, hora_str, servico_id]):
+        return JsonResponse({
+            "error": "Parâmetros obrigatórios: data, hora, servico_id"
+        }, status=400)
+    
+    try:
+        # Parse data e hora
+        data = datetime.strptime(data_str, '%Y-%m-%d').date()
+        hora = datetime.strptime(hora_str, '%H:%M').time()
+        
+        # Buscar serviço
+        servico = Servico.objects.get(id=servico_id, empresa=empresa)
+        
+        # Criar datetime completo
+        data_hora_inicio = timezone.make_aware(
+            datetime.combine(data, hora),
+            timezone.get_current_timezone()
+        )
+        data_hora_fim = data_hora_inicio + timedelta(minutes=servico.duracao_minutos)
+        
+        # Verificar disponibilidade
+        resultado = _verificar_disponibilidade_horario(
+            empresa=empresa,
+            data_hora_inicio=data_hora_inicio,
+            data_hora_fim=data_hora_fim,
+            servico=servico,
+            profissional_id=profissional_id
+        )
+        
+        return JsonResponse(resultado)
+        
+    except Servico.DoesNotExist:
+        return JsonResponse({"error": "Serviço não encontrado"}, status=404)
+    except ValueError as e:
+        return JsonResponse({"error": f"Formato inválido: {str(e)}"}, status=400)
+    except Exception as e:
+        logger.error(f"Erro ao verificar disponibilidade: {e}")
+        return JsonResponse({"error": "Erro interno"}, status=500)
+
+
+
+@login_required
 def editar_agendamento(request, id):
     empresa = request.user.empresa
     agendamento = get_object_or_404(Agendamento, id=id, empresa=empresa)
@@ -432,3 +506,167 @@ def ativar_desativar_recorrencia(request, id):
     messages.success(request, f'Recorrência {status} com sucesso!')
 
     return redirect('agendamentos:listar_recorrencias')
+# Funções auxiliares para verificação de disponibilidade
+
+def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim, servico, profissional_id=None):
+    '''Lógica principal de verificação de disponibilidade'''
+    dia_semana = data_hora_inicio.weekday()  # 0=Segunda, 6=Domingo
+    
+    # 1. Verificar se é data especial (feriado)
+    data_especial = DataEspecial.objects.filter(
+        empresa=empresa,
+        data=data_hora_inicio.date(),
+        tipo='feriado'
+    ).first()
+    
+    if data_especial:
+        return {
+            'disponivel': False,
+            'motivo': f'Fechado - {data_especial.descricao}',
+            'profissionais_disponiveis': [],
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+        }
+    
+    # 2. Verificar horário de funcionamento da empresa
+    horario_func = HorarioFuncionamento.objects.filter(
+        empresa=empresa,
+        dia_semana=dia_semana,
+        ativo=True
+    ).first()
+    
+    if not horario_func:
+        return {
+            'disponivel': False,
+            'motivo': 'Empresa fechada neste dia',
+            'profissionais_disponiveis': [],
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+        }
+    
+    # Verificar se horário está dentro do expediente
+    hora_inicio = data_hora_inicio.time()
+    hora_fim = data_hora_fim.time()
+    
+    if hora_inicio < horario_func.hora_abertura or hora_fim > horario_func.hora_fechamento:
+        return {
+            'disponivel': False,
+            'motivo': f'Fora do horário de funcionamento ({horario_func.hora_abertura.strftime(\"%H:%M\")} - {horario_func.hora_fechamento.strftime(\"%H:%M\")})',
+            'profissionais_disponiveis': [],
+            'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+        }
+    
+    # 3. Verificar disponibilidade de profissionais
+    if profissional_id:
+        # Profissional específico
+        try:
+            profissional = Profissional.objects.get(id=profissional_id, empresa=empresa)
+            disponivel = _profissional_disponivel(profissional, data_hora_inicio, data_hora_fim, dia_semana)
+            
+            if disponivel:
+                return {
+                    'disponivel': True,
+                    'motivo': '',
+                    'profissionais_disponiveis': [{
+                        'id': profissional.id,
+                        'nome': profissional.nome
+                    }],
+                    'sugestoes': []
+                }
+            else:
+                return {
+                    'disponivel': False,
+                    'motivo': f'{profissional.nome} não está disponível neste horário',
+                    'profissionais_disponiveis': [],
+                    'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+                }
+        except Profissional.DoesNotExist:
+            return {
+                'disponivel': False,
+                'motivo': 'Profissional não encontrado',
+                'profissionais_disponiveis': [],
+                'sugestoes': []
+            }
+    else:
+        # Qualquer profissional disponível
+        profissionais = Profissional.objects.filter(empresa=empresa, ativo=True)
+        profissionais_disponiveis = []
+        
+        for prof in profissionais:
+            if _profissional_disponivel(prof, data_hora_inicio, data_hora_fim, dia_semana):
+                profissionais_disponiveis.append({
+                    'id': prof.id,
+                    'nome': prof.nome
+                })
+        
+        if profissionais_disponiveis:
+            return {
+                'disponivel': True,
+                'motivo': '',
+                'profissionais_disponiveis': profissionais_disponiveis,
+                'sugestoes': []
+            }
+        else:
+            return {
+                'disponivel': False,
+                'motivo': 'Nenhum profissional disponível neste horário',
+                'profissionais_disponiveis': [],
+                'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
+            }
+
+
+def _profissional_disponivel(profissional, data_hora_inicio, data_hora_fim, dia_semana):
+    '''Verifica se profissional específico está disponível'''
+    # 1. Verificar disponibilidade cadastrada
+    disponibilidade = DisponibilidadeProfissional.objects.filter(
+        profissional=profissional,
+        dia_semana=dia_semana,
+        ativo=True
+    ).first()
+    
+    if disponibilidade:
+        hora_inicio = data_hora_inicio.time()
+        hora_fim = data_hora_fim.time()
+        
+        # Verificar se está dentro do horário de disponibilidade
+        if hora_inicio < disponibilidade.hora_inicio or hora_fim > disponibilidade.hora_fim:
+            return False
+    
+    # 2. Verificar conflitos com agendamentos existentes
+    conflito = Agendamento.objects.filter(
+        profissional=profissional,
+        data_hora_inicio__lt=data_hora_fim,
+        data_hora_fim__gt=data_hora_inicio,
+        status__in=['pendente', 'confirmado']
+    ).exists()
+    
+    return not conflito
+
+
+def _gerar_sugestoes_horarios(empresa, data_hora_solicitada, servico, profissional_id=None):
+    '''Gera sugestões de horários próximos disponíveis'''
+    sugestoes = []
+    data_base = data_hora_solicitada.date()
+    
+    # Tentar próximas 3 horas no mesmo dia
+    for i in range(1, 4):
+        nova_hora = data_hora_solicitada + timedelta(hours=i)
+        
+        if nova_hora.date() == data_base:  # Ainda no mesmo dia
+            resultado = _verificar_disponibilidade_horario(
+                empresa=empresa,
+                data_hora_inicio=nova_hora,
+                data_hora_fim=nova_hora + timedelta(minutes=servico.duracao_minutos),
+                servico=servico,
+                profissional_id=profissional_id
+            )
+            
+            if resultado['disponivel']:
+                sugestoes.append({
+                    'data': nova_hora.strftime('%Y-%m-%d'),
+                    'hora': nova_hora.strftime('%H:%M'),
+                    'profissionais': resultado['profissionais_disponiveis']
+                })
+                
+                if len(sugestoes) >= 3:
+                    break
+    
+    return sugestoes
