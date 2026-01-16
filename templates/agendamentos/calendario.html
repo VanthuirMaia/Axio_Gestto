@@ -355,9 +355,12 @@
                     <h2 class="fw-bold mb-1">Calendário de Agendamentos</h2>
                     <p class="text-muted mb-0">Gerencie todos os seus agendamentos</p>
                 </div>
-                <div>
-                    <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn-clean btn-clean-primary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoAgendamento">
                         <i class="bi bi-plus-circle"></i>Novo Agendamento
+                    </button>
+                    <a href="{% url 'agendamentos:listar_recorrencias' %}" class="btn btn-outline-primary" title="Gerenciar agendamentos que se repetem automaticamente">
+                        <i class="bi bi-arrow-repeat"></i>Recorrentes
                     </a>
                 </div>
             </div>
