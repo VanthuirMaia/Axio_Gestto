@@ -547,9 +547,13 @@ def _verificar_disponibilidade_horario(empresa, data_hora_inicio, data_hora_fim,
     hora_fim = data_hora_fim.time()
     
     if hora_inicio < horario_func.hora_abertura or hora_fim > horario_func.hora_fechamento:
+        # Formatar horas fora da f-string (f-strings não permitem backslash)
+        hora_abre = horario_func.hora_abertura.strftime("%H:%M")
+        hora_fecha = horario_func.hora_fechamento.strftime("%H:%M")
+        
         return {
             'disponivel': False,
-            'motivo': f'Fora do horário de funcionamento ({horario_func.hora_abertura.strftime(\"%H:%M\")} - {horario_func.hora_fechamento.strftime(\"%H:%M\")})',
+            'motivo': f'Fora do horário de funcionamento ({hora_abre} - {hora_fecha})',
             'profissionais_disponiveis': [],
             'sugestoes': _gerar_sugestoes_horarios(empresa, data_hora_inicio, servico, profissional_id)
         }
