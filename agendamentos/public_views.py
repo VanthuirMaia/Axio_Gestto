@@ -318,8 +318,45 @@ def confirmar_agendamento(request, slug):
                 origem='site'
             )
 
-        # TODO: Enviar notificação para empresa (email/WhatsApp)
-        # TODO: Enviar confirmação para cliente (email/SMS)
+
+        # Enviar email de confirmação para o cliente
+        if cliente_email:
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from django.utils.html import strip_tags
+                from django.conf import settings
+                import logging
+                
+                logger = logging.getLogger(__name__)
+                logger.info(f'Enviando email de confirmação para {cliente_email}')
+                
+                # Contexto para o template
+                context = {
+                    'empresa': empresa,
+                    'cliente': cliente,
+                    'agendamento': agendamento,
+                }
+                
+                # Renderizar template HTML
+                html_message = render_to_string('emails/confirmacao_agendamento.html', context)
+                plain_message = strip_tags(html_message)
+                
+                # Enviar email
+                send_mail(
+                    subject=f'Agendamento Confirmado - {empresa.nome}',
+                    message=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[cliente_email],
+                    html_message=html_message,
+                    fail_silently=True,  # Não quebrar se email falhar
+                )
+                
+                logger.info(f'Email de confirmação enviado com sucesso para {cliente_email}')
+            except Exception as e:
+                logger.error(f'Erro ao enviar email de confirmação: {str(e)}')
+                # Continua mesmo se email falhar
+
 
         return JsonResponse({
             'success': True,
