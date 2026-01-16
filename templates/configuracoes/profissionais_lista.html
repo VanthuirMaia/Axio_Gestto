@@ -47,7 +47,12 @@
   <div class="alert alert-warning py-2 mb-3 d-flex align-items-center" role="alert">
     <i class="bi bi-info-circle-fill me-2"></i>
     <div>
-      Você atingiu o limite de <strong>{{ max_profissionais }} profissional(is)</strong> do seu plano {{ assinatura.plano.get_nome_display }}.
+      Você atingiu o limite de <strong>{{ max_profissionais }} profissional(is)</strong> 
+      {% if assinatura and assinatura.plano %}
+        do seu plano {{ assinatura.plano.get_nome_display }}.
+      {% else %}
+        do seu plano atual.
+      {% endif %}
       <a href="{% url 'assinatura_gerenciar' %}" class="alert-link">Faça um upgrade</a> para adicionar mais.
     </div>
   </div>

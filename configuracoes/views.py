@@ -521,42 +521,55 @@ def usuario_deletar(request, pk):
 @login_required
 def profissionais_lista(request):
     """Lista todos os profissionais"""
-    empresa = request.user.empresa
-    profissionais = Profissional.objects.filter(empresa=empresa).order_by('nome')
-    
-    # Breadcrumb
-    breadcrumb_items = [
-        {'label': 'Configurações', 'url': reverse('configuracoes_dashboard'), 'icon': 'gear-fill'},
-        {'label': 'Profissionais', 'url': '#'},
-    ]
-    
-    # Verificar limites do plano
-    assinatura = getattr(empresa, 'assinatura', None)
-    
-    # Defaults (sem plano = limite 1 apenas por segurança)
-    max_profissionais = 1
-    pode_criar = False
-    
-    if assinatura and assinatura.plano:
-        max_profissionais = assinatura.plano.max_profissionais
-        # Contar APENAS ATIVOS para o limite
-        profissionais_ativos = profissionais.filter(ativo=True).count()
-        pode_criar = profissionais_ativos < max_profissionais
-    else:
-        # Sem plano ou trial expirado, verificar regra
-        profissionais_ativos = profissionais.filter(ativo=True).count()
-        pode_criar = profissionais_ativos < 1
+    try:
+        empresa = request.user.empresa
+        profissionais = Profissional.objects.filter(empresa=empresa).order_by('nome')
+        
+        # Breadcrumb
+        breadcrumb_items = [
+            {'label': 'Configurações', 'url': reverse('configuracoes_dashboard'), 'icon': 'gear-fill'},
+            {'label': 'Profissionais', 'url': '#'},
+        ]
+        
+        # Verificar limites do plano
+        assinatura = getattr(empresa, 'assinatura', None)
+        
+        # Defaults
+        max_profissionais = 1
+        pode_criar = False
+        
+        if assinatura and assinatura.plano:
+            # Casting seguro para garantir que é int
+            try:
+                max_profissionais = int(assinatura.plano.max_profissionais)
+            except (ValueError, TypeError):
+                max_profissionais = 1
+                logger.error(f"Erro ao ler max_profissionais do plano {assinatura.plano.id}")
 
-    context = {
-        'empresa': empresa,
-        'profissionais': profissionais,
-        'breadcrumb_items': breadcrumb_items,
-        'pode_criar': pode_criar,
-        'max_profissionais': max_profissionais,
-        'profissionais_ativos': profissionais_ativos,
-    }
-    
-    return render(request, 'configuracoes/profissionais_lista.html', context)
+            # Contar APENAS ATIVOS para o limite
+            profissionais_ativos = profissionais.filter(ativo=True).count()
+            pode_criar = profissionais_ativos < max_profissionais
+        else:
+            # Sem plano ou trial expirado
+            profissionais_ativos = profissionais.filter(ativo=True).count()
+            pode_criar = profissionais_ativos < 1
+
+        context = {
+            'empresa': empresa,
+            'profissionais': profissionais,
+            'breadcrumb_items': breadcrumb_items,
+            'pode_criar': pode_criar,
+            'max_profissionais': max_profissionais,
+            'profissionais_ativos': profissionais_ativos,
+            'assinatura': assinatura, # Garantir assinatura no contexto
+        }
+        
+        return render(request, 'configuracoes/profissionais_lista.html', context)
+
+    except Exception as e:
+        logger.error(f"Erro fatal em profissionais_lista: {str(e)}")
+        messages.error(request, "Ocorreu um erro ao carregar a lista. Tente novamente.")
+        return redirect('configuracoes_dashboard')
 
 @login_required
 def profissional_criar(request):

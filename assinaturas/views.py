@@ -21,7 +21,9 @@ from core.models import Usuario
 from .models import Plano, Assinatura
 from .stripe_integration import processar_webhook_stripe, criar_checkout_session
 from .asaas_integration import processar_webhook_asaas
+from .asaas_integration import processar_webhook_asaas
 from .validators import validar_cpf_cnpj
+from .email_service import enviar_email_boas_vindas
 
 logger = logging.getLogger(__name__)
 
@@ -215,12 +217,17 @@ def create_tenant(request):
             logger.error(f'Erro ao criar checkout Stripe: {str(e)}')
             # Não fazer rollback - empresa já foi criada
 
+
     # 10. Email de boas-vindas com link de ativação
-    # Sempre envia email, independente do gateway
-    try:
-        _enviar_email_boas_vindas(usuario, empresa, activation_token, plano)
-    except Exception as e:
-        logger.error(f'Erro ao enviar email: {str(e)}')
+    # CONDICIONAL: Só envia se for manual (trial sem cartão)
+    # Se for Stripe/Asaas, o email será enviado pelo Webhook após confirmação do pagamento
+    if gateway == 'manual':
+        try:
+            enviar_email_boas_vindas(usuario, empresa, activation_token, plano)
+        except Exception as e:
+            logger.error(f'Erro ao enviar email: {str(e)}')
+    else:
+        logger.info(f"Email de ativação SUPRIMIDO. Aguardando confirmação de pagamento via Webhook ({gateway})")
 
     # 11. Retornar resposta de sucesso
     response_data = {
@@ -299,104 +306,5 @@ def asaas_webhook(request):
 # FUNÇÕES AUXILIARES
 # ============================================
 
-def _gerar_senha_temporaria(length=12):
-    """
-    Gera senha aleatória forte
+# Funções auxiliares movidas para email_service.py e utils.py
 
-    Returns:
-        str: senha com letras maiúsculas, minúsculas, números e símbolos
-    """
-    chars = string.ascii_letters + string.digits + '!@#$%'
-    senha = ''.join(secrets.choice(chars) for _ in range(length))
-
-    # Garantir que tem pelo menos 1 de cada tipo
-    if not any(c.isupper() for c in senha):
-        senha = senha[:-1] + secrets.choice(string.ascii_uppercase)
-    if not any(c.isdigit() for c in senha):
-        senha = senha[:-1] + secrets.choice(string.digits)
-
-    return senha
-
-
-def _enviar_email_boas_vindas(usuario, empresa, activation_token, plano):
-    """
-    Envia email HTML com link de ativação de conta
-    
-    Args:
-        usuario: Instância de Usuario
-        empresa: Instância de Empresa
-        activation_token: Token de ativação gerado
-        plano: Instância de Plano
-    """
-    try:
-        # Validar configurações de email antes de tentar enviar
-        if not hasattr(settings, 'EMAIL_HOST') or not settings.EMAIL_HOST:
-            logger.error('EMAIL_HOST não configurado. Não é possível enviar email.')
-            raise ValueError('Configuração de email incompleta: EMAIL_HOST não definido')
-        
-        if not hasattr(settings, 'DEFAULT_FROM_EMAIL') or not settings.DEFAULT_FROM_EMAIL:
-            logger.error('DEFAULT_FROM_EMAIL não configurado. Não é possível enviar email.')
-            raise ValueError('Configuração de email incompleta: DEFAULT_FROM_EMAIL não definido')
-        
-        # Log antes de tentar enviar
-        logger.info(f'Preparando email de boas-vindas para {usuario.email}')
-        logger.info(f'  Empresa: {empresa.nome}')
-        logger.info(f'  Plano: {plano.nome}')
-        logger.info(f'  Token de ativação: {activation_token[:10]}...')
-        
-        # Contexto para o template
-        context = {
-            'usuario': usuario,
-            'empresa': empresa,
-            'activation_token': activation_token,
-            'plano': plano,
-            'trial_expira_em': empresa.assinatura.data_expiracao if hasattr(empresa, 'assinatura') else None,
-            'site_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000',
-        }
-
-        # Renderiza o template HTML
-        logger.info('Renderizando template de email...')
-        html_message = render_to_string('emails/boas_vindas_com_senha.html', context)
-        # Versão texto puro (fallback)
-        plain_message = strip_tags(html_message)
-
-        # Configurações do email
-        from_email = settings.DEFAULT_FROM_EMAIL
-        subject = f'Ative sua conta - {empresa.nome} | Gestto 🎉'
-        
-        logger.info(f'Enviando email via SMTP...')
-        logger.info(f'  De: {from_email}')
-        logger.info(f'  Para: {usuario.email}')
-        logger.info(f'  Assunto: {subject}')
-        logger.info(f'  Host SMTP: {settings.EMAIL_HOST}')
-        
-        # Envia o email
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=from_email,
-            recipient_list=[usuario.email],
-            html_message=html_message,
-            fail_silently=False,  # Lança exceção se falhar
-        )
-
-        logger.info(f'✓ Email de boas-vindas enviado com sucesso para {usuario.email}')
-
-    except ValueError as e:
-        # Erro de configuração
-        logger.error(f'Erro de configuração ao enviar email: {str(e)}')
-        raise
-    except Exception as e:
-        # Captura informações detalhadas do erro
-        logger.error(f'Erro ao enviar email de boas-vindas para {usuario.email}')
-        logger.error(f'  Tipo de erro: {type(e).__name__}')
-        logger.error(f'  Mensagem: {str(e)}')
-        
-        # Log adicional para erros SMTP
-        if hasattr(e, 'smtp_code'):
-            logger.error(f'  Código SMTP: {e.smtp_code}')
-        if hasattr(e, 'smtp_error'):
-            logger.error(f'  Erro SMTP: {e.smtp_error}')
-        
-        # Re-lança a exceção para que o chamador saiba que falhou
-        raise
