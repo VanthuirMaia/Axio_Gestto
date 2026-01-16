@@ -127,7 +127,7 @@ class Servico(models.Model):
 class Profissional(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='profissionais')
     nome = models.CharField(max_length=255)
-    email = models.EmailField()
+    email = models.EmailField(blank=True, null=True)
     telefone = models.CharField(max_length=20)
     servicos = models.ManyToManyField(Servico, related_name='profissionais')
     comissao_percentual = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
@@ -147,7 +147,8 @@ class Profissional(models.Model):
         verbose_name = 'Profissional'
         verbose_name_plural = 'Profissionais'
         ordering = ['nome']
-        unique_together = ('empresa', 'email')
+        # unique_together removido para permitir email opcional (validação feita via View)
+
 
     def __str__(self):
         return f"{self.nome} - {self.empresa}"

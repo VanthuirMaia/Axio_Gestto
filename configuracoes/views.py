@@ -568,7 +568,8 @@ def profissionais_lista(request):
 
     except Exception as e:
         logger.error(f"Erro fatal em profissionais_lista: {str(e)}")
-        messages.error(request, "Ocorreu um erro ao carregar a lista. Tente novamente.")
+        # Em produção, redirecionar ou mostrar erro amigável
+        messages.error(request, "Ocorreu um erro ao carregar a lista de profissionais.")
         return redirect('configuracoes_dashboard')
 
 @login_required
@@ -606,8 +607,22 @@ def profissional_criar(request):
 
         nome = request.POST.get('nome')
         telefone = request.POST.get('telefone', '')
-        email = request.POST.get('email', '')
+        # Se vazio, vira None
+        email = request.POST.get('email', '').strip() or None 
         cor_hex = request.POST.get('cor_hex', '#1e3a8a')
+
+        # Validação de Duplicidade (Só se email foi fornecido)
+        if email and Profissional.objects.filter(empresa=empresa, email=email).exists():
+            messages.error(request, f'Já existe um profissional cadastrado com o email {email}.')
+            # Preservar dados do formulário
+            servicos = Servico.objects.filter(empresa=empresa, ativo=True)
+            return render(request, 'configuracoes/profissional_form.html', {
+                'empresa': empresa, 
+                'servicos': servicos,
+                'nome': nome,
+                'email': email or '',
+                'telefone': telefone
+            })
 
         profissional = Profissional.objects.create(
             empresa=empresa,
@@ -665,7 +680,14 @@ def profissional_editar(request, pk):
         # Atualizar dados do profissional
         profissional.nome = request.POST.get('nome')
         profissional.telefone = request.POST.get('telefone', '')
-        profissional.email = request.POST.get('email', '')
+        novo_email = request.POST.get('email', '').strip() or None
+        
+        # Validar duplicidade se mudou o email e email for preenchido
+        if novo_email and novo_email != profissional.email and Profissional.objects.filter(empresa=empresa, email=novo_email).exists():
+             messages.error(request, f'Já existe outro profissional com o email {novo_email}.')
+             return redirect('profissional_editar', pk=pk)
+
+        profissional.email = novo_email
         profissional.cor_hex = request.POST.get('cor_hex', '#1e3a8a')
         profissional.ativo = novo_ativo
         profissional.save()
