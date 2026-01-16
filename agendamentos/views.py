@@ -659,6 +659,20 @@ def criar_recorrencia(request):
                         'form_values': request.POST
                     })
 
+            # Converter strings para objetos date/time
+            from datetime import datetime, time as dt_time
+            
+            # Converter hora_inicio (string "HH:MM" para objeto time)
+            hora_obj = datetime.strptime(hora_inicio, '%H:%M').time()
+            
+            # Converter data_inicio (string "YYYY-MM-DD" para objeto date)
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            
+            # Converter data_fim se fornecida
+            data_fim_obj = None
+            if data_fim:
+                data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+
             # Criar recorrência
             recorrencia = AgendamentoRecorrente.objects.create(
                 empresa=empresa,
@@ -668,9 +682,9 @@ def criar_recorrencia(request):
                 frequencia=frequencia,
                 dias_semana=dias_semana,
                 dia_mes=dia_mes,
-                hora_inicio=hora_inicio,
-                data_inicio=data_inicio,
-                data_fim=data_fim,
+                hora_inicio=hora_obj,
+                data_inicio=data_inicio_obj,
+                data_fim=data_fim_obj,
                 criado_por=request.user,
                 ativo=True
             )
