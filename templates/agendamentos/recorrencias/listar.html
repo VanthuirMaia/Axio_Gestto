@@ -121,8 +121,8 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <form method="POST" action="{% url 'agendamentos:ativar_desativar_recorrencia' rec.id %}" class="d-inline">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-outline-{{ rec.ativo and 'warning' or 'success' }}" title="{{ rec.ativo and 'Pausar' or 'Ativar' }}">
-                                                    <i class="bi bi-{{ rec.ativo and 'pause' or 'play' }}"></i>
+                                                <button type="submit" class="btn btn-outline-{% if rec.ativo %}warning{% else %}success{% endif %}" title="{% if rec.ativo %}Pausar{% else %}Ativar{% endif %}">
+                                                    <i class="bi bi-{% if rec.ativo %}pause{% else %}play{% endif %}"></i>
                                                 </button>
                                             </form>
                                             <form method="POST" action="{% url 'agendamentos:deletar_recorrencia' rec.id %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta recorrência? Os agendamentos já criados não serão afetados.');">
