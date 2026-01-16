@@ -2,18 +2,41 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+from django.conf import settings
 from dateutil import parser
 from datetime import datetime, timedelta
 from .models import Agendamento, DisponibilidadeProfissional
-from empresas.models import Servico, Profissional, HorarioFuncionamento, DataEspecial
+from empresas.models import Servico, Profissional, HorarioFuncionamento, DataEspecial, Empresa
 from clientes.models import Cliente
 from core.decorators import plano_required
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# Decorator para autenticação via API key (para n8n e integrações externas)
+def api_key_required(view_func):
+    """
+    Decorator que verifica se a requisição tem uma API key válida
+    Uso: Para APIs que serão consumidas por n8n ou outras integrações
+    """
+    def wrapper(request, *args, **kwargs):
+        api_key = request.GET.get('api_key') or request.headers.get('X-API-Key')
+        gestto_api_key = getattr(settings, 'GESTTO_API_KEY', None)
+        
+        if not api_key or api_key != gestto_api_key:
+            return JsonResponse({
+                "error": "API key inválida ou não fornecida",
+                "hint": "Adicione ?api_key=SUA_CHAVE ou header X-API-Key"
+            }, status=401)
+        
+        return view_func(request, *args, **kwargs)
+    
+    return wrapper
 
 STATUS_COLORS = {
     "pendente": "#facc15",       # amarelo
@@ -342,10 +365,55 @@ def listar_horarios_disponiveis(request):
         return JsonResponse({
             "error": "Parâmetros obrigatórios: data, servico_id"
         }, status=400)
+
+
+@csrf_exempt
+@api_key_required
+def listar_horarios_disponiveis(request):
+    """
+    Lista todos os horários disponíveis para um dia específico
+    
+    Query Parameters:
+        - empresa_id: ID da empresa (obrigatório)
+        - data: Data no formato YYYY-MM-DD
+        - servico_id: ID do serviço (obrigatório)
+        - profissional_id: ID do profissional (opcional)
+        - intervalo: Intervalo entre horários em minutos (padrão: 30)
+        - api_key: Chave de API (obrigatório)
+        
+    Returns:
+        {
+            "data": "2026-01-17",
+            "horarios_disponiveis": [
+                {
+                    "hora": "09:00",
+                    "disponivel": true,
+                    "profissionais": [{" id": 1, "nome": "João"}]
+                },
+                ...
+            ],
+            "total_disponiveis": 10
+        }
+    """
+    # Parâmetros
+    empresa_id = request.GET.get('empresa_id')
+    data_str = request.GET.get('data')  # YYYY-MM-DD
+    servico_id = request.GET.get('servico_id')
+    profissional_id = request.GET.get('profissional_id', None)
+    intervalo = int(request.GET.get('intervalo', 30))  # minutos
+    
+    # Validações
+    if not all([empresa_id, data_str, servico_id]):
+        return JsonResponse({
+            "error": "Parâmetros obrigatórios: empresa_id, data, servico_id"
+        }, status=400)
     
     try:
         # Parse data
         data = datetime.strptime(data_str, '%Y-%m-%d').date()
+        
+        # Buscar empresa
+        empresa = Empresa.objects.get(id=empresa_id)
         
         # Buscar serviço
         servico = Servico.objects.get(id=servico_id, empresa=empresa)
@@ -427,6 +495,8 @@ def listar_horarios_disponiveis(request):
             }
         })
         
+    except Empresa.DoesNotExist:
+        return JsonResponse({"error": "Empresa não encontrada"}, status=404)
     except Servico.DoesNotExist:
         return JsonResponse({"error": "Serviço não encontrado"}, status=404)
     except ValueError as e:
