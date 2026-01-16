@@ -1,0 +1,102 @@
+{% extends 'backoffice/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mono">Dashboard Executivo</h2>
+    <span class="badge bg-success fs-6 mono">V2.0 FINANCEIRO</span>
+</div>
+
+<!-- Financial Stats (NOVO) -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white p-4">
+            <h6 class="text-white-50 mb-0">MRR (Mensal)</h6>
+            <h2 class="fw-bold my-2 mono">R$ {{ financial.mrr|floatformat:2 }}</h2>
+            <small><i class="bi bi-graph-up-arrow me-1"></i>Receita Recorrente</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-success p-4">
+            <h6 class="text-white-50 mb-0">ARR (Projeção Anual)</h6>
+            <h2 class="fw-bold my-2 mono text-success">R$ {{ financial.arr|floatformat:2 }}</h2>
+            <small class="text-muted">Run Rate (MRR x 12)</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-4">
+            <h6 class="text-white-50 mb-0">Ticket Médio (ARPU)</h6>
+             <h2 class="fw-bold my-2 mono text-warning">R$ {{ financial.ticket_medio|floatformat:2 }}</h2>
+             <small class="text-muted">Por Assinante Ativo</small>
+        </div>
+    </div>
+</div>
+
+<hr class="border-secondary my-4">
+
+<h5 class="text-muted mono mb-3">Infraestrutura & Operações</h5>
+
+<!-- Hardware Metrics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="text-muted mb-0">CPU Load</h6>
+                <div class="mono small">{{ infra.cpu_percent }}%</div>
+            </div>
+            <div class="progress mt-2" style="height: 4px;">
+                <div class="progress-bar {% if infra.cpu_percent > 80 %}bg-danger{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ infra.cpu_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="text-muted mb-0">Memória RAM</h6>
+                 <div class="mono small">{{ infra.ram_percent }}%</div>
+            </div>
+            <div class="progress mt-2" style="height: 4px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ infra.ram_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+             <div class="d-flex justify-content-between align-items-center">
+                <h6 class="text-muted mb-0">Disco</h6>
+                 <div class="mono small">{{ infra.disk_percent }}%</div>
+            </div>
+             <div class="progress mt-2" style="height: 4px;">
+                <div class="progress-bar bg-light" role="progressbar" style="width: {{ infra.disk_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Metrics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-dark bg-dark bg-gradient">
+            <h3 class="fw-bold">{{ metrics.empresas_total }}</h3>
+            <span class="text-muted small">Empresas Totais</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-success bg-dark bg-gradient">
+            <h3 class="fw-bold text-success">{{ metrics.empresas_ativas }}</h3>
+            <span class="text-muted small">Assinantes Ativos</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+         <div class="card text-center p-3 border-dark bg-dark bg-gradient">
+            <h3 class="fw-bold">{{ metrics.profissionais }}</h3>
+            <span class="text-muted small">Profissionais</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+         <div class="card text-center p-3 border-info bg-dark bg-gradient">
+            <h3 class="fw-bold text-info">+{{ metrics.novas_empresas_30d }}</h3>
+            <span class="text-muted small">Novos (30d)</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

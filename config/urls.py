@@ -58,6 +58,7 @@ urlpatterns = [
     # ==========================================
     path('', include('landing.urls')),  # Landing na raiz
     path('ajuda/', include('ajuda.urls')),  # Central de Ajuda
+    path('backoffice/', include('backoffice.urls')), # Admin Dashboard
 
     # ==========================================
     # PÚBLICO - Agendamento Online
