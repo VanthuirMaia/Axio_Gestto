@@ -21,6 +21,9 @@ from empresas.models import Servico, Profissional, Empresa
 from .authentication import APIKeyAuthentication
 from .throttling import BotAPIThrottle
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 @api_view(['POST'])
 @authentication_classes([APIKeyAuthentication])
