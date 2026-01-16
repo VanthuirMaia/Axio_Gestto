@@ -57,6 +57,7 @@ urlpatterns = [
     # PÚBLICO - Landing Page
     # ==========================================
     path('', include('landing.urls')),  # Landing na raiz
+    path('ajuda/', include('ajuda.urls')),  # Central de Ajuda
 
     # ==========================================
     # PÚBLICO - Agendamento Online

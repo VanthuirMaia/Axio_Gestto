@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Central de Ajuda - Axio Gestto{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-3">Como podemos ajudar?</h1>
+        <p class="lead text-muted">Explore nossa documentação e aprenda a usar o Axio Gestto ao máximo.</p>
+        
+        <!-- Busca (Futuro) -->
+        <!-- <div class="row justify-content-center mt-4">
+            <div class="col-md-6">
+                <form action="#" method="get" class="d-flex">
+                    <input type="text" class="form-control form-control-lg" placeholder="Busque por um artigo...">
+                    <button class="btn btn-primary px-4"><i class="bi bi-search"></i></button>
+                </form>
+            </div>
+        </div> -->
+    </div>
+
+    <!-- Categorias -->
+    <div class="row g-4">
+        {% for categoria in categorias %}
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-up transition-all">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-box mb-3 mx-auto bg-light text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        <i class="bi {{ categoria.icone }} fs-2"></i>
+                    </div>
+                    <h3 class="h5 card-title fw-bold mb-3">
+                        <a href="{% url 'ajuda_categoria' categoria.slug %}" class="text-decoration-none text-dark stretched-link">
+                            {{ categoria.nome }}
+                        </a>
+                    </h3>
+                    <p class="card-text text-muted small mb-3">
+                        {{ categoria.descricao|default:"Acesse os artigos desta categoria." }}
+                    </p>
+                    <div class="text-start">
+                        <ul class="list-unstyled mb-0 small">
+                            {% for artigo in categoria.artigos.all|slice:":3" %}
+                            <li class="mb-2">
+                                <i class="bi bi-file-text me-2 text-muted"></i>
+                                <span class="text-truncate d-inline-block" style="max-width: 90%;">{{ artigo.titulo }}</span>
+                            </li>
+                            {% endfor %}
+                            {% if categoria.artigos.count > 3 %}
+                            <li class="text-primary mt-2">
+                                Ver mais {{ categoria.artigos.count|add:"-3" }} artigos...
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Dúvidas -->
+    <div class="text-center mt-5 pt-5">
+        <p class="mb-3">Ainda precisa de ajuda?</p>
+        <a href="https://wa.me/5587981531743" target="_blank" class="btn btn-outline-success">
+            <i class="bi bi-whatsapp me-2"></i>Falar com Suporte
+        </a>
+    </div>
+</div>
+
+<style>
+    .hover-up:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+    .transition-all {
+        transition: all .3s ease;
+    }
+</style>
+{% endblock %}
