@@ -689,9 +689,14 @@ def criar_recorrencia(request):
                 ativo=True
             )
 
+            # Gerar agendamentos imediatamente
+            from .utils_recorrencia import gerar_agendamentos_recorrencia
+            agendamentos_criados = gerar_agendamentos_recorrencia(recorrencia, dias_futuros=60)
+
             messages.success(
                 request,
-                f'Recorrência criada com sucesso! {recorrencia.get_descricao_frequencia()}'
+                f'Recorrência criada com sucesso! {recorrencia.get_descricao_frequencia()} '
+                f'({agendamentos_criados} agendamentos gerados)'
             )
             return redirect('agendamentos:listar_recorrencias')
 
