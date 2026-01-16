@@ -544,6 +544,19 @@ def profissional_criar(request):
     empresa = request.user.empresa
 
     if request.method == 'POST':
+        # Validar limite do plano
+        assinatura = getattr(empresa, 'assinatura', None)
+        if assinatura and assinatura.plano:
+            max_profissionais = assinatura.plano.max_profissionais
+            profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+            
+            if profissionais_ativos >= max_profissionais:
+                messages.error(
+                    request,
+                    f'Seu plano permite apenas {max_profissionais} profissional(is). Faça um upgrade para adicionar mais.'
+                )
+                return redirect('profissionais_lista')
+
         nome = request.POST.get('nome')
         telefone = request.POST.get('telefone', '')
         email = request.POST.get('email', '')
