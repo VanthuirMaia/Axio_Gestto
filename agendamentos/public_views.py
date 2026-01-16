@@ -110,6 +110,8 @@ def api_profissionais_por_servico(request, slug):
     })
 
 
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def api_horarios_disponiveis(request, slug):
     """
