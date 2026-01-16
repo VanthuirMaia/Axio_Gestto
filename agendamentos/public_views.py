@@ -86,7 +86,7 @@ def api_profissionais_por_servico(request, slug):
     API: Retorna profissionais que executam um serviço específico
     GET /agendar/{slug}/api/profissionais/?servico_id=123
     """
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
     servico_id = request.GET.get('servico_id')
 
     if not servico_id:
@@ -124,7 +124,7 @@ def api_horarios_disponiveis(request, slug):
     """
     import json
 
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
 
     try:
         data = json.loads(request.body)
@@ -230,7 +230,7 @@ def confirmar_agendamento(request, slug):
     """
     import json
 
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
 
     try:
         # Aceitar tanto JSON quanto form data
