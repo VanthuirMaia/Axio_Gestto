@@ -73,7 +73,7 @@ def gerar_agendamentos_recorrencia(recorrencia, dias_futuros=60):
                 ).exists()
                 
                 if not existe:
-                    # Criar agendamento
+                    # Criar agendamento (status confirmado pois é recorrente)
                     Agendamento.objects.create(
                         empresa=recorrencia.empresa,
                         cliente=recorrencia.cliente,
@@ -81,7 +81,7 @@ def gerar_agendamentos_recorrencia(recorrencia, dias_futuros=60):
                         profissional=recorrencia.profissional,
                         data_hora_inicio=data_hora_inicio,
                         data_hora_fim=data_hora_fim,
-                        status='pendente',
+                        status='confirmado',  # Recorrências já são confirmadas
                         valor_cobrado=recorrencia.servico.preco,
                         origem='manual',
                         notas=f'Gerado automaticamente pela recorrência #{recorrencia.id}'
