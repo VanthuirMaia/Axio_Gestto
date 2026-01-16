@@ -109,8 +109,12 @@ def logs_view(request):
     Leitor de logs do sistema (app.log).
     """
     # Log Path (ajuste conforme seu settings de LOGGING)
-    log_file_path = os.path.join(settings.BASE_DIR, 'data', 'logs', 'app.log')
+    log_dir = os.path.join(settings.BASE_DIR, 'data', 'logs')
+    log_file_path = os.path.join(log_dir, 'app.log')
     logs = []
+    
+    # Criar diretório se não existir
+    os.makedirs(log_dir, exist_ok=True)
     
     if os.path.exists(log_file_path):
         try:
@@ -132,7 +136,7 @@ def logs_view(request):
         except Exception as e:
             messages.error(request, f"Erro ao ler arquivo de log: {e}")
     else:
-        messages.warning(request, "Arquivo de log não encontrado em data/logs/app.log")
+        messages.warning(request, f"Arquivo de log não encontrado: {log_file_path}. Configure LOGGING no settings ou aguarde a geração de logs.")
 
     return render(request, 'backoffice/logs.html', {'logs': logs, 'menu_active': 'logs'})
 
