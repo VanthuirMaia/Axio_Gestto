@@ -2,11 +2,10 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 from datetime import timedelta
 from agendamentos.models import Agendamento, StatusAgendamento
-from financeiro.models import LancamentoFinanceiro, TipoLancamento, StatusLancamento, CategoriaFinanceira
 
 
 class Command(BaseCommand):
-    help = 'Processa agendamentos que terminaram há mais de 30 minutos e gera receitas'
+    help = 'Processa agendamentos que terminaram há mais de 30 minutos e marca como concluídos (receitas criadas via signal)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -52,40 +51,18 @@ class Command(BaseCommand):
                         f'Valor: R$ {agendamento.valor_cobrado or 0}'
                     )
                 else:
-                    # Marca como concluído
+                    # Marca como concluído (o signal cria o lançamento automaticamente)
                     agendamento.status = StatusAgendamento.CONCLUIDO
                     agendamento.save()
                     
-                    # Só gera receita se tiver valor
+                    # Verifica se tem valor para reportar corretamente
                     if agendamento.valor_cobrado and agendamento.valor_cobrado > 0:
-                        # Busca ou cria categoria
-                        categoria, _ = CategoriaFinanceira.objects.get_or_create(
-                            empresa=agendamento.empresa,
-                            nome='Serviços',
-                            tipo=TipoLancamento.RECEITA,
-                            defaults={
-                                'descricao': 'Receitas de serviços prestados',
-                                'cor': '#28a745'
-                            }
-                        )
-                        
-                        # Cria lançamento pendente
-                        LancamentoFinanceiro.objects.create(
-                            empresa=agendamento.empresa,
-                            tipo=TipoLancamento.RECEITA,
-                            categoria=categoria,
-                            agendamento=agendamento,
-                            descricao=f"{agendamento.servico.nome} - {agendamento.cliente.nome}",
-                            valor=agendamento.valor_cobrado,
-                            data_vencimento=agendamento.data_hora_inicio.date(),
-                            status=StatusLancamento.PENDENTE,
-                        )
-                        
                         self.stdout.write(
                             self.style.SUCCESS(
                                 f'  ✅ ID: {agendamento.id} | '
                                 f'{agendamento.cliente.nome} | '
-                                f'R$ {agendamento.valor_cobrado}'
+                                f'R$ {agendamento.valor_cobrado} | '
+                                f'Lançamento criado via signal'
                             )
                         )
                         processados += 1
@@ -94,7 +71,7 @@ class Command(BaseCommand):
                             self.style.WARNING(
                                 f'  ⚠️  ID: {agendamento.id} | '
                                 f'{agendamento.cliente.nome} | '
-                                f'SEM VALOR DEFINIDO'
+                                f'SEM VALOR DEFINIDO (não criará lançamento)'
                             )
                         )
                         sem_valor += 1

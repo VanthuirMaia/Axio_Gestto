@@ -12,12 +12,21 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
         <h2 class="fw-bold mb-1">Financeiro</h2>
-        <p class="text-muted mb-0">{{ mes_atual }}</p>
+        <p class="text-muted mb-0">{{ periodo_nome }}</p>
       </div>
       <div class="d-flex gap-2 align-items-center">
         <!-- Seletor de Período -->
-        <form method="get" class="d-flex gap-2" id="formPeriodo">
-          <select name="mes" class="form-select form-select-sm" style="width: 140px;">
+        <form method="get" class="d-flex gap-2 flex-wrap" id="formPeriodo">
+          <!-- Tipo de Período -->
+          <select name="tipo_periodo" id="tipoPeriodo" class="form-select form-select-sm" style="width: 130px;">
+            <option value="mes" {% if tipo_periodo == 'mes' %}selected{% endif %}>Mês</option>
+            <option value="trimestre" {% if tipo_periodo == 'trimestre' %}selected{% endif %}>Trimestre</option>
+            <option value="semestre" {% if tipo_periodo == 'semestre' %}selected{% endif %}>Semestre</option>
+            <option value="ano" {% if tipo_periodo == 'ano' %}selected{% endif %}>Ano</option>
+          </select>
+          
+          <!-- Seletor de Mês (visível apenas para tipo=mes) -->
+          <select name="mes" id="seletorMes" class="form-select form-select-sm" style="width: 140px; {% if tipo_periodo != 'mes' %}display:none;{% endif %}">
             {% for num, nome in meses_pt %}
               <option value="{{ num }}" {% if num == mes_selecionado %}selected{% endif %}>
                 {{ nome }}
@@ -25,7 +34,26 @@
             {% endfor %}
           </select>
           
-          <select name="ano" class="form-select form-select-sm" style="width: 100px;">
+          <!-- Seletor de Trimestre (visível apenas para tipo=trimestre) -->
+          <select name="trimestre" id="seletorTrimestre" class="form-select form-select-sm" style="width: 100px; {% if tipo_periodo != 'trimestre' %}display:none;{% endif %}">
+            {% for num, nome in trimestres %}
+              <option value="{{ num }}" {% if num == trimestre_selecionado|add:0 %}selected{% endif %}>
+                {{ nome }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <!-- Seletor de Semestre (visível apenas para tipo=semestre) -->
+          <select name="semestre" id="seletorSemestre" class="form-select form-select-sm" style="width: 140px; {% if tipo_periodo != 'semestre' %}display:none;{% endif %}">
+            {% for num, nome in semestres %}
+              <option value="{{ num }}" {% if num == semestre_selecionado|add:0 %}selected{% endif %}>
+                {{ nome }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <!-- Seletor de Ano (sempre visível) -->
+          <select name="ano" id="seletorAno" class="form-select form-select-sm" style="width: 100px;">
             {% for ano in anos_disponiveis reversed %}
               <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>
                 {{ ano }}
@@ -116,6 +144,93 @@
     </div>
 
   </div>
+  <!-- Cards Adicionais (Comparativo e Médias) - Apenas para períodos > 1 mês -->
+  {% if mostrar_medias %}
+  <div class="row g-3 mb-4">
+    
+    <!-- Comparativo vs Período Anterior -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start {% if comparativo_positivo %}border-success{% else %}border-danger{% endif %} border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">vs Período Anterior</small>
+            <i class="bi bi-graph-{% if comparativo_positivo %}up{% else %}down{% endif %}-arrow {% if comparativo_positivo %}text-success{% else %}text-danger{% endif %} fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1 {% if comparativo_positivo %}text-success{% else %}text-danger{% endif %}">
+            {% if comparativo_positivo %}↑{% else %}↓{% endif %} {{ comparativo_percentual|floatformat:1 }}%
+          </h3>
+          <small class="text-muted">Receitas pagas</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receita Média Mensal -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-primary border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Receita Média/Mês</small>
+            <i class="bi bi-calculator text-primary fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1 text-success">R$ {{ receita_media_mensal|floatformat:2 }}</h3>
+          <small class="text-muted">Média do período</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Despesa Média Mensal -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-warning border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Despesa Média/Mês</small>
+            <i class="bi bi-calculator text-warning fs-4"></i>
+          </div>
+          <h3 class="fw-bold mb-1 text-danger">R$ {{ despesa_media_mensal|floatformat:2 }}</h3>
+          <small class="text-muted">Média do período</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lucro Médio Mensal -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm border-start border-info border-4 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <small class="text-muted">Lucro Médio/Mês</small>
+            <i class="bi bi-trophy text-info fs-4"></i>
+          </div>
+          {% with lucro_medio=receita_media_mensal|add:"-"|add:despesa_media_mensal %}
+          <h3 class="fw-bold mb-1 {% if lucro_medio >= 0 %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ lucro_medio|floatformat:2 }}
+          </h3>
+          {% endwith %}
+          <small class="text-muted">Receita - Despesa</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+  <!-- Gráfico de Evolução - Apenas para períodos > 1 mês -->
+  {% if mostrar_grafico %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-graph-up text-primary me-2"></i>
+            Evolução no Período
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="graficoEvolucao" style="max-height: 300px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Alertas de Vencidas -->
   {% if contas_vencidas > 0 %}
@@ -262,15 +377,123 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script>
-  // Auto-submit ao mudar mês ou ano
+  // Controle de visibilidade dos seletores baseado no tipo de período
   const formPeriodo = document.getElementById('formPeriodo');
-  const selects = formPeriodo.querySelectorAll('select');
+  const tipoPeriodo = document.getElementById('tipoPeriodo');
+  const seletorMes = document.getElementById('seletorMes');
+  const seletorTrimestre = document.getElementById('seletorTrimestre');
+  const seletorSemestre = document.getElementById('seletorSemestre');
   
-  selects.forEach(select => {
-    select.addEventListener('change', function() {
-      formPeriodo.submit();
-    });
+  function atualizarSeletores() {
+    const tipo = tipoPeriodo.value;
+    
+    // Esconde todos
+    seletorMes.style.display = 'none';
+    seletorTrimestre.style.display = 'none';
+    seletorSemestre.style.display = 'none';
+    
+    // Mostra o seletor apropriado
+    if (tipo === 'mes') {
+      seletorMes.style.display = 'block';
+    } else if (tipo === 'trimestre') {
+      seletorTrimestre.style.display = 'block';
+    } else if (tipo === 'semestre') {
+      seletorSemestre.style.display = 'block';
+    }
+    // Para 'ano', não mostra nenhum seletor adicional
+  }
+  
+  // Atualiza ao mudar tipo
+  tipoPeriodo.addEventListener('change', function() {
+    atualizarSeletores();
+    formPeriodo.submit();
   });
+  
+  // Auto-submit ao mudar qualquer seletor
+  const selects = formPeriodo.querySelectorAll('select');
+  selects.forEach(select => {
+    if (select.id !== 'tipoPeriodo') {  // Já tem listener acima
+      select.addEventListener('change', function() {
+        formPeriodo.submit();
+      });
+    }
+  });
+  
+  // Gráfico de Evolução (apenas se houver dados)
+  {% if mostrar_grafico and evolucao_mensal %}
+  const ctx = document.getElementById('graficoEvolucao');
+  if (ctx) {
+    const evolucaoData = {{ evolucao_mensal|safe }};
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: evolucaoData.map(d => d.mes),
+        datasets: [
+          {
+            label: 'Receitas',
+            data: evolucaoData.map(d => d.receitas),
+            borderColor: 'rgb(40, 167, 69)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Despesas',
+            data: evolucaoData.map(d => d.despesas),
+            borderColor: 'rgb(220, 53, 69)',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                label += 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return 'R$ ' + value.toFixed(0);
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  }
+  {% endif %}
 </script>
 {% endblock %}
