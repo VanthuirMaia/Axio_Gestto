@@ -519,6 +519,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales/pt-br.global.min.js"></script>
 
 <script>
+// Forçar reload do calendário se vier de criação de agendamento
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('refresh') === '1') {
+    // Limpar o parâmetro da URL sem recarregar
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const calendarEl = document.getElementById("calendar");
 

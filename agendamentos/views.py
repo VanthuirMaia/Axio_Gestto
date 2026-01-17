@@ -139,7 +139,7 @@ def criar_agendamento(request):
                 )
 
             messages.success(request, "Agendamento criado com sucesso!")
-            return redirect('agendamentos:calendario')
+            return redirect('agendamentos:calendario' + '?refresh=1')
 
         except Exception as e:
             messages.error(request, f"Erro ao criar agendamento: {e}")
