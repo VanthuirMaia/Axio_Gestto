@@ -3,6 +3,8 @@ API para integração com n8n (Bot WhatsApp)
 Todas as requisições vindas do n8n passam por aqui
 """
 
+import re
+
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -331,7 +333,21 @@ def processar_cancelamento(empresa, telefone, dados, log):
         }
 
     # Verificar se é do mesmo telefone (segurança básica)
-    if agendamento.cliente.telefone.replace('+55', '').replace(' ', '') != telefone.replace('+55', '').replace(' ', ''):
+    # Usar mesma lógica de normalização de buscar_ou_criar_cliente
+    def normalizar_telefone(tel):
+        telefone_limpo = re.sub(r'\D', '', tel)  # Remove tudo que não é dígito
+        # Remover código do país (55) se presente no início
+        if telefone_limpo.startswith('55') and len(telefone_limpo) > 10:
+            telefone_limpo = telefone_limpo[2:]
+        return telefone_limpo
+
+    telefone_agendamento = normalizar_telefone(agendamento.cliente.telefone)
+    telefone_request = normalizar_telefone(telefone)
+
+    # DEBUG: Log para ver os telefones
+    logger.info(f"[DEBUG CANCELAMENTO] Telefone do agendamento: '{telefone_agendamento}' | Telefone da request: '{telefone_request}'")
+    
+    if telefone_agendamento != telefone_request:
         return {
             'sucesso': False,
             'mensagem': 'Este agendamento não pertence a você!'
