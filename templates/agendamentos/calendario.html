@@ -155,7 +155,9 @@
     opacity: 0.9;
 }
 
-/* Cores por status */
+/* Cores por status - DESABILITADO para usar cores dos profissionais */
+/* As cores agora vêm da API baseadas no profissional */
+/*
 .fc-event-pendente {
     background-color: #fbbf24 !important;
     color: #78350f !important;
@@ -180,6 +182,7 @@
     background-color: #6b7280 !important;
     color: white !important;
 }
+*/
 
 /* Vista de semana/dia */
 .fc .fc-timegrid-slot {
@@ -588,6 +591,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         title: ev.title,
                         start: ev.start,
                         end: ev.end,
+                        // Usar cores da API (cor do profissional)
+                        backgroundColor: ev.backgroundColor,
+                        borderColor: ev.borderColor,
+                        textColor: ev.textColor || '#ffffff',
                         classNames: ["fc-event-" + ev.status],
                         extendedProps: ev
                     }));
