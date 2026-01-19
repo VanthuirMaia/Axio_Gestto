@@ -31,6 +31,10 @@ class Empresa(models.Model):
 
     # Controle
     ativa = models.BooleanField(default=True)
+    is_demo = models.BooleanField(
+        default=False,
+        help_text="Empresa de demonstração - não aparece nas métricas do Backoffice"
+    )
 
     # ====== NOVOS CAMPOS PARA SaaS ======
 

@@ -23,9 +23,10 @@ class AssinaturaInline(admin.StackedInline):
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cnpj', 'cidade', 'ativa', 'tem_assinatura')
-    list_filter = ('ativa', 'onboarding_completo')
+    list_display = ('nome', 'cnpj', 'cidade', 'ativa', 'is_demo', 'tem_assinatura')
+    list_filter = ('ativa', 'is_demo', 'onboarding_completo')
     search_fields = ('nome', 'cnpj')
+    list_editable = ('is_demo',)
     inlines = [AssinaturaInline]
 
     def tem_assinatura(self, obj):
