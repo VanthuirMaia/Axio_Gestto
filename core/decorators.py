@@ -55,14 +55,16 @@ def plano_required(feature_flag=None, feature_name=None, redirect_to='dashboard'
 
             # Verificar se o plano tem a feature flag
             if not getattr(plano, flag_to_check, False):
-                messages.warning(
-                    request,
-                    f'🔒 <strong>{display_name}</strong> está disponível apenas no <strong>Plano Profissional</strong>. '
-                    f'<a href="{reverse("configuracoes_assinatura")}" class="alert-link">Faça upgrade agora</a> '
-                    f'para ter acesso completo.',
-                    extra_tags='safe'
-                )
-                return redirect(redirect_to)
+                # Redirecionar para página de upgrade com contexto
+                from django.http import HttpResponseRedirect
+                from urllib.parse import urlencode
+                
+                params = urlencode({
+                    'feature': display_name,
+                    'flag': flag_to_check,
+                    'plano_atual': plano.nome
+                })
+                return HttpResponseRedirect(f"{reverse('upgrade_required')}?{params}")
 
             # Plano OK, executar view normalmente
             return view_func(request, *args, **kwargs)

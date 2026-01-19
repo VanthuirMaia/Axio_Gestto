@@ -10,6 +10,8 @@ urlpatterns = [
     path('editar/<int:id>/', views.editar_agendamento, name='editar_agendamento'),
     path('deletar/<int:id>/', views.deletar_agendamento, name='deletar_agendamento'),
     path('api/', views.api_agendamentos, name='api_agendamentos'),
+    path('api/disponibilidade/', views.verificar_disponibilidade, name='verificar_disponibilidade'),
+    path('api/horarios-disponiveis/', views.listar_horarios_disponiveis, name='listar_horarios_disponiveis'),
 
     # Agendamentos recorrentes
     path('recorrencias/', views.listar_recorrencias, name='listar_recorrencias'),

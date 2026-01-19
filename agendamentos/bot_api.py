@@ -3,6 +3,8 @@ API para integração com n8n (Bot WhatsApp)
 Todas as requisições vindas do n8n passam por aqui
 """
 
+import re
+
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -20,6 +22,9 @@ from clientes.models import Cliente
 from empresas.models import Servico, Profissional, Empresa
 from .authentication import APIKeyAuthentication
 from .throttling import BotAPIThrottle
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -62,6 +67,17 @@ def processar_comando_bot(request):
     intencao = request.data.get('intencao')
     dados = request.data.get('dados', {})
     empresa = request.empresa  # Vem da autenticação
+    
+    # 🔒 VALIDAÇÃO CRÍTICA: Garantir que empresa foi identificada
+    if not empresa:
+        logger.error("[SECURITY] Tentativa de acesso sem empresa identificada")
+        return Response({
+            'sucesso': False,
+            'erro': 'Empresa não identificada. Configure X-Instance-Name no n8n.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 📊 LOG DE AUDITORIA
+    logger.info(f"[AUDIT] Request recebido | Empresa: {empresa.nome} (ID: {empresa.id}) | Telefone: {telefone} | Intenção: {intencao}")
 
     # Criar log da interação
     log = LogMensagemBot.objects.create(
@@ -232,16 +248,35 @@ def processar_agendamento(empresa, telefone, dados, log):
             }
 
         # 7. Criar agendamento (dentro da transação, lock ainda ativo)
-        agendamento = Agendamento.objects.create(
-            empresa=empresa,
-            cliente=cliente,
-            servico=servico,
-            profissional=profissional,
-            data_hora_inicio=data_hora_inicio,
-            data_hora_fim=data_hora_fim,
-            status='pendente',
-            valor_cobrado=servico.preco,
-            notas=f'Agendado via WhatsApp. Código: {codigo}'
+        try:
+            agendamento = Agendamento.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                servico=servico,
+                profissional=profissional,
+                data_hora_inicio=data_hora_inicio,
+                data_hora_fim=data_hora_fim,
+                status='pendente',
+                valor_cobrado=servico.preco,
+                notas=f'Agendado via WhatsApp. Código: {codigo}'
+            )
+        except Exception as e:
+            # Capturar erro de validação (ex: tenant inválido)
+            logger.error(f"Erro ao criar agendamento: {e}")
+            return {
+                'sucesso': False,
+                'mensagem': f'Ocorreu um erro ao criar o agendamento: {str(e)}'
+            }
+        
+        # 📊 LOG DE AUDITORIA
+        logger.info(
+            f"[AUDIT] Agendamento criado | "
+            f"ID: {agendamento.id} | "
+            f"Empresa: {empresa.nome} (ID: {empresa.id}) | "
+            f"Cliente: {cliente.nome} | "
+            f"Serviço: {servico.nome} | "
+            f"Profissional: {profissional.nome if profissional else 'N/A'} | "
+            f"Data: {data_hora_inicio.strftime('%d/%m/%Y %H:%M')}"
         )
 
         # Vincular log ao agendamento
@@ -298,7 +333,21 @@ def processar_cancelamento(empresa, telefone, dados, log):
         }
 
     # Verificar se é do mesmo telefone (segurança básica)
-    if agendamento.cliente.telefone.replace('+55', '').replace(' ', '') != telefone.replace('+55', '').replace(' ', ''):
+    # Usar mesma lógica de normalização de buscar_ou_criar_cliente
+    def normalizar_telefone(tel):
+        telefone_limpo = re.sub(r'\D', '', tel)  # Remove tudo que não é dígito
+        # Remover código do país (55) se presente no início
+        if telefone_limpo.startswith('55') and len(telefone_limpo) > 10:
+            telefone_limpo = telefone_limpo[2:]
+        return telefone_limpo
+
+    telefone_agendamento = normalizar_telefone(agendamento.cliente.telefone)
+    telefone_request = normalizar_telefone(telefone)
+
+    # DEBUG: Log para ver os telefones
+    logger.info(f"[DEBUG CANCELAMENTO] Telefone do agendamento: '{telefone_agendamento}' | Telefone da request: '{telefone_request}'")
+    
+    if telefone_agendamento != telefone_request:
         return {
             'sucesso': False,
             'mensagem': 'Este agendamento não pertence a você!'
@@ -656,7 +705,24 @@ def buscar_ou_criar_cliente(empresa, telefone, dados):
     if telefone_limpo.startswith('55') and len(telefone_limpo) > 10:
         telefone_limpo = telefone_limpo[2:]
 
-    nome = dados.get('nome_cliente', 'Cliente WhatsApp')
+
+    # Extrair nome do cliente (tentar múltiplos campos)
+    nome = (
+        dados.get('nome_cliente') or 
+        dados.get('nome') or 
+        dados.get('cliente') or
+        'Cliente WhatsApp'
+    )
+    
+    # Remover espaços extras e validar
+    nome = nome.strip() if nome else 'Cliente WhatsApp'
+    
+    # Se nome estiver vazio ou for muito curto, usar fallback
+    if not nome or len(nome) < 2 or nome.lower() in ['cliente', 'whatsapp']:
+        nome = 'Cliente WhatsApp'
+    
+    # 📊 LOG DE DEBUG
+    logger.info(f"[DEBUG] Criando/buscando cliente | Telefone: {telefone_limpo} | Nome extraído: {nome} | Dados recebidos: {dados}")
 
     # get_or_create é atômico e previne violação de constraint única
     cliente, criado = Cliente.objects.get_or_create(

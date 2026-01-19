@@ -168,6 +168,29 @@ def _processar_checkout_completo(session):
 
         logger.info(f'Checkout processado: Empresa {empresa.nome} - Plano {plano.nome}')
 
+        # === NOVO: Enviar email de ativação APÓS pagamento confirmado ===
+        try:
+            from core.models import Usuario
+            from .email_service import enviar_email_boas_vindas
+            
+            # Buscar usuário admin desta empresa (criado no create_tenant)
+            # Geralmente é o único usuário neste momento, ou filtramos por quem tem token
+            usuario_admin = Usuario.objects.filter(
+                empresa=empresa, 
+                activation_token__isnull=False,
+                is_activated=False
+            ).first()
+
+            if usuario_admin:
+                logger.info(f'Enviando email de ativação para {usuario_admin.email} (Checkout Stripe)')
+                enviar_email_boas_vindas(usuario_admin, empresa, usuario_admin.activation_token, plano)
+            else:
+                logger.warning(f'Usuário admin não encontrado para envio de email (Empresa {empresa.id})')
+                
+        except Exception as e_email:
+            # Não falhar o webhook por causa do email, apenas logar
+            logger.error(f'Erro ao enviar email de ativação no Webhook: {str(e_email)}')
+
         return {'status': 'success', 'assinatura_id': assinatura.id}
 
     except Exception as e:

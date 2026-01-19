@@ -59,6 +59,35 @@ class Agendamento(models.Model):
 
     def __str__(self):
         return f"{self.cliente} - {self.servico} ({self.data_hora_inicio})"
+    
+    def clean(self):
+        """Validação multi-tenant para prevenir cruzamento de dados"""
+        from django.core.exceptions import ValidationError
+        
+        # Validar que cliente pertence à mesma empresa
+        if self.cliente_id and self.cliente.empresa_id != self.empresa_id:
+            raise ValidationError({
+                'cliente': f'Cliente "{self.cliente.nome}" não pertence à empresa "{self.empresa.nome}"'
+            })
+        
+        # Validar que profissional pertence à mesma empresa  
+        if self.profissional_id and self.profissional.empresa_id != self.empresa_id:
+            raise ValidationError({
+                'profissional': f'Profissional "{self.profissional.nome}" não pertence à empresa "{self.empresa.nome}"'
+            })
+        
+        # Validar que serviço pertence à mesma empresa
+        if self.servico_id and self.servico.empresa_id != self.empresa_id:
+            raise ValidationError({
+                'servico': f'Serviço "{self.servico.nome}" não pertence à empresa "{self.empresa.nome}"'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save para garantir validação apenas na criação"""
+        # Validar apenas ao criar (não ao atualizar)
+        if not self.pk:  # Se não tem ID, é criação
+            self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class DisponibilidadeProfissional(models.Model):

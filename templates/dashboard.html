@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard – {{ empresa.nome }}{% endblock %}
+{% block title %}Painel – {{ empresa.nome }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4 px-4">
@@ -28,6 +28,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Barra de Onboarding -->
+  {% include 'components/onboarding_bar.html' %}
 
   <!-- Alertas Importantes -->
   {% if contas_vencidas > 0 or agendamentos_pendentes > 0 or clientes_risco > 0 %}
@@ -315,10 +318,10 @@
             <i class="bi bi-cash-coin"></i>Novo Lançamento
           </a>
           <a href="{% url 'dashboard_clientes' %}" class="btn-clean btn-clean-outline">
-            <i class="bi bi-graph-up"></i>Dashboard Clientes
+            <i class="bi bi-graph-up"></i>Painel de Clientes
           </a>
           <a href="{% url 'financeiro_dashboard' %}" class="btn-clean btn-clean-outline">
-            <i class="bi bi-wallet2"></i>Dashboard Financeiro
+            <i class="bi bi-wallet2"></i>Painel Financeiro
           </a>
           <a href="{% url 'configuracoes_dashboard' %}" class="btn-clean btn-clean-outline">
             <i class="bi bi-gear"></i>Configurações

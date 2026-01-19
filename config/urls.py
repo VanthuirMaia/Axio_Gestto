@@ -8,7 +8,7 @@ from core.views import (
     login_view, logout_view, dashboard_view,
     password_reset_request, password_reset_sent,
     password_reset_confirm, password_reset_complete,
-    service_worker, offline_view
+    service_worker, offline_view, ativar_conta, upgrade_required
 )
 from core.health import health_check
 from agendamentos.bot_api import processar_comando_bot, whatsapp_webhook_saas, consultar_informacoes_empresa
@@ -57,6 +57,8 @@ urlpatterns = [
     # PÚBLICO - Landing Page
     # ==========================================
     path('', include('landing.urls')),  # Landing na raiz
+    path('ajuda/', include('ajuda.urls')),  # Central de Ajuda
+    path('backoffice/', include('backoffice.urls')), # Admin Dashboard
 
     # ==========================================
     # PÚBLICO - Agendamento Online
@@ -112,11 +114,15 @@ urlpatterns = [
     path('app/password-reset/confirm/<uidb64>/<token>/', password_reset_confirm, name='password_reset_confirm'),
     path('app/password-reset/complete/', password_reset_complete, name='password_reset_complete'),
 
+    # Account Activation
+    path('ativar-conta/<str:token>/', ativar_conta, name='ativar_conta'),
+
     # Onboarding wizard
     path('app/', include('core.onboarding_urls')),
 
     # Sistema principal
     path('app/dashboard/', dashboard_view, name='dashboard'),
+    path('app/upgrade/', upgrade_required, name='upgrade_required'),
     path('app/agendamentos/', include('agendamentos.urls')),
     path('app/clientes/', include('clientes.urls')),
     path('app/financeiro/', include('financeiro.urls')),

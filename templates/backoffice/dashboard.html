@@ -1,0 +1,309 @@
+{% extends 'backoffice/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mono">Dashboard Executivo</h2>
+    <span class="badge bg-success fs-6 mono">V2.0 FINANCEIRO</span>
+</div>
+
+<!-- Financial Stats (ATUALIZADO) -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card bg-success text-white p-3">
+            <h6 class="text-white-50 mb-1 small">MRR (Mensal)</h6>
+            <div class="d-flex align-items-baseline gap-2">
+                <h3 class="fw-bold my-1 mono">R$ {{ financial.mrr|floatformat:2 }}</h3>
+                {% if financial.crescimento_mrr > 0 %}
+                    <span class="badge bg-white text-success">↑ {{ financial.crescimento_mrr }}%</span>
+                {% elif financial.crescimento_mrr < 0 %}
+                    <span class="badge bg-white text-danger">↓ {{ financial.crescimento_mrr }}%</span>
+                {% else %}
+                    <span class="badge bg-white text-secondary">→ 0%</span>
+                {% endif %}
+            </div>
+            <small class="small"><i class="bi bi-graph-up-arrow me-1"></i>vs mês anterior</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-success p-3">
+            <h6 class="text-white-50 mb-1 small">ARR (Projeção Anual)</h6>
+            <h3 class="fw-bold my-1 mono text-success">R$ {{ financial.arr|floatformat:2 }}</h3>
+            <small class="text-muted small">Run Rate (MRR x 12)</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3">
+            <h6 class="text-white-50 mb-1 small">Ticket Médio (ARPU)</h6>
+             <h3 class="fw-bold my-1 mono text-warning">R$ {{ financial.ticket_medio|floatformat:2 }}</h3>
+             <small class="text-muted small">Por Assinante Ativo</small>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas de Conversão e Churn (NOVO) -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card bg-dark border-info p-3">
+            <h6 class="text-white-50 mb-1 small">Taxa de Conversão</h6>
+            <h3 class="fw-bold my-1 mono text-info">{{ bi.taxa_conversao }}%</h3>
+            <small class="text-muted small">{{ bi.convertidos }}/{{ bi.trials_iniciados }} trials convertidos</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark p-3 {% if bi.churn_rate > 5 %}border-danger{% else %}border-success{% endif %}">
+            <h6 class="text-white-50 mb-1 small">Churn Rate</h6>
+            <h3 class="fw-bold my-1 mono {% if bi.churn_rate > 5 %}text-danger{% else %}text-success{% endif %}">{{ bi.churn_rate }}%</h3>
+            <small class="text-muted small">Últimos 30 dias</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-warning p-3">
+            <h6 class="text-white-50 mb-1 small">Assinaturas em Risco</h6>
+            <h3 class="fw-bold my-1 mono text-warning">{{ bi.assinaturas_risco }}</h3>
+            <small class="text-muted small">Sem login há 7+ dias</small>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Evolução MRR (NOVO) -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark border-bottom border-secondary py-2">
+                <small class="fw-bold text-info"><i class="bi bi-graph-up me-1"></i>Evolução MRR (Últimos 30 Dias)</small>
+            </div>
+            <div class="card-body bg-dark">
+                <canvas id="chartMRR" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BI / Insights (v3) -->
+<div class="row mb-3">
+    <!-- Status Funnel -->
+    <div class="col-md-3">
+        <div class="card p-2 bg-dark border-primary mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-primary small fw-bold">TRIAL</span>
+                <span class="badge bg-primary rounded-pill">{{ bi.funil.trial|default:"0" }}</span>
+            </div>
+        </div>
+        <div class="card p-2 bg-dark border-success mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-success small fw-bold">ATIVAS</span>
+                <span class="badge bg-success rounded-pill">{{ bi.funil.ativa|default:"0" }}</span>
+            </div>
+        </div>
+        <div class="card p-2 bg-dark border-danger mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-danger small fw-bold">CANCELADAS</span>
+                <span class="badge bg-danger rounded-pill">{{ bi.funil.cancelada|default:"0" }}</span>
+            </div>
+        </div>
+         <div class="card p-2 bg-dark border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-warning small fw-bold">SUSPENSAS</span>
+                <span class="badge bg-warning text-dark rounded-pill">{{ bi.funil.suspensa|default:"0" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Clients -->
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header bg-dark border-bottom border-secondary py-2">
+                <small class="fw-bold text-success"><i class="bi bi-trophy me-1"></i>Top Clientes (VIP)</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Plano</th>
+                            <th class="text-end">Valor</th>
+                            <th class="text-end">% Receita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in bi.top_clientes %}
+                        <tr>
+                            <td class="text-truncate" style="max-width: 120px;">{{ cliente.empresa.nome }}</td>
+                            <td><span class="badge bg-secondary">{{ cliente.plano.nome }}</span></td>
+                            <td class="text-end text-success fw-bold">R$ {{ cliente.valor }}</td>
+                            <td class="text-end"><span class="badge bg-info">{{ cliente.percentual }}%</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-3">Sem clientes ativos.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Churn Risk -->
+    <div class="col-md-4">
+        <div class="card h-100 border-danger">
+            <div class="card-header bg-danger text-white py-2">
+                <small class="fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Risco de Churn (>7d sem login)</small>
+            </div>
+            <ul class="list-group list-group-flush bg-dark" style="font-size: 0.8rem;">
+                {% for user_risk in bi.risco_churn %}
+                <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                    <span class="text-truncate" style="max-width: 150px;">
+                        {{ user_risk.empresa.nome|default:"Sem Empresa" }}
+                        <br><small class="text-muted">{{ user_risk.email }}</small>
+                    </span>
+                    <span class="badge bg-danger">{{ user_risk.last_login|timesince }}</span>
+                </li>
+                 {% empty %}
+                <li class="list-group-item bg-dark text-muted text-center py-3">Nenhum risco detectado.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<hr class="border-secondary my-3">
+
+<h6 class="text-muted mono mb-3 small">Infraestrutura & Operações</h6>
+
+<!-- Hardware Metrics -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card p-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">CPU Load</span>
+                <div class="mono small">{{ infra.cpu_percent }}%</div>
+            </div>
+            <div class="progress mt-1" style="height: 3px;">
+                <div class="progress-bar {% if infra.cpu_percent > 80 %}bg-danger{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ infra.cpu_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Memória RAM</span>
+                 <div class="mono small">{{ infra.ram_percent }}%</div>
+            </div>
+            <div class="progress mt-1" style="height: 3px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ infra.ram_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-2">
+             <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Disco</span>
+                 <div class="mono small">{{ infra.disk_percent }}%</div>
+            </div>
+             <div class="progress mt-1" style="height: 3px;">
+                <div class="progress-bar bg-light" role="progressbar" style="width: {{ infra.disk_percent }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Metrics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center p-2 border-dark bg-dark bg-gradient">
+            <h4 class="fw-bold my-1">{{ metrics.empresas_total }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Empresas Totais</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-2 border-success bg-dark bg-gradient">
+            <h4 class="fw-bold text-success my-1">{{ metrics.empresas_ativas }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Assinantes Ativos</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+         <div class="card text-center p-2 border-dark bg-dark bg-gradient">
+            <h4 class="fw-bold my-1">{{ metrics.profissionais }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Profissionais</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+         <div class="card text-center p-2 border-info bg-dark bg-gradient">
+            <h4 class="fw-bold text-info my-1">+{{ metrics.novas_empresas_30d }}</h4>
+            <span class="text-muted small" style="font-size: 0.75rem;">Novos (30d)</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Gráfico de Evolução MRR
+const ctxMRR = document.getElementById('chartMRR');
+const mrrData = {{ analytics.mrr_historico|safe }};
+
+const labels = mrrData.map(d => d.data);
+const values = mrrData.map(d => d.mrr);
+
+new Chart(ctxMRR, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'MRR (R$)',
+            data: values,
+            backgroundColor: 'rgba(13, 202, 240, 0.2)',
+            borderColor: 'rgb(13, 202, 240)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgb(13, 202, 240)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                callbacks: {
+                    label: function(context) {
+                        return 'MRR: R$ ' + context.parsed.y.toFixed(2);
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#6c757d',
+                    callback: function(value) {
+                        return 'R$ ' + value.toFixed(0);
+                    }
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#6c757d',
+                    maxRotation: 45,
+                    minRotation: 45
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

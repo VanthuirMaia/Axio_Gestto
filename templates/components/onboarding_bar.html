@@ -1,0 +1,83 @@
+{% if onboarding and not onboarding.completo %}
+<div class="onboarding-bar mb-4" id="onboarding-bar">
+    <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div style="font-size: 2rem;">🚀</div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-white mb-1 fw-bold">Configure seu sistema</h6>
+                            <div class="progress" style="height: 8px; background: rgba(255,255,255,0.3);">
+                                <div class="progress-bar bg-white" role="progressbar" 
+                                     style="width: {{ onboarding.progresso }}%;" 
+                                     aria-valuenow="{{ onboarding.progresso }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-white d-block mt-1" style="opacity: 0.9;">
+                                {{ onboarding.steps_completos }} de {{ onboarding.steps_total }} etapas concluídas ({{ onboarding.progresso }}%)
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if onboarding.proximo_passo %}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white" style="opacity: 0.9;">
+                            <strong>Próximo passo:</strong>
+                        </span>
+                        <a href="{{ onboarding.proximo_passo.url }}" 
+                           class="btn btn-light btn-sm">
+                            {{ onboarding.proximo_passo.icon }} {{ onboarding.proximo_passo.label }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-lg-4 mt-3 mt-lg-0">
+                    <div class="d-grid gap-2">
+                        {% for step in onboarding.steps %}
+                        <div class="d-flex align-items-center gap-2 text-white" style="font-size: 0.9rem;">
+                            {% if step.completo %}
+                                <i class="bi bi-check-circle-fill text-white"></i>
+                            {% else %}
+                                <i class="bi bi-circle text-white" style="opacity: 0.5;"></i>
+                            {% endif %}
+                            <span style="opacity: {% if step.completo %}1{% else %}0.7{% endif %};">
+                                {{ step.label }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" 
+                    onclick="dismissOnboarding()" 
+                    aria-label="Dispensar">
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function dismissOnboarding() {
+    // Esconder a barra
+    document.getElementById('onboarding-bar').style.display = 'none';
+    
+    // Salvar preferência no localStorage
+    localStorage.setItem('onboarding_dismissed', 'true');
+    
+    // TODO: Opcional - fazer request AJAX para salvar no backend
+}
+
+// Verificar se usuário já dispensou
+if (localStorage.getItem('onboarding_dismissed') === 'true') {
+    const bar = document.getElementById('onboarding-bar');
+    if (bar) {
+        bar.style.display = 'none';
+    }
+}
+</script>
+{% endif %}

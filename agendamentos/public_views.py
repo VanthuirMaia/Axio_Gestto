@@ -20,32 +20,64 @@ def agendamento_publico(request, slug):
     Página pública de agendamento
     URL: /agendar/{empresa-slug}/
     """
-    # Buscar empresa pelo slug
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f'Acesso à página de agendamento público - slug: {slug}')
+        
+        # Buscar empresa pelo slug
+        try:
+            empresa = Empresa.objects.get(slug=slug, ativa=True)
+            logger.info(f'Empresa encontrada: {empresa.nome} (ID: {empresa.id})')
+        except Empresa.DoesNotExist:
+            logger.warning(f'Empresa não encontrada ou inativa - slug: {slug}')
+            return render(request, 'agendamentos/publico/empresa_indisponivel.html', {
+                'empresa': None,
+                'motivo': 'nao_encontrada',
+                'slug': slug
+            }, status=404)
 
-    # Verificar se onboarding está completo
-    if not empresa.onboarding_completo:
-        return render(request, 'agendamentos/publico/empresa_indisponivel.html', {
+        # Verificar se onboarding está completo
+        if not empresa.onboarding_completo:
+            logger.info(f'Empresa {empresa.nome} - onboarding não completo')
+            return render(request, 'agendamentos/publico/empresa_indisponivel.html', {
+                'empresa': empresa,
+                'motivo': 'configuracao'
+            })
+
+        # Buscar serviços ativos
+        servicos = empresa.servicos.filter(ativo=True).order_by('nome')
+        logger.info(f'Empresa {empresa.nome} - {servicos.count()} serviços ativos')
+
+        if not servicos.exists():
+            logger.warning(f'Empresa {empresa.nome} - sem serviços ativos')
+            return render(request, 'agendamentos/publico/empresa_indisponivel.html', {
+                'empresa': empresa,
+                'motivo': 'sem_servicos'
+            })
+
+        context = {
             'empresa': empresa,
-            'motivo': 'configuracao'
-        })
+            'servicos': servicos,
+            'hoje': timezone.now().date().isoformat(),  # formato YYYY-MM-DD para input date
+        }
 
-    # Buscar serviços ativos
-    servicos = empresa.servicos.filter(ativo=True).order_by('nome')
-
-    if not servicos.exists():
+        logger.info(f'Renderizando página de agendamento para {empresa.nome}')
+        return render(request, 'agendamentos/publico/agendar.html', context)
+        
+    except Exception as e:
+        logger.error(f'Erro inesperado na view agendamento_publico - slug: {slug}')
+        logger.error(f'Tipo de erro: {type(e).__name__}')
+        logger.error(f'Mensagem: {str(e)}')
+        logger.exception('Stack trace completo:')
+        
+        # Retornar página de erro genérica em vez de 500/503
         return render(request, 'agendamentos/publico/empresa_indisponivel.html', {
-            'empresa': empresa,
-            'motivo': 'sem_servicos'
-        })
-
-    context = {
-        'empresa': empresa,
-        'servicos': servicos,
-        'hoje': timezone.now().date().isoformat(),  # formato YYYY-MM-DD para input date
-    }
-
-    return render(request, 'agendamentos/publico/agendar.html', context)
+            'empresa': None,
+            'motivo': 'erro_sistema',
+            'slug': slug
+        }, status=500)
 
 
 @require_http_methods(["GET"])
@@ -54,7 +86,7 @@ def api_profissionais_por_servico(request, slug):
     API: Retorna profissionais que executam um serviço específico
     GET /agendar/{slug}/api/profissionais/?servico_id=123
     """
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
     servico_id = request.GET.get('servico_id')
 
     if not servico_id:
@@ -78,6 +110,8 @@ def api_profissionais_por_servico(request, slug):
     })
 
 
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def api_horarios_disponiveis(request, slug):
     """
@@ -92,7 +126,7 @@ def api_horarios_disponiveis(request, slug):
     """
     import json
 
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
 
     try:
         data = json.loads(request.body)
@@ -198,7 +232,7 @@ def confirmar_agendamento(request, slug):
     """
     import json
 
-    empresa = get_object_or_404(Empresa, slug=slug, ativo=True)
+    empresa = get_object_or_404(Empresa, slug=slug, ativa=True)
 
     try:
         # Aceitar tanto JSON quanto form data
@@ -284,8 +318,45 @@ def confirmar_agendamento(request, slug):
                 origem='site'
             )
 
-        # TODO: Enviar notificação para empresa (email/WhatsApp)
-        # TODO: Enviar confirmação para cliente (email/SMS)
+
+        # Enviar email de confirmação para o cliente
+        if cliente_email:
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from django.utils.html import strip_tags
+                from django.conf import settings
+                import logging
+                
+                logger = logging.getLogger(__name__)
+                logger.info(f'Enviando email de confirmação para {cliente_email}')
+                
+                # Contexto para o template
+                context = {
+                    'empresa': empresa,
+                    'cliente': cliente,
+                    'agendamento': agendamento,
+                }
+                
+                # Renderizar template HTML
+                html_message = render_to_string('emails/confirmacao_agendamento.html', context)
+                plain_message = strip_tags(html_message)
+                
+                # Enviar email
+                send_mail(
+                    subject=f'Agendamento Confirmado - {empresa.nome}',
+                    message=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[cliente_email],
+                    html_message=html_message,
+                    fail_silently=True,  # Não quebrar se email falhar
+                )
+                
+                logger.info(f'Email de confirmação enviado com sucesso para {cliente_email}')
+            except Exception as e:
+                logger.error(f'Erro ao enviar email de confirmação: {str(e)}')
+                # Continua mesmo se email falhar
+
 
         return JsonResponse({
             'success': True,

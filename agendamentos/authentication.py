@@ -79,11 +79,13 @@ class APIKeyAuthentication(BaseAuthentication):
             if not empresa:
                 raise AuthenticationFailed(f'Nenhuma empresa encontrada com WhatsApp {telefone_whatsapp}')
 
-        # 4. Fallback: primeira empresa ativa
+        # 4. SEM IDENTIFICAÇÃO = ERRO (proteção multi-tenant)
         else:
-            empresa = Empresa.objects.filter(ativa=True).first()
-            if not empresa:
-                raise AuthenticationFailed('Nenhuma empresa ativa encontrada')
+            raise AuthenticationFailed(
+                'Empresa não identificada. Envie um dos headers obrigatórios: '
+                'X-Instance-Name (recomendado), X-Empresa-ID ou X-Telefone-WhatsApp. '
+                'Isso é necessário para garantir isolamento de dados entre empresas.'
+            )
 
         # Anexar empresa ao request (para usar nas views)
         request.empresa = empresa

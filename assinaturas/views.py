@@ -21,7 +21,9 @@ from core.models import Usuario
 from .models import Plano, Assinatura
 from .stripe_integration import processar_webhook_stripe, criar_checkout_session
 from .asaas_integration import processar_webhook_asaas
+from .asaas_integration import processar_webhook_asaas
 from .validators import validar_cpf_cnpj
+from .email_service import enviar_email_boas_vindas
 
 logger = logging.getLogger(__name__)
 
@@ -165,15 +167,20 @@ def create_tenant(request):
 
     # 8. Criar usuário admin
     try:
-        senha_temporaria = _gerar_senha_temporaria()
+        from core.utils import gerar_token_ativacao
+        
+        activation_token = gerar_token_ativacao()
 
         usuario = Usuario.objects.create_user(
             username=f"admin_{empresa.id}",
             email=email,
-            password=senha_temporaria,
+            password=None,  # Senha será definida na ativação
             empresa=empresa,
             is_staff=False,  # Não é staff do Django admin
             ativo=True,
+            is_activated=False,  # Conta não ativada ainda
+            activation_token=activation_token,
+            activation_token_created=now(),
             first_name='Admin',
             last_name=empresa.nome
         )
@@ -210,13 +217,17 @@ def create_tenant(request):
             logger.error(f'Erro ao criar checkout Stripe: {str(e)}')
             # Não fazer rollback - empresa já foi criada
 
-    # 10. Email de boas-vindas será enviado pelo webhook após pagamento confirmado
-    # Se não houver checkout (gateway manual), envia agora
-    if not checkout_url:
+
+    # 10. Email de boas-vindas com link de ativação
+    # CONDICIONAL: Só envia se for manual (trial sem cartão)
+    # Se for Stripe/Asaas, o email será enviado pelo Webhook após confirmação do pagamento
+    if gateway == 'manual':
         try:
-            _enviar_email_boas_vindas(usuario, empresa, senha_temporaria, plano)
+            enviar_email_boas_vindas(usuario, empresa, activation_token, plano)
         except Exception as e:
             logger.error(f'Erro ao enviar email: {str(e)}')
+    else:
+        logger.info(f"Email de ativação SUPRIMIDO. Aguardando confirmação de pagamento via Webhook ({gateway})")
 
     # 11. Retornar resposta de sucesso
     response_data = {
@@ -227,10 +238,7 @@ def create_tenant(request):
         'trial_expira_em': assinatura.data_expiracao.isoformat(),
         'trial_dias': plano.trial_dias,
         'plano': plano.get_nome_display(),
-        'credenciais': {
-            'email': email,
-            'senha_temporaria': senha_temporaria if settings.DEBUG else '***ENVIADA_POR_EMAIL***'
-        }
+        'mensagem': 'Email de ativação enviado! Verifique sua caixa de entrada.'
     }
 
     # Adicionar checkout_url se houver
@@ -298,63 +306,5 @@ def asaas_webhook(request):
 # FUNÇÕES AUXILIARES
 # ============================================
 
-def _gerar_senha_temporaria(length=12):
-    """
-    Gera senha aleatória forte
+# Funções auxiliares movidas para email_service.py e utils.py
 
-    Returns:
-        str: senha com letras maiúsculas, minúsculas, números e símbolos
-    """
-    chars = string.ascii_letters + string.digits + '!@#$%'
-    senha = ''.join(secrets.choice(chars) for _ in range(length))
-
-    # Garantir que tem pelo menos 1 de cada tipo
-    if not any(c.isupper() for c in senha):
-        senha = senha[:-1] + secrets.choice(string.ascii_uppercase)
-    if not any(c.isdigit() for c in senha):
-        senha = senha[:-1] + secrets.choice(string.digits)
-
-    return senha
-
-
-def _enviar_email_boas_vindas(usuario, empresa, senha, plano):
-    """
-    Envia email HTML com credenciais de acesso ao novo tenant
-
-    Args:
-        usuario: Instância de Usuario
-        empresa: Instância de Empresa
-        senha: Senha temporária gerada
-        plano: Instância de Plano
-    """
-    try:
-        # Contexto para o template
-        context = {
-            'usuario': usuario,
-            'empresa': empresa,
-            'senha_temporaria': senha,
-            'plano': plano,
-            'trial_expira_em': empresa.assinatura.data_expiracao if hasattr(empresa, 'assinatura') else None,
-            'site_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8000',
-        }
-
-        # Renderiza o template HTML
-        html_message = render_to_string('emails/boas_vindas_com_senha.html', context)
-        # Versão texto puro (fallback)
-        plain_message = strip_tags(html_message)
-
-        # Envia o email
-        send_mail(
-            subject=f'Bem-vindo ao Gestto - {empresa.nome}! 🎉',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@gestto.com.br',
-            recipient_list=[usuario.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-
-        logger.info(f'Email de boas-vindas (HTML) enviado para {usuario.email}')
-
-    except Exception as e:
-        logger.error(f'Erro ao enviar email de boas-vindas: {str(e)}')
-        raise

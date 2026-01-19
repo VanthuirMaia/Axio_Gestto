@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ categoria.nome }} - Central de Ajuda{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ajuda_home' %}">Central de Ajuda</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ categoria.nome }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-5 border-bottom pb-4">
+        <div class="icon-box me-3 bg-light text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+            <i class="bi {{ categoria.icone }} fs-4"></i>
+        </div>
+        <div>
+            <h1 class="h2 fw-bold mb-0">{{ categoria.nome }}</h1>
+            {% if categoria.descricao %}
+            <p class="text-muted mb-0 mt-1">{{ categoria.descricao }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lista de Artigos -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="list-group list-group-flush border rounded shadow-sm">
+                {% for artigo in artigos %}
+                <a href="{% url 'ajuda_artigo' artigo.slug %}" class="list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-file-text text-muted me-3"></i>
+                        <div>
+                            <h5 class="mb-1 text-primary">{{ artigo.titulo }}</h5>
+                            <!-- <small class="text-muted">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</small> -->
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+                {% empty %}
+                <div class="p-5 text-center">
+                    <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted">Nenhum artigo encontrado nesta categoria.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Não encontrou o que procura?</h5>
+                    <p class="card-text small text-muted">Entre em contato com nossa equipe de suporte.</p>
+                    <a href="https://wa.me/5587981531743" target="_blank" class="btn btn-success w-100">
+                        <i class="bi bi-whatsapp me-2"></i>Suporte WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

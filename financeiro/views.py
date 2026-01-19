@@ -10,6 +10,168 @@ from agendamentos.models import Agendamento
 from core.decorators import plano_required
 
 
+def calcular_periodo(tipo_periodo, mes=None, ano=None, trimestre=None, semestre=None):
+    """
+    Calcula início e fim de um período baseado no tipo
+    
+    Args:
+        tipo_periodo: 'mes', 'trimestre', 'semestre', 'ano'
+        mes: Mês (1-12) para tipo 'mes'
+        ano: Ano (ex: 2026)
+        trimestre: Trimestre (1-4) para tipo 'trimestre'
+        semestre: Semestre (1-2) para tipo 'semestre'
+    
+    Returns:
+        tuple: (inicio, fim, nome_periodo)
+    """
+    from datetime import datetime
+    
+    agora = now()
+    
+    if tipo_periodo == 'trimestre':
+        # Trimestres: Q1 (Jan-Mar), Q2 (Abr-Jun), Q3 (Jul-Set), Q4 (Out-Dez)
+        trimestre = int(trimestre) if trimestre else ((agora.month - 1) // 3) + 1
+        ano = int(ano) if ano else agora.year
+        
+        mes_inicio = (trimestre - 1) * 3 + 1
+        mes_fim = trimestre * 3
+        
+        inicio = datetime(ano, mes_inicio, 1, 0, 0, 0)
+        fim = datetime(ano, mes_fim, 1, 0, 0, 0)
+        fim = (fim + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        
+        nome = f"Q{trimestre}/{ano}"
+        
+    elif tipo_periodo == 'semestre':
+        # Semestres: 1º (Jan-Jun), 2º (Jul-Dez)
+        semestre = int(semestre) if semestre else (1 if agora.month <= 6 else 2)
+        ano = int(ano) if ano else agora.year
+        
+        mes_inicio = 1 if semestre == 1 else 7
+        mes_fim = 6 if semestre == 1 else 12
+        
+        inicio = datetime(ano, mes_inicio, 1, 0, 0, 0)
+        fim = datetime(ano, mes_fim, 1, 0, 0, 0)
+        fim = (fim + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        
+        nome = f"{semestre}º Semestre/{ano}"
+        
+    elif tipo_periodo == 'ano':
+        ano = int(ano) if ano else agora.year
+        
+        inicio = datetime(ano, 1, 1, 0, 0, 0)
+        fim = datetime(ano, 12, 31, 23, 59, 59)
+        
+        nome = str(ano)
+        
+    else:  # 'mes' (padrão)
+        mes = int(mes) if mes else agora.month
+        ano = int(ano) if ano else agora.year
+        
+        inicio = datetime(ano, mes, 1, 0, 0, 0)
+        fim = (inicio + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        
+        MESES_PT = {
+            1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+            5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+            9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+        }
+        nome = f"{MESES_PT[mes]}/{ano}"
+    
+    # Converte para timezone-aware
+    from django.utils.timezone import make_aware
+    inicio = make_aware(inicio)
+    fim = make_aware(fim)
+    
+    return inicio, fim, nome
+
+
+def calcular_periodo_anterior(tipo_periodo, inicio_atual, trimestre=None, semestre=None):
+    """
+    Calcula o período anterior baseado no tipo
+    
+    Returns:
+        tuple: (inicio_anterior, fim_anterior)
+    """
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
+    if tipo_periodo == 'trimestre':
+        # 3 meses atrás
+        inicio_anterior = inicio_atual - relativedelta(months=3)
+        fim_anterior = inicio_atual - timedelta(seconds=1)
+        
+    elif tipo_periodo == 'semestre':
+        # 6 meses atrás
+        inicio_anterior = inicio_atual - relativedelta(months=6)
+        fim_anterior = inicio_atual - timedelta(seconds=1)
+        
+    elif tipo_periodo == 'ano':
+        # 1 ano atrás
+        inicio_anterior = inicio_atual - relativedelta(years=1)
+        fim_anterior = inicio_atual - timedelta(seconds=1)
+        
+    else:  # 'mes'
+        # 1 mês atrás
+        inicio_anterior = inicio_atual - relativedelta(months=1)
+        fim_anterior = inicio_atual - timedelta(seconds=1)
+    
+    return inicio_anterior, fim_anterior
+
+
+def calcular_evolucao_mensal(empresa, inicio, fim):
+    """
+    Calcula evolução mês a mês de receitas e despesas no período
+    
+    Returns:
+        list: [{'mes': 'Jan/26', 'receitas': 1000, 'despesas': 500}, ...]
+    """
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
+    evolucao = []
+    mes_atual = inicio.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    MESES_CURTOS = {
+        1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr',
+        5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago',
+        9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
+    }
+    
+    while mes_atual <= fim:
+        fim_mes = (mes_atual + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        
+        # Receitas do mês
+        receitas = LancamentoFinanceiro.objects.filter(
+            empresa=empresa,
+            tipo=TipoLancamento.RECEITA,
+            status=StatusLancamento.PAGO,
+            data_vencimento__gte=mes_atual,
+            data_vencimento__lte=fim_mes
+        ).aggregate(total=Sum('valor'))['total'] or 0
+        
+        # Despesas do mês
+        despesas = LancamentoFinanceiro.objects.filter(
+            empresa=empresa,
+            tipo=TipoLancamento.DESPESA,
+            status=StatusLancamento.PAGO,
+            data_vencimento__gte=mes_atual,
+            data_vencimento__lte=fim_mes
+        ).aggregate(total=Sum('valor'))['total'] or 0
+        
+        mes_nome = f"{MESES_CURTOS[mes_atual.month]}/{str(mes_atual.year)[2:]}"
+        
+        evolucao.append({
+            'mes': mes_nome,
+            'receitas': float(receitas),
+            'despesas': float(despesas)
+        })
+        
+        mes_atual = mes_atual + relativedelta(months=1)
+    
+    return evolucao
+
+
 @login_required
 @plano_required(feature_flag='permite_financeiro', feature_name='Controle Financeiro')
 def financeiro_dashboard(request):
@@ -17,73 +179,106 @@ def financeiro_dashboard(request):
     empresa = request.user.empresa
     agora = now()
     
-    # Período selecionado (padrão: mês atual)
+    # Parâmetros do período
+    tipo_periodo = request.GET.get('tipo_periodo', 'mes')
     mes_selecionado = request.GET.get('mes')
     ano_selecionado = request.GET.get('ano')
+    trimestre_selecionado = request.GET.get('trimestre')
+    semestre_selecionado = request.GET.get('semestre')
     
-    if mes_selecionado and ano_selecionado:
-        try:
-            mes = int(mes_selecionado)
-            ano = int(ano_selecionado)
-            inicio_mes = agora.replace(year=ano, month=mes, day=1, hour=0, minute=0, second=0, microsecond=0)
-        except (ValueError, TypeError):
-            inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    else:
-        inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # Calcula o período atual
+    inicio_periodo, fim_periodo, nome_periodo = calcular_periodo(
+        tipo_periodo=tipo_periodo,
+        mes=mes_selecionado,
+        ano=ano_selecionado,
+        trimestre=trimestre_selecionado,
+        semestre=semestre_selecionado
+    )
     
-    fim_mes = (inicio_mes + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+    # Calcula período anterior para comparativo
+    inicio_anterior, fim_anterior = calcular_periodo_anterior(
+        tipo_periodo, inicio_periodo, trimestre_selecionado, semestre_selecionado
+    )
     
-    # RECEITAS
-    receitas_mes = LancamentoFinanceiro.objects.filter(
+    # RECEITAS DO PERÍODO
+    receitas_periodo = LancamentoFinanceiro.objects.filter(
         empresa=empresa,
         tipo=TipoLancamento.RECEITA,
-        data_vencimento__gte=inicio_mes,
-        data_vencimento__lte=fim_mes
+        data_vencimento__gte=inicio_periodo,
+        data_vencimento__lte=fim_periodo
     ).aggregate(
         total=Sum('valor'),
         pagas=Sum('valor', filter=Q(status=StatusLancamento.PAGO)),
         pendentes=Sum('valor', filter=Q(status=StatusLancamento.PENDENTE))
     )
     
-    # DESPESAS
-    despesas_mes = LancamentoFinanceiro.objects.filter(
+    # DESPESAS DO PERÍODO
+    despesas_periodo = LancamentoFinanceiro.objects.filter(
         empresa=empresa,
         tipo=TipoLancamento.DESPESA,
-        data_vencimento__gte=inicio_mes,
-        data_vencimento__lte=fim_mes
+        data_vencimento__gte=inicio_periodo,
+        data_vencimento__lte=fim_periodo
     ).aggregate(
         total=Sum('valor'),
         pagas=Sum('valor', filter=Q(status=StatusLancamento.PAGO)),
         pendentes=Sum('valor', filter=Q(status=StatusLancamento.PENDENTE))
     )
     
-    # SALDO
-    saldo_real = (receitas_mes['pagas'] or 0) - (despesas_mes['pagas'] or 0)
-    saldo_previsto = (receitas_mes['total'] or 0) - (despesas_mes['total'] or 0)
+    # RECEITAS DO PERÍODO ANTERIOR (para comparativo)
+    receitas_anterior = LancamentoFinanceiro.objects.filter(
+        empresa=empresa,
+        tipo=TipoLancamento.RECEITA,
+        status=StatusLancamento.PAGO,
+        data_vencimento__gte=inicio_anterior,
+        data_vencimento__lte=fim_anterior
+    ).aggregate(total=Sum('valor'))['total'] or 0
     
-    # CONTAS A RECEBER (próximos 30 dias a partir do período selecionado)
-    proximos_30_dias = fim_mes + timedelta(days=30)
+    # SALDO
+    saldo_real = (receitas_periodo['pagas'] or 0) - (despesas_periodo['pagas'] or 0)
+    saldo_previsto = (receitas_periodo['total'] or 0) - (despesas_periodo['total'] or 0)
+    
+    # COMPARATIVO (% de variação vs período anterior)
+    receitas_pagas_atual = receitas_periodo['pagas'] or 0
+    if receitas_anterior > 0:
+        comparativo_percentual = ((receitas_pagas_atual - receitas_anterior) / receitas_anterior) * 100
+    else:
+        comparativo_percentual = 100 if receitas_pagas_atual > 0 else 0
+    
+    # EVOLUÇÃO MENSAL (para gráfico)
+    evolucao_mensal = calcular_evolucao_mensal(empresa, inicio_periodo, fim_periodo)
+    
+    # MÉDIAS (apenas para períodos maiores que 1 mês)
+    num_meses = len(evolucao_mensal)
+    if num_meses > 1:
+        receita_media_mensal = receitas_pagas_atual / num_meses if num_meses > 0 else 0
+        despesa_media_mensal = (despesas_periodo['pagas'] or 0) / num_meses if num_meses > 0 else 0
+    else:
+        receita_media_mensal = None
+        despesa_media_mensal = None
+    
+    # CONTAS A RECEBER (próximos 30 dias)
+    proximos_30_dias = fim_periodo + timedelta(days=30)
     contas_receber = LancamentoFinanceiro.objects.filter(
         empresa=empresa,
         tipo=TipoLancamento.RECEITA,
         status=StatusLancamento.PENDENTE,
-        data_vencimento__range=(inicio_mes, proximos_30_dias)
+        data_vencimento__range=(inicio_periodo, proximos_30_dias)
     ).order_by('data_vencimento')[:5]
     
-    # CONTAS A PAGAR (próximos 30 dias a partir do período selecionado)
+    # CONTAS A PAGAR (próximos 30 dias)
     contas_pagar = LancamentoFinanceiro.objects.filter(
         empresa=empresa,
         tipo=TipoLancamento.DESPESA,
         status=StatusLancamento.PENDENTE,
-        data_vencimento__range=(inicio_mes, proximos_30_dias)
+        data_vencimento__range=(inicio_periodo, proximos_30_dias)
     ).order_by('data_vencimento')[:5]
     
-    # CONTAS VENCIDAS (no período selecionado)
+    # CONTAS VENCIDAS (no período)
     vencidas = LancamentoFinanceiro.objects.filter(
         empresa=empresa,
         status=StatusLancamento.PENDENTE,
-        data_vencimento__lt=fim_mes,
-        data_vencimento__gte=inicio_mes
+        data_vencimento__lt=agora,
+        data_vencimento__gte=inicio_periodo
     ).count()
     
     # RECEITAS POR CATEGORIA
@@ -91,13 +286,13 @@ def financeiro_dashboard(request):
         empresa=empresa,
         tipo=TipoLancamento.RECEITA,
         status=StatusLancamento.PAGO,
-        data_vencimento__gte=inicio_mes,
-        data_vencimento__lte=fim_mes
+        data_vencimento__gte=inicio_periodo,
+        data_vencimento__lte=fim_periodo
     ).values('categoria__nome', 'categoria__cor').annotate(
         total=Sum('valor')
     ).order_by('-total')
     
-    # Anos disponíveis (do primeiro lançamento até próximo ano)
+    # Anos disponíveis
     primeiro_lancamento = LancamentoFinanceiro.objects.filter(
         empresa=empresa
     ).order_by('data_vencimento').first()
@@ -117,29 +312,53 @@ def financeiro_dashboard(request):
         (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro')
     ]
     
-    mes_nome = dict(MESES_PT).get(inicio_mes.month, '')
+    # Trimestres e Semestres
+    TRIMESTRES = [(1, 'Q1'), (2, 'Q2'), (3, 'Q3'), (4, 'Q4')]
+    SEMESTRES = [(1, '1º Semestre'), (2, '2º Semestre')]
     
     context = {
         'empresa': empresa,
-        'mes_atual': f"{mes_nome}/{inicio_mes.year}",
-        'mes_selecionado': inicio_mes.month,
-        'ano_selecionado': inicio_mes.year,
+        
+        # Período
+        'tipo_periodo': tipo_periodo,
+        'periodo_nome': nome_periodo,
+        'mes_selecionado': inicio_periodo.month if tipo_periodo == 'mes' else None,
+        'ano_selecionado': inicio_periodo.year,
+        'trimestre_selecionado': trimestre_selecionado or ((agora.month - 1) // 3) + 1,
+        'semestre_selecionado': semestre_selecionado or (1 if agora.month <= 6 else 2),
+        
+        # Opções de seleção
         'meses_pt': MESES_PT,
+        'trimestres': TRIMESTRES,
+        'semestres': SEMESTRES,
         'anos_disponiveis': anos_disponiveis,
         
         # Receitas
-        'receitas_total': receitas_mes['total'] or 0,
-        'receitas_pagas': receitas_mes['pagas'] or 0,
-        'receitas_pendentes': receitas_mes['pendentes'] or 0,
+        'receitas_total': receitas_periodo['total'] or 0,
+        'receitas_pagas': receitas_periodo['pagas'] or 0,
+        'receitas_pendentes': receitas_periodo['pendentes'] or 0,
         
         # Despesas
-        'despesas_total': despesas_mes['total'] or 0,
-        'despesas_pagas': despesas_mes['pagas'] or 0,
-        'despesas_pendentes': despesas_mes['pendentes'] or 0,
+        'despesas_total': despesas_periodo['total'] or 0,
+        'despesas_pagas': despesas_periodo['pagas'] or 0,
+        'despesas_pendentes': despesas_periodo['pendentes'] or 0,
         
         # Saldo
         'saldo_real': saldo_real,
         'saldo_previsto': saldo_previsto,
+        
+        # Comparativo
+        'comparativo_percentual': comparativo_percentual,
+        'comparativo_positivo': comparativo_percentual >= 0,
+        
+        # Médias (apenas para períodos > 1 mês)
+        'receita_media_mensal': receita_media_mensal,
+        'despesa_media_mensal': despesa_media_mensal,
+        'mostrar_medias': num_meses > 1,
+        
+        # Evolução (para gráfico)
+        'evolucao_mensal': evolucao_mensal,
+        'mostrar_grafico': num_meses > 1,
         
         # Contas
         'contas_receber': contas_receber,
@@ -149,7 +368,7 @@ def financeiro_dashboard(request):
         # Gráficos
         'receitas_por_categoria': receitas_por_categoria,
         
-        # Data de hoje para comparações no template
+        # Data de hoje
         'hoje': agora.date(),
     }
     
@@ -310,20 +529,6 @@ def marcar_como_pago(request, pk):
         lancamento.marcar_como_pago(
             data_pagamento=data_pagamento,
             forma_pagamento=forma_pagamento  # ← Passa o objeto, não o ID
-        )
-    
-    return redirect(request.META.get('HTTP_REFERER', 'financeiro_dashboard'))
-    """Marca um lançamento como pago"""
-    empresa = request.user.empresa
-    lancamento = get_object_or_404(LancamentoFinanceiro, pk=pk, empresa=empresa)
-    
-    if request.method == 'POST':
-        forma_pagamento_id = request.POST.get('forma_pagamento')
-        data_pagamento = request.POST.get('data_pagamento', now().date())
-        
-        lancamento.marcar_como_pago(
-            data_pagamento=data_pagamento,
-            forma_pagamento_id=forma_pagamento_id
         )
     
     return redirect(request.META.get('HTTP_REFERER', 'financeiro_dashboard'))

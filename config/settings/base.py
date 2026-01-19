@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'configuracoes.apps.ConfiguracoesConfig',
     'assinaturas.apps.AssinaturasConfig',
     'whatsapp.apps.WhatsappConfig',
+    'ajuda.apps.AjudaConfig',
+    'backoffice',
 
     # Third party
     'django_apscheduler',

@@ -291,6 +291,13 @@ def dashboard_view(request):
         dias_valores.append(float(faturamento_dia))
 
     # ============================================
+    # ONBOARDING (NOVO)
+    # ============================================
+    from .onboarding import calcular_progresso_onboarding
+    
+    onboarding = calcular_progresso_onboarding(empresa)
+    
+    # ============================================
     # CONTEXTO
     # ============================================
     
@@ -300,6 +307,9 @@ def dashboard_view(request):
         'saudacao': saudacao,
         'hoje': hoje,
         'agora': agora,
+        
+        # Onboarding
+        'onboarding': onboarding,
 
         # Agendamentos
         'agendamentos_hoje': agendamentos_hoje,
@@ -489,6 +499,68 @@ def alterar_senha(request):
 
 
 # ==========================================
+# ATIVAÇÃO DE CONTA VIA EMAIL
+# ==========================================
+
+@require_http_methods(["GET", "POST"])
+def ativar_conta(request, token):
+    """
+    Ativa conta de usuário via link de email
+    
+    GET: Mostra formulário para definir senha
+    POST: Ativa conta e define senha
+    """
+    from .utils import token_ativacao_valido
+    
+    # Fazer logout se houver sessão ativa para evitar conflitos
+    # (ex: admin logado clicando no link de ativação de outro usuário)
+    if request.user.is_authenticated:
+        logout(request)
+    
+    # Buscar usuário pelo token
+    try:
+        usuario = Usuario.objects.get(activation_token=token, is_activated=False)
+    except Usuario.DoesNotExist:
+        messages.error(request, 'Link de ativação inválido ou já utilizado.')
+        return render(request, 'ativar_conta.html', {'token_valido': False})
+    
+    # Verificar se token ainda é válido (48h)
+    if not token_ativacao_valido(usuario):
+        messages.error(request, 'Este link de ativação expirou. Entre em contato com o suporte.')
+        return render(request, 'ativar_conta.html', {'token_valido': False})
+    
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        # Validar senhas
+        if password != password_confirm:
+            messages.error(request, 'As senhas não coincidem.')
+            return render(request, 'ativar_conta.html', {'token_valido': True})
+        
+        # Validar força da senha
+        try:
+            password_validation.validate_password(password, usuario)
+        except ValidationError as e:
+            for error in e.messages:
+                messages.error(request, error)
+            return render(request, 'ativar_conta.html', {'token_valido': True})
+        
+        # Ativar conta e definir senha
+        usuario.set_password(password)
+        usuario.is_activated = True
+        usuario.activation_token = None  # Invalidar token
+        usuario.activation_token_created = None
+        usuario.save()
+        
+        messages.success(request, 'Conta ativada com sucesso! Você já pode fazer login.')
+        return redirect('login')
+    
+    # GET: Mostrar formulário
+    return render(request, 'ativar_conta.html', {'token_valido': True})
+
+
+# ==========================================
 # PWA - Service Worker e Offline
 # ==========================================
 
@@ -555,3 +627,35 @@ def manifest_json(request):
             content_type='application/manifest+json',
             status=404
         )
+
+
+@login_required
+def upgrade_required(request):
+    """
+    Página de upgrade mostrada quando usuário tenta acessar feature bloqueada
+    """
+    feature_name = request.GET.get('feature', 'Este recurso')
+    plano_atual = request.GET.get('plano_atual', 'basico')
+    
+    # Mapear nomes de planos
+    planos_display = {
+        'basico': 'Básico',
+        'essencial': 'Essencial',
+        'profissional': 'Profissional'
+    }
+    
+    # Preços dos planos
+    precos = {
+        'basico': '19,99',
+        'essencial': '79,99',
+        'profissional': '199,99'
+    }
+    
+    context = {
+        'feature_name': feature_name,
+        'plano_atual': plano_atual,
+        'plano_atual_display': planos_display.get(plano_atual, plano_atual.title()),
+        'preco_atual': precos.get(plano_atual, '0,00')
+    }
+    
+    return render(request, 'core/upgrade_required.html', context)

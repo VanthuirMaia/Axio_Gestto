@@ -15,6 +15,12 @@ class Usuario(AbstractUser):
     )
     telefone = models.CharField(max_length=20, blank=True)
     ativo = models.BooleanField(default=True)
+    
+    # Campos para ativação de conta via email
+    activation_token = models.CharField(max_length=64, blank=True, null=True, help_text='Token para ativação de conta')
+    activation_token_created = models.DateTimeField(blank=True, null=True, help_text='Data de criação do token')
+    is_activated = models.BooleanField(default=False, help_text='Indica se a conta foi ativada')
+    
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upgrade Necessário - Gestto{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <span style="font-size: 4rem;">🔒</span>
+                </div>
+                <h1 class="display-5 fw-bold mb-3">{{ feature_name }} está no Plano Profissional</h1>
+                <p class="lead text-muted">
+                    Você está no <strong>Plano {{ plano_atual_display }}</strong>. 
+                    Faça upgrade para desbloquear recursos avançados.
+                </p>
+            </div>
+
+            <!-- Comparação de Planos -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="mb-4 text-center">Compare os Planos</h3>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40%;">Recurso</th>
+                                    <th class="text-center" style="width: 20%;">Seu Plano<br><small class="text-muted">({{ plano_atual_display }})</small></th>
+                                    <th class="text-center bg-success bg-opacity-10" style="width: 20%;">Profissional</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Agendamentos Ilimitados</strong></td>
+                                    <td class="text-center">✅</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Bot WhatsApp 24/7</strong></td>
+                                    <td class="text-center">{% if plano_atual == 'essencial' %}✅{% else %}❌{% endif %}</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td><strong>{{ feature_name }}</strong> <span class="badge bg-warning text-dark">Você está aqui</span></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Gestão de Equipe (até 4 profissionais)</strong></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Relatórios Avançados</strong></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Comissões Automáticas</strong></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center bg-success bg-opacity-10">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Suporte Prioritário</strong></td>
+                                    <td class="text-center">Email (24h)</td>
+                                    <td class="text-center bg-success bg-opacity-10">Email + WhatsApp (12h)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preço e CTA -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100 border-secondary">
+                        <div class="card-body text-center p-4">
+                            <h5 class="text-muted mb-3">Seu Plano Atual</h5>
+                            <div class="display-4 fw-bold mb-2">R$ {{ preco_atual }}</div>
+                            <p class="text-muted">/mês</p>
+                            <p class="small">{{ plano_atual_display }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-success shadow">
+                        <div class="card-body text-center p-4">
+                            <div class="badge bg-success mb-3">Recomendado</div>
+                            <h5 class="text-success mb-3">Plano Profissional</h5>
+                            <div class="display-4 fw-bold text-success mb-2">R$ 199,99</div>
+                            <p class="text-muted">/mês</p>
+                            <a href="{% url 'configuracoes_assinatura' %}" class="btn btn-success btn-lg w-100 mt-3">
+                                🚀 Fazer Upgrade Agora
+                            </a>
+                            <p class="small text-muted mt-3">Sem taxas de setup • Cancele quando quiser</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voltar -->
+            <div class="text-center">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    ← Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .bg-success.bg-opacity-10 {
+        background-color: rgba(25, 135, 84, 0.1) !important;
+    }
+</style>
+{% endblock %}

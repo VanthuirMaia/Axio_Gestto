@@ -521,33 +521,108 @@ def usuario_deletar(request, pk):
 @login_required
 def profissionais_lista(request):
     """Lista todos os profissionais"""
-    empresa = request.user.empresa
-    profissionais = Profissional.objects.filter(empresa=empresa).order_by('nome')
-    
-    # Breadcrumb
-    breadcrumb_items = [
-        {'label': 'Configurações', 'url': reverse('configuracoes_dashboard'), 'icon': 'gear-fill'},
-        {'label': 'Profissionais', 'url': '#'},
-    ]
-    
-    context = {
-        'empresa': empresa,
-        'profissionais': profissionais,
-        'breadcrumb_items': breadcrumb_items,
-    }
-    
-    return render(request, 'configuracoes/profissionais_lista.html', context)
+    try:
+        empresa = request.user.empresa
+        profissionais = Profissional.objects.filter(empresa=empresa).order_by('nome')
+        
+        # Breadcrumb
+        breadcrumb_items = [
+            {'label': 'Configurações', 'url': reverse('configuracoes_dashboard'), 'icon': 'gear-fill'},
+            {'label': 'Profissionais', 'url': '#'},
+        ]
+        
+        # Verificar limites do plano
+        assinatura = getattr(empresa, 'assinatura', None)
+        
+        # Defaults
+        max_profissionais = 1
+        pode_criar = False
+        
+        if assinatura and assinatura.plano:
+            # Casting seguro para garantir que é int
+            try:
+                max_profissionais = int(assinatura.plano.max_profissionais)
+            except (ValueError, TypeError):
+                max_profissionais = 1
+                logger.error(f"Erro ao ler max_profissionais do plano {assinatura.plano.id}")
+
+            # Contar APENAS ATIVOS para o limite
+            profissionais_ativos = profissionais.filter(ativo=True).count()
+            pode_criar = profissionais_ativos < max_profissionais
+        else:
+            # Sem plano ou trial expirado
+            profissionais_ativos = profissionais.filter(ativo=True).count()
+            pode_criar = profissionais_ativos < 1
+
+        context = {
+            'empresa': empresa,
+            'profissionais': profissionais,
+            'breadcrumb_items': breadcrumb_items,
+            'pode_criar': pode_criar,
+            'max_profissionais': max_profissionais,
+            'profissionais_ativos': profissionais_ativos,
+            'assinatura': assinatura, # Garantir assinatura no contexto
+        }
+        
+        return render(request, 'configuracoes/profissionais_lista.html', context)
+
+    except Exception as e:
+        logger.error(f"Erro fatal em profissionais_lista: {str(e)}")
+        # Em produção, redirecionar ou mostrar erro amigável
+        messages.error(request, "Ocorreu um erro ao carregar a lista de profissionais.")
+        return redirect('configuracoes_dashboard')
 
 @login_required
 def profissional_criar(request):
     """Cria um novo profissional"""
     empresa = request.user.empresa
 
+    # Validar limite do plano (GET e POST)
+    assinatura = getattr(empresa, 'assinatura', None)
+    if assinatura and assinatura.plano:
+        max_profissionais = assinatura.plano.max_profissionais
+        profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+        
+        if profissionais_ativos >= max_profissionais:
+            messages.error(
+                request,
+                f'❌ Seu plano permite apenas {max_profissionais} profissional(is) ativo(s). '
+                f'Faça upgrade do plano para adicionar mais.'
+            )
+            return redirect('profissionais_lista')
+
     if request.method == 'POST':
+        # Validar limite do plano novamente (segurança extra)
+        assinatura = getattr(empresa, 'assinatura', None)
+        if assinatura and assinatura.plano:
+            max_profissionais = assinatura.plano.max_profissionais
+            profissionais_ativos = Profissional.objects.filter(empresa=empresa, ativo=True).count()
+            
+            if profissionais_ativos >= max_profissionais:
+                messages.error(
+                    request,
+                    f'Seu plano permite apenas {max_profissionais} profissional(is). Faça um upgrade para adicionar mais.'
+                )
+                return redirect('profissionais_lista')
+
         nome = request.POST.get('nome')
         telefone = request.POST.get('telefone', '')
-        email = request.POST.get('email', '')
+        # Se vazio, vira None
+        email = request.POST.get('email', '').strip() or None 
         cor_hex = request.POST.get('cor_hex', '#1e3a8a')
+
+        # Validação de Duplicidade (Só se email foi fornecido)
+        if email and Profissional.objects.filter(empresa=empresa, email=email).exists():
+            messages.error(request, f'Já existe um profissional cadastrado com o email {email}.')
+            # Preservar dados do formulário
+            servicos = Servico.objects.filter(empresa=empresa, ativo=True)
+            return render(request, 'configuracoes/profissional_form.html', {
+                'empresa': empresa, 
+                'servicos': servicos,
+                'nome': nome,
+                'email': email or '',
+                'telefone': telefone
+            })
 
         profissional = Profissional.objects.create(
             empresa=empresa,
@@ -605,7 +680,14 @@ def profissional_editar(request, pk):
         # Atualizar dados do profissional
         profissional.nome = request.POST.get('nome')
         profissional.telefone = request.POST.get('telefone', '')
-        profissional.email = request.POST.get('email', '')
+        novo_email = request.POST.get('email', '').strip() or None
+        
+        # Validar duplicidade se mudou o email e email for preenchido
+        if novo_email and novo_email != profissional.email and Profissional.objects.filter(empresa=empresa, email=novo_email).exists():
+             messages.error(request, f'Já existe outro profissional com o email {novo_email}.')
+             return redirect('profissional_editar', pk=pk)
+
+        profissional.email = novo_email
         profissional.cor_hex = request.POST.get('cor_hex', '#1e3a8a')
         profissional.ativo = novo_ativo
         profissional.save()

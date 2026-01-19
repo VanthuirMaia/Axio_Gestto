@@ -31,7 +31,11 @@
     {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            <i class="bi bi-{{ message.tags == 'success' and 'check-circle' or 'exclamation-triangle' }} me-2"></i>
+            {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle me-2"></i>
+            {% else %}
+                <i class="bi bi-exclamation-triangle me-2"></i>
+            {% endif %}
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -117,8 +121,8 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <form method="POST" action="{% url 'agendamentos:ativar_desativar_recorrencia' rec.id %}" class="d-inline">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-outline-{{ rec.ativo and 'warning' or 'success' }}" title="{{ rec.ativo and 'Pausar' or 'Ativar' }}">
-                                                    <i class="bi bi-{{ rec.ativo and 'pause' or 'play' }}"></i>
+                                                <button type="submit" class="btn btn-outline-{% if rec.ativo %}warning{% else %}success{% endif %}" title="{% if rec.ativo %}Pausar{% else %}Ativar{% endif %}">
+                                                    <i class="bi bi-{% if rec.ativo %}pause{% else %}play{% endif %}"></i>
                                                 </button>
                                             </form>
                                             <form method="POST" action="{% url 'agendamentos:deletar_recorrencia' rec.id %}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta recorrência? Os agendamentos já criados não serão afetados.');">

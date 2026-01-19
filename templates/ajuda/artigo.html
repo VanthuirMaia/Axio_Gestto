@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ artigo.titulo }} - Central de Ajuda{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ajuda_home' %}">Central de Ajuda</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ajuda_categoria' artigo.categoria.slug %}">{{ artigo.categoria.nome }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ artigo.titulo }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Conteúdo do Artigo -->
+        <div class="col-lg-8">
+            <article class="bg-white p-4 p-md-5 rounded shadow-sm border mb-5">
+                <header class="mb-4 pb-3 border-bottom">
+                    <h1 class="fw-bold mb-2">{{ artigo.titulo }}</h1>
+                    <div class="text-muted small">
+                        Categoria: <a href="{% url 'ajuda_categoria' artigo.categoria.slug %}" class="text-decoration-none">{{ artigo.categoria.nome }}</a>
+                        <!-- &bull; Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }} -->
+                    </div>
+                </header>
+                
+                <div class="markdown-content">
+                    {{ conteudo_html|safe }}
+                </div>
+            </article>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 20px;">
+                <!-- Outros artigos da categoria -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3">
+                        Nesta categoria
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for outro in outros_artigos %}
+                        <a href="{% url 'ajuda_artigo' outro.slug %}" class="list-group-item list-group-item-action small">
+                            {{ outro.titulo }}
+                        </a>
+                        {% endfor %}
+                        <a href="{% url 'ajuda_categoria' artigo.categoria.slug %}" class="list-group-item list-group-item-action text-primary small fw-bold text-center">
+                            Ver todos os artigos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Suporte -->
+                <div class="card bg-light border-0">
+                    <div class="card-body text-center">
+                        <i class="bi bi-chat-heart fs-3 text-primary mb-2"></i>
+                        <h6 class="card-title fw-bold">Isso foi útil?</h6>
+                        <p class="small text-muted mb-3">Se ainda tiver dúvidas, estamos aqui.</p>
+                        <a href="https://wa.me/5587981531743" target="_blank" class="btn btn-outline-primary btn-sm w-100">
+                            Falar com Suporte
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos para o conteúdo Markdown */
+    .markdown-content {
+        line-height: 1.7;
+        color: #374151;
+    }
+    .markdown-content h2 {
+        font-size: 1.75rem;
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        color: #111827;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .markdown-content h3 {
+        font-size: 1.4rem;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .markdown-content p {
+        margin-bottom: 1.25rem;
+    }
+    .markdown-content ul, .markdown-content ol {
+        margin-bottom: 1.25rem;
+        padding-left: 1.5rem;
+    }
+    .markdown-content li {
+        margin-bottom: 0.5rem;
+    }
+    .markdown-content pre {
+        background-color: #f3f4f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
+    }
+    .markdown-content code {
+        background-color: #f3f4f6;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+        color: #d946ef;
+    }
+    .markdown-content pre code {
+        color: #374151;
+        background-color: transparent;
+        padding: 0;
+    }
+    .markdown-content blockquote {
+        border-left: 4px solid #3b82f6;
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-bottom: 1.5rem;
+        font-style: italic;
+        color: #4b5563;
+        background-color: #eff6ff;
+        padding: 1rem;
+        border-radius: 0 0.5rem 0.5rem 0;
+    }
+    .markdown-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .markdown-content table {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        border-collapse: collapse;
+    }
+    .markdown-content th, .markdown-content td {
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+    }
+    .markdown-content th {
+        background-color: #f9fafb;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

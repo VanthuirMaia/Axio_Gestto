@@ -555,9 +555,10 @@ class ManagementCommandTest(TestCase):
         agendamento.refresh_from_db()
         self.assertEqual(agendamento.status, StatusAgendamento.CONCLUIDO)
 
-        # Nota: O comando cria 2 lançamentos (1 via signal + 1 manualmente)
-        # Isso poderia ser otimizado para criar apenas 1
-        self.assertGreaterEqual(agendamento.lancamentos.count(), 1)
+        # Verifica que apenas 1 lançamento foi criado (via signal)
+        self.assertEqual(agendamento.lancamentos.count(), 1)
+        lancamento = agendamento.lancamentos.first()
+        self.assertEqual(lancamento.status, StatusLancamento.PAGO)
 
     def test_nao_processar_agendamento_recente(self):
         """Testa que não processa agendamento que terminou há menos de 30 minutos"""

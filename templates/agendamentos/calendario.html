@@ -155,7 +155,7 @@
     opacity: 0.9;
 }
 
-/* Cores por status */
+/* Cores por status - FUNDO DO EVENTO */
 .fc-event-pendente {
     background-color: #fbbf24 !important;
     color: #78350f !important;
@@ -179,6 +179,19 @@
 .fc-event-nao_compareceu {
     background-color: #6b7280 !important;
     color: white !important;
+}
+
+/* Bolinha do profissional - aparece antes do título */
+.fc-event-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    background-color: var(--prof-color, #ffffff);
+    vertical-align: middle;
 }
 
 /* Vista de semana/dia */
@@ -355,9 +368,12 @@
                     <h2 class="fw-bold mb-1">Calendário de Agendamentos</h2>
                     <p class="text-muted mb-0">Gerencie todos os seus agendamentos</p>
                 </div>
-                <div>
-                    <a href="{% url 'agendamentos:criar_agendamento' %}" class="btn-clean btn-clean-primary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoAgendamento">
                         <i class="bi bi-plus-circle"></i>Novo Agendamento
+                    </button>
+                    <a href="{% url 'agendamentos:listar_recorrencias' %}" class="btn btn-outline-primary" title="Gerenciar agendamentos que se repetem automaticamente">
+                        <i class="bi bi-arrow-repeat"></i>Recorrentes
                     </a>
                 </div>
             </div>
@@ -380,9 +396,6 @@
                         <span class="status-badge status-concluido">
                             <i class="bi bi-check-all me-1"></i>Concluído
                         </span>
-                        <span class="status-badge status-cancelado">
-                            <i class="bi bi-x-circle me-1"></i>Cancelado
-                        </span>
                         <span class="status-badge status-nao_compareceu">
                             <i class="bi bi-person-x me-1"></i>Não Compareceu
                         </span>
@@ -391,6 +404,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Filtro de Profissionais -->
+    {% if profissionais %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
+                        <small class="text-muted fw-semibold">
+                            <i class="bi bi-funnel me-1"></i>Filtrar por profissional:
+                        </small>
+                        
+                        <!-- Checkboxes de profissionais -->
+                        <div class="d-flex flex-wrap gap-3" id="filtro-profissionais">
+                            {% for prof in profissionais %}
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input profissional-checkbox" 
+                                    type="checkbox" 
+                                    value="{{ prof.id }}" 
+                                    id="prof-{{ prof.id }}"
+                                    checked
+                                >
+                                <label class="form-check-label" for="prof-{{ prof.id }}">
+                                    {{ prof.nome }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Botões de ação -->
+                        <div class="ms-auto d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="selecionarTodos()">
+                                <i class="bi bi-check-all"></i> Todos
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="limparSelecao()">
+                                <i class="bi bi-x"></i> Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Calendário -->
     <div class="row">
@@ -471,6 +529,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/locales/pt-br.global.min.js"></script>
 
 <script>
+// Forçar reload do calendário se vier de criação de agendamento
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('refresh') === '1') {
+    // Limpar o parâmetro da URL sem recarregar
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const calendarEl = document.getElementById("calendar");
 
@@ -522,26 +588,53 @@ document.addEventListener("DOMContentLoaded", function () {
             const startStr = info.start.toISOString().split('T')[0];
             const endStr = info.end.toISOString().split('T')[0];
 
-            console.log(`[Calendar] Buscando eventos de ${startStr} até ${endStr}`);
+            // Obter profissionais selecionados
+            const checkboxes = document.querySelectorAll('.profissional-checkbox:checked');
+            const profissionaisIds = Array.from(checkboxes).map(cb => cb.value).join(',');
 
-            fetch(`/app/agendamentos/api/?start=${startStr}&end=${endStr}`)
+            // Montar URL com filtros
+            let url = `/app/agendamentos/api/?start=${startStr}&end=${endStr}`;
+            if (profissionaisIds) {
+                url += `&profissionais=${profissionaisIds}`;
+            }
+
+            console.log(`[Calendar] Buscando eventos: ${url}`);
+
+            fetch(url)
                 .then(r => r.json())
                 .then(lista => {
-                    console.log(`[Calendar] Recebidos ${lista.length} agendamentos:`, lista);
-                    const eventos = lista.map(ev => ({
-                        id: ev.id,
-                        title: ev.title,
-                        start: ev.start,
-                        end: ev.end,
-                        classNames: ["fc-event-" + ev.status],
-                        extendedProps: ev
-                    }));
+                    console.log(`[Calendar] Recebidos ${lista.length} agendamentos`);
+                    const eventos = lista.map(ev => {
+                        const evento = {
+                            id: ev.id,
+                            title: ev.title,
+                            start: ev.start,
+                            end: ev.end,
+                            // Manter cores de status no fundo
+                            classNames: ["fc-event-" + ev.status],
+                            extendedProps: ev
+                        };
+                        
+                        // Se tiver cor do profissional, adicionar como custom property
+                        if (ev.backgroundColor) {
+                            evento.extendedProps.profColor = ev.backgroundColor;
+                        }
+                        
+                        return evento;
+                    });
                     successCallback(eventos);
                 })
                 .catch(err => {
                     console.error('[Calendar] Erro ao carregar eventos:', err);
                     failureCallback(err);
                 });
+        },
+
+        // Aplicar cor do profissional na bolinha
+        eventDidMount(info) {
+            if (info.event.extendedProps.profColor) {
+                info.el.style.setProperty('--prof-color', info.event.extendedProps.profColor);
+            }
         },
 
         // Clicar em um dia vazio para ver agendamentos daquele dia
@@ -615,6 +708,35 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     calendar.render();
+
+    // Adicionar listeners aos checkboxes de filtro
+    document.querySelectorAll('.profissional-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            console.log('[Filtro] Profissional alterado, atualizando calendário...');
+            calendar.refetchEvents();
+        });
+    });
 });
+
+// Funções de controle do filtro
+function selecionarTodos() {
+    document.querySelectorAll('.profissional-checkbox').forEach(cb => {
+        cb.checked = true;
+    });
+    const calendar = document.querySelector('#calendar')?._calendar;
+    if (calendar) {
+        calendar.refetchEvents();
+    }
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.profissional-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    const calendar = document.querySelector('#calendar')?._calendar;
+    if (calendar) {
+        calendar.refetchEvents();
+    }
+}
 </script>
 {% endblock %}
