@@ -15,8 +15,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--days',
             type=int,
-            default=90,
-            help='Manter logs dos últimos N dias (padrão: 90)'
+            default=30,
+            help='Manter logs dos últimos N dias (padrão: 30)'
         )
         parser.add_argument(
             '--dry-run',
