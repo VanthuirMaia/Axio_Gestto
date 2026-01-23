@@ -147,3 +147,52 @@ def termos_uso(request):
 def politica_cancelamento(request):
     """Página de Política de Cancelamento"""
     return render(request, 'landing/politica_cancelamento.html')
+
+
+@require_http_methods(["POST"])
+@ratelimit(key='ip', rate='100/m', method='POST', block=True)
+def track_event(request):
+    """Endpoint para receber eventos de analytics do frontend"""
+    try:
+        import json
+        from .models import UserEvent
+        
+        # Parse do JSON
+        data = json.loads(request.body)
+        
+        event_type = data.get('event_type')
+        event_data = data.get('event_data', {})
+        page_url = data.get('page_url', request.META.get('HTTP_REFERER', ''))
+        
+        # Validar tipo de evento
+        valid_types = ['click_cta', 'section_view', 'faq_open', 'scroll_depth', 
+                      'time_on_section', 'plan_click', 'whatsapp_click', 
+                      'contact_click', 'menu_click']
+        
+        if event_type not in valid_types:
+            return JsonResponse({'error': 'Tipo de evento inválido'}, status=400)
+        
+        # Obter session_id
+        session_id = request.session.get('analytics_session', '')
+        
+        # Obter IP
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip_address = request.META.get('REMOTE_ADDR', '127.0.0.1')
+        
+        # Criar evento
+        UserEvent.objects.create(
+            event_type=event_type,
+            event_data=event_data,
+            page_url=page_url,
+            session_id=session_id,
+            ip_address=ip_address
+        )
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Erro ao registrar evento: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

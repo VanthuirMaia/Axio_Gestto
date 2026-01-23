@@ -257,6 +257,18 @@
             }
         }
     </style>
+    
+    <!-- Google Analytics 4 -->
+    {% if GA4_MEASUREMENT_ID %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA4_MEASUREMENT_ID }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ GA4_MEASUREMENT_ID }}');
+    </script>
+    {% endif %}
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -365,6 +377,10 @@
             }
         });
     </script>
+    
+    <!-- Landing Analytics -->
+    {% load static %}
+    <script src="{% static 'js/landing-analytics.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

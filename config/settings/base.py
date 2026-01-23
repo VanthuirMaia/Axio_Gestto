@@ -57,6 +57,9 @@ MIDDLEWARE = [
 
     # Landing Page Security Monitoring
     'landing.middleware.LandingSecurityMonitoringMiddleware',
+    
+    # Analytics - Rastreamento de pageviews
+    'landing.middleware_analytics.AnalyticsMiddleware',
 
     # SaaS Middlewares
     'core.middleware.AssinaturaExpiracaoMiddleware',
@@ -77,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'landing.context_processors.analytics',  # Google Analytics
             ],
         },
     },
@@ -181,6 +185,9 @@ ASAAS_SANDBOX = config('ASAAS_SANDBOX', default=True, cast=bool)
 # Evolution API (WhatsApp Integration)
 EVOLUTION_API_URL = config('EVOLUTION_API_URL', default='')
 EVOLUTION_API_KEY = config('EVOLUTION_API_KEY', default='')
+
+# Google Analytics 4
+GA4_MEASUREMENT_ID = config('GA4_MEASUREMENT_ID', default='')
 
 # ============================================
 # ADMIN INTERFACE
