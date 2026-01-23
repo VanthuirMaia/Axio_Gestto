@@ -339,96 +339,74 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  // ========== FUNÇÕES DE COMPARTILHAMENTO ==========
-  
   function copiarLinkAgendamento() {
     const linkElement = document.getElementById('link-agendamento');
     
-    // Validar se elemento existe
     if (!linkElement) {
-      console.error('Elemento link-agendamento não encontrado');
       alert('Erro: Link não encontrado. Recarregue a página.');
       return;
     }
     
     const link = linkElement.textContent.trim();
     
-    // Validar se link não está vazio
     if (!link) {
-      console.error('Link está vazio');
       alert('Erro: Link vazio. Recarregue a página.');
       return;
     }
     
-    // Tentar usar clipboard API (funciona apenas em HTTPS)
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(link).then(function() {
-        mostrarFeedbackCopia();
-      }).catch(function(err) {
-        console.error('Erro clipboard API:', err);
-        copiarFallback(link);
-      });
-    } else {
-      // Fallback para HTTP ou navegadores antigos
-      copiarFallback(link);
-    }
-  }
-  
-  function copiarFallback(link) {
+    // Método mais confiável: criar textarea, selecionar e copiar
+    const textarea = document.createElement('textarea');
+    textarea.value = link;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-999999px';
+    textarea.style.top = '-999999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    
     try {
-      // Criar input temporário
-      const input = document.createElement('input');
-      input.value = link;
-      input.style.position = 'fixed';
-      input.style.opacity = '0';
-      document.body.appendChild(input);
-      input.select();
-      input.setSelectionRange(0, 99999); // Para mobile
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textarea);
       
-      // Executar comando de cópia
-      const sucesso = document.execCommand('copy');
-      document.body.removeChild(input);
-      
-      if (sucesso) {
-        mostrarFeedbackCopia();
+      if (successful) {
+        // Sucesso - mostrar feedback
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Link copiado!',
+            text: 'Cole onde quiser compartilhar com seus clientes',
+            timer: 2500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
+        } else {
+          // Mudar botão temporariamente
+          const btn = event.target.closest('button');
+          if (btn) {
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Copiado!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-light');
+            
+            setTimeout(function() {
+              btn.innerHTML = textoOriginal;
+              btn.classList.remove('btn-success');
+              btn.classList.add('btn-light');
+            }, 2000);
+          } else {
+            alert('✓ Link copiado com sucesso!');
+          }
+        }
       } else {
-        throw new Error('execCommand falhou');
+        // Falhou - mostrar link para copiar manualmente
+        prompt('Copie o link abaixo (Ctrl+C):', link);
       }
     } catch (err) {
-      console.error('Erro no fallback:', err);
-      alert('Não foi possível copiar automaticamente. Link: ' + link);
-    }
-  }
-  
-  function mostrarFeedbackCopia() {
-    // Feedback visual com SweetAlert2 (se disponível) ou alert simples
-    if (typeof Swal !== 'undefined') {
-      Swal.fire({
-        icon: 'success',
-        title: 'Link copiado!',
-        text: 'Cole onde quiser compartilhar com seus clientes',
-        timer: 2500,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-      });
-    } else {
-      // Fallback: mudar temporariamente o texto do botão
-      const btn = event.target.closest('button');
-      if (btn) {
-        const textoOriginal = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Copiado!';
-        btn.classList.add('btn-success');
-        btn.classList.remove('btn-light');
-        
-        setTimeout(function() {
-          btn.innerHTML = textoOriginal;
-          btn.classList.remove('btn-success');
-          btn.classList.add('btn-light');
-        }, 2000);
-      } else {
-        alert('Link copiado com sucesso!');
-      }
+      document.body.removeChild(textarea);
+      console.error('Erro ao copiar:', err);
+      // Mostrar link em prompt para copiar manualmente
+      prompt('Copie o link abaixo (Ctrl+C):', link);
     }
   }
   
