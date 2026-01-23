@@ -315,14 +315,19 @@
         const mobileMenu = document.getElementById('mobileMenu');
         const menuOverlay = document.getElementById('menuOverlay');
 
+        function closeMenu() {
+            // Força o fechamento do menu e restaura o scroll
+            mobileMenu.classList.remove('show');
+            menuOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+        }
+
         function toggleMobileMenu() {
             const isShowing = mobileMenu.classList.contains('show');
             
             if (isShowing) {
-                // Fechando o menu
-                mobileMenu.classList.remove('show');
-                menuOverlay.classList.remove('show');
-                document.body.style.overflow = '';
+                closeMenu();
             } else {
                 // Abrindo o menu
                 mobileMenu.classList.add('show');
@@ -336,18 +341,19 @@
         }
 
         if (menuOverlay) {
-            menuOverlay.addEventListener('click', toggleMobileMenu);
+            menuOverlay.addEventListener('click', closeMenu);
         }
 
-        // Close menu on link click
+        // Close menu on link click - usa closeMenu diretamente
         if (mobileMenu) {
             mobileMenu.addEventListener('click', function(e) {
                 if (e.target.tagName === 'A') {
-                    toggleMobileMenu();
+                    // Usa setTimeout para garantir que o link seja processado antes de fechar
+                    setTimeout(closeMenu, 10);
                 }
                 // Close button (::before pseudo-element click)
                 if (e.target === mobileMenu && e.offsetX > mobileMenu.offsetWidth - 80 && e.offsetY < 80) {
-                    toggleMobileMenu();
+                    closeMenu();
                 }
             });
         }
@@ -355,7 +361,7 @@
         // Close on escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('show')) {
-                toggleMobileMenu();
+                closeMenu();
             }
         });
     </script>

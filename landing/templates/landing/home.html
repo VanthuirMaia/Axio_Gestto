@@ -1563,6 +1563,38 @@
             el.style.opacity = '0';
             observer.observe(el);
         });
+
+        // CORREÇÃO: Garante que o scroll nunca fique travado
+        // Força a restauração do overflow do body sempre que houver navegação
+        function ensureScrollEnabled() {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.documentElement.style.overflow = '';
+        }
+
+        // Monitora mudanças de hash (navegação por âncoras)
+        window.addEventListener('hashchange', function() {
+            setTimeout(ensureScrollEnabled, 100);
+        });
+
+        // Monitora cliques em links de navegação
+        document.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                setTimeout(ensureScrollEnabled, 100);
+            });
+        });
+
+        // Garante que o scroll esteja habilitado ao carregar a página
+        ensureScrollEnabled();
+
+        // Monitora periodicamente para garantir que o scroll nunca trave
+        setInterval(function() {
+            // Só restaura se não houver menu mobile aberto
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (!mobileMenu || !mobileMenu.classList.contains('show')) {
+                ensureScrollEnabled();
+            }
+        }, 1000);
     });
 </script>
 {% endblock %}
