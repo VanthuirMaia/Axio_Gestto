@@ -35,11 +35,11 @@ class LimitesPlanoMiddleware:
     ]
 
     # URLs que NUNCA serão bloqueadas (essenciais)
+    # NOTA: /app/dashboard/ foi REMOVIDO para que assinaturas expiradas sejam bloqueadas
     ROTAS_EXCLUIDAS = [
         '/app/admin/',
         '/app/login/',
         '/app/logout/',
-        '/app/dashboard/',
         '/health/',
         '/api/',
         '/app/configuracoes/assinatura/',  # Permitir acesso à página de upgrade

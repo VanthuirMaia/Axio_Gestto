@@ -1,0 +1,245 @@
+[
+  {
+    "model": "ajuda.categoria",
+    "pk": 1,
+    "fields": {
+      "nome": "Primeiros Passos",
+      "slug": "primeiros-passos",
+      "descricao": "Guias para comecar a usar o sistema",
+      "ordem": 1,
+      "icone": "bi-rocket-takeoff"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 2,
+    "fields": {
+      "nome": "Agendamentos",
+      "slug": "agendamentos",
+      "descricao": "Tudo sobre gestao de agendamentos",
+      "ordem": 2,
+      "icone": "bi-calendar-check"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 3,
+    "fields": {
+      "nome": "Profissionais",
+      "slug": "profissionais",
+      "descricao": "Como gerenciar sua equipe",
+      "ordem": 3,
+      "icone": "bi-person-badge"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 4,
+    "fields": {
+      "nome": "Servicos",
+      "slug": "servicos",
+      "descricao": "Configuracao de servicos e precos",
+      "ordem": 4,
+      "icone": "bi-scissors"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 5,
+    "fields": {
+      "nome": "Financeiro",
+      "slug": "financeiro",
+      "descricao": "Controle de receitas e despesas",
+      "ordem": 5,
+      "icone": "bi-currency-dollar"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 6,
+    "fields": {
+      "nome": "WhatsApp Bot",
+      "slug": "whatsapp-bot",
+      "descricao": "Integracao com WhatsApp para agendamentos automaticos",
+      "ordem": 6,
+      "icone": "bi-whatsapp"
+    }
+  },
+  {
+    "model": "ajuda.categoria",
+    "pk": 7,
+    "fields": {
+      "nome": "Configuracoes",
+      "slug": "configuracoes",
+      "descricao": "Personalize o sistema para seu negocio",
+      "ordem": 7,
+      "icone": "bi-gear"
+    }
+  },
+
+  {
+    "model": "ajuda.artigo",
+    "pk": 1,
+    "fields": {
+      "categoria": 1,
+      "titulo": "Bem-vindo ao Gestto! Por onde comecar?",
+      "slug": "bem-vindo-ao-gestto",
+      "conteudo": "# Bem-vindo ao Gestto!\n\nParabens por escolher o Gestto para gerenciar seu negocio! Este guia vai te ajudar a configurar tudo rapidamente.\n\n## O que voce precisa configurar\n\nAntes de comecar a receber agendamentos, configure estes itens:\n\n1. **Dados da Empresa** - Nome, endereco e contato\n2. **Servicos** - O que voce oferece (ex: Corte, Barba, etc)\n3. **Profissionais** - Quem realiza os atendimentos\n4. **Horarios de Funcionamento** - Dias e horarios de trabalho\n\n## Acesse Primeiros Passos\n\nPara facilitar, criamos uma pagina especial que mostra exatamente o que falta configurar:\n\n1. Va em **Configuracoes** no menu lateral\n2. Clique em **Primeiros Passos**\n3. Siga o checklist ate completar 100%\n\n## Proximo passo\n\nComece cadastrando seus **Servicos** - sao a base de tudo!\n\n---\n\nDuvidas? Entre em contato com nosso suporte via WhatsApp.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 2,
+    "fields": {
+      "categoria": 1,
+      "titulo": "Como cadastrar servicos",
+      "slug": "como-cadastrar-servicos",
+      "conteudo": "# Como Cadastrar Servicos\n\nOs servicos sao a base do seu negocio no Gestto. Aqui voce define o que oferece, precos e duracao.\n\n## Passo a passo\n\n1. Acesse **Configuracoes** no menu lateral\n2. Clique em **Servicos**\n3. Clique no botao **+ Novo Servico**\n4. Preencha os campos:\n   - **Nome**: Ex: Corte Masculino, Barba, Hidratacao\n   - **Descricao**: Detalhes do servico (opcional)\n   - **Preco**: Valor cobrado (ex: 35.00)\n   - **Duracao**: Tempo em minutos (ex: 30)\n5. Clique em **Salvar**\n\n## Dicas importantes\n\n- **Duracao correta**: Defina um tempo realista. Se o corte leva 30 minutos, coloque 30. Isso evita encaixes apertados.\n- **Precos**: Voce pode alterar a qualquer momento.\n- **Servicos inativos**: Se parar de oferecer algo, desative em vez de deletar.\n\n## Exemplos de servicos comuns\n\n| Servico | Duracao sugerida | Preco medio |\n|---------|------------------|-------------|\n| Corte Masculino | 30 min | R$ 35-50 |\n| Barba | 20 min | R$ 25-35 |\n| Corte + Barba | 45 min | R$ 55-70 |\n| Sobrancelha | 10 min | R$ 10-15 |\n| Hidratacao | 40 min | R$ 40-60 |\n\n---\n\nProximo passo: Cadastre seus **Profissionais** e associe os servicos que cada um realiza.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 3,
+    "fields": {
+      "categoria": 1,
+      "titulo": "Como cadastrar profissionais",
+      "slug": "como-cadastrar-profissionais",
+      "conteudo": "# Como Cadastrar Profissionais\n\nCadastre sua equipe para que clientes possam escolher com quem querem ser atendidos.\n\n## Passo a passo\n\n1. Acesse **Configuracoes** no menu lateral\n2. Clique em **Profissionais**\n3. Clique no botao **+ Novo Profissional**\n4. Preencha os campos:\n   - **Nome**: Nome completo do profissional\n   - **Telefone**: Para contato interno\n   - **Email**: Opcional\n   - **Cor no Calendario**: Escolha uma cor unica para identificar no calendario\n   - **Servicos**: Selecione quais servicos este profissional realiza\n5. Clique em **Salvar**\n\n## Cor no calendario\n\nCada profissional pode ter uma cor diferente. Isso facilita visualizar quem esta atendendo apenas olhando o calendario.\n\n**Sugestoes de cores:**\n- Azul: #3b82f6\n- Verde: #10b981\n- Roxo: #8b5cf6\n- Rosa: #ec4899\n- Laranja: #f59e0b\n\n## Limite de profissionais\n\nO numero de profissionais que voce pode cadastrar depende do seu plano:\n\n- **Basico**: 1 profissional\n- **Essencial**: 5 profissionais\n- **Profissional**: Ilimitado\n\n## Dicas\n\n- Cada profissional pode ter servicos diferentes\n- Voce pode desativar profissionais temporariamente (ferias, folga)\n- Profissionais inativos nao aparecem para agendamento\n\n---\n\nProximo passo: Configure os **Horarios de Funcionamento** da sua empresa.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 4,
+    "fields": {
+      "categoria": 1,
+      "titulo": "Como configurar horarios de funcionamento",
+      "slug": "como-configurar-horarios-funcionamento",
+      "conteudo": "# Como Configurar Horarios de Funcionamento\n\nDefina os dias e horarios em que sua empresa atende para que o sistema libere apenas horarios disponiveis.\n\n## Passo a passo\n\n1. Acesse **Configuracoes** no menu lateral\n2. Clique em **Horarios**\n3. Para cada dia da semana:\n   - Marque se o dia esta **Ativo** (trabalhando)\n   - Defina **Abertura** e **Fechamento**\n   - Se tiver intervalo (almoco), preencha **Intervalo Inicio** e **Fim**\n4. Clique em **Salvar**\n\n## Exemplo de configuracao\n\n| Dia | Ativo | Abertura | Fechamento | Intervalo |\n|-----|-------|----------|------------|----------|\n| Segunda | Sim | 09:00 | 19:00 | 12:00-13:00 |\n| Terca | Sim | 09:00 | 19:00 | 12:00-13:00 |\n| Quarta | Sim | 09:00 | 19:00 | 12:00-13:00 |\n| Quinta | Sim | 09:00 | 19:00 | 12:00-13:00 |\n| Sexta | Sim | 09:00 | 19:00 | 12:00-13:00 |\n| Sabado | Sim | 09:00 | 17:00 | - |\n| Domingo | Nao | - | - | - |\n\n## Datas especiais\n\nPrecisa fechar em um feriado ou ter horario diferenciado?\n\n1. Na pagina de Horarios, clique em **Datas Especiais**\n2. Adicione a data (ex: 25/12 - Natal)\n3. Escolha se e **Feriado** (fechado) ou **Horario Especial**\n\n---\n\nProximo passo: Configure a integracao com **WhatsApp** para agendamentos automaticos!",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 5,
+    "fields": {
+      "categoria": 2,
+      "titulo": "Como criar um agendamento",
+      "slug": "como-criar-agendamento",
+      "conteudo": "# Como Criar um Agendamento\n\nExistem duas formas de criar agendamentos: pelo painel ou pelo cliente.\n\n## Criar pelo painel (voce)\n\n1. Acesse **Agenda** no menu lateral\n2. Clique em um horario vazio no calendario **OU** clique em **+ Novo**\n3. Preencha:\n   - **Cliente**: Selecione existente ou cadastre novo\n   - **Profissional**: Quem vai atender\n   - **Servico**: O que sera realizado\n   - **Data e Hora**: Quando sera\n4. Clique em **Salvar**\n\n## Pelo cliente (link de agendamento)\n\nSeu cliente pode agendar sozinho acessando seu link de agendamento:\n\n```\nhttps://gestto.com.br/agendar/sua-empresa/\n```\n\nO cliente escolhe:\n1. Servico desejado\n2. Profissional (ou \"Qualquer um\")\n3. Data e horario disponivel\n4. Informa nome e telefone\n5. Confirma o agendamento\n\n## Status dos agendamentos\n\n- **Pendente**: Aguardando confirmacao\n- **Confirmado**: Cliente confirmou presenca\n- **Concluido**: Atendimento realizado\n- **Cancelado**: Agendamento cancelado\n- **Faltou**: Cliente nao compareceu\n\n## Dicas\n\n- Use cores diferentes para cada profissional\n- O calendario mostra automaticamente horarios ocupados\n- Clique em um agendamento para ver detalhes ou editar\n\n---\n\nDuvidas sobre cancelamentos? Veja o artigo **Como cancelar/reagendar**.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 6,
+    "fields": {
+      "categoria": 2,
+      "titulo": "Como cancelar ou reagendar",
+      "slug": "como-cancelar-reagendar",
+      "conteudo": "# Como Cancelar ou Reagendar\n\n## Cancelar um agendamento\n\n1. Acesse **Agenda** no menu\n2. Encontre o agendamento no calendario\n3. Clique no agendamento\n4. Clique em **Cancelar**\n5. Confirme a acao\n\n## Reagendar (mudar data/hora)\n\n1. Clique no agendamento\n2. Clique em **Editar**\n3. Altere a data e/ou horario\n4. Salve as alteracoes\n\n## Pelo WhatsApp (cliente)\n\nSe voce tem o WhatsApp Bot configurado, o cliente pode:\n\n1. Enviar mensagem para seu WhatsApp\n2. O bot identifica que ele tem agendamento\n3. Oferece opcoes de reagendar ou cancelar\n\n## Dicas\n\n- Agendamentos cancelados ficam registrados no historico\n- Configure lembretes automaticos para reduzir faltas\n- Considere politica de cancelamento com antecedencia minima\n\n---\n\nPrecisa de mais controle? Veja como usar os **Relatorios** de agendamentos.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 7,
+    "fields": {
+      "categoria": 2,
+      "titulo": "Entendendo o calendario",
+      "slug": "entendendo-calendario",
+      "conteudo": "# Entendendo o Calendario\n\nO calendario e sua principal ferramenta para visualizar e gerenciar agendamentos.\n\n## Visoes disponiveis\n\n- **Dia**: Mostra todos os horarios de um dia especifico\n- **Semana**: Visao geral da semana (mais usada)\n- **Mes**: Visao mensal para planejamento\n\n## Cores dos agendamentos\n\nCada agendamento pode ter cor baseada em:\n\n1. **Profissional**: Cada profissional tem sua cor\n2. **Status**: Cores diferentes para pendente, confirmado, etc.\n\nO sistema combina as duas: a cor do profissional com indicador de status.\n\n## Navegacao\n\n- Use as setas **< >** para navegar entre datas\n- Clique em **Hoje** para voltar ao dia atual\n- Clique em uma data no mini-calendario para ir direto\n\n## Acoes rapidas\n\n- **Clique em horario vazio**: Criar novo agendamento\n- **Clique em agendamento**: Ver detalhes/editar\n- **Arrastar agendamento**: Reagendar (em breve)\n\n## Filtros\n\nUse os filtros para ver apenas:\n- Agendamentos de um profissional especifico\n- Agendamentos com determinado status\n\n---\n\nDica: O calendario carrega automaticamente os horarios de funcionamento configurados.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 8,
+    "fields": {
+      "categoria": 3,
+      "titulo": "Gerenciando sua equipe",
+      "slug": "gerenciando-sua-equipe",
+      "conteudo": "# Gerenciando sua Equipe\n\nAprenda a gerenciar profissionais, comissoes e disponibilidade.\n\n## Adicionar profissional\n\nVeja o artigo completo: **Como cadastrar profissionais**\n\n## Editar profissional\n\n1. Va em **Configuracoes > Profissionais**\n2. Clique no profissional desejado\n3. Altere as informacoes necessarias\n4. Salve\n\n## Desativar temporariamente\n\nSe um profissional estiver de ferias ou afastado:\n\n1. Edite o profissional\n2. Desmarque a opcao **Ativo**\n3. Salve\n\nO profissional nao aparecera para novos agendamentos, mas os agendamentos existentes serao mantidos.\n\n## Servicos por profissional\n\nCada profissional pode ter servicos diferentes:\n\n- Joao: Corte, Barba\n- Maria: Corte Feminino, Coloracao, Escova\n- Pedro: Corte, Barba, Sobrancelha\n\nClientes so verao servicos que o profissional escolhido realiza.\n\n## Comissoes\n\nVoce pode definir percentual de comissao para cada profissional. O sistema calcula automaticamente no financeiro.\n\n---\n\nDica: Use cores diferentes para facilitar a visualizacao no calendario!",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 9,
+    "fields": {
+      "categoria": 5,
+      "titulo": "Visao geral do financeiro",
+      "slug": "visao-geral-financeiro",
+      "conteudo": "# Visao Geral do Financeiro\n\nO modulo financeiro ajuda voce a controlar receitas, despesas e ter uma visao clara da saude do seu negocio.\n\n## Acessando\n\n1. Clique em **Financeiro** no menu lateral\n2. Voce vera o dashboard com resumo do periodo\n\n## Cards principais\n\n- **Receitas**: Total recebido no periodo\n- **Despesas**: Total de gastos no periodo\n- **Saldo**: Diferenca entre receitas e despesas\n- **Agendamentos Concluidos**: Quanto veio de atendimentos\n\n## Filtros de periodo\n\nUse os filtros para ver:\n- Hoje\n- Esta semana\n- Este mes\n- Periodo personalizado\n\n## Lancamentos\n\nO sistema registra automaticamente:\n- Receitas de agendamentos concluidos\n- Formas de pagamento utilizadas\n\nVoce pode adicionar manualmente:\n- Outras receitas (venda de produtos, etc)\n- Despesas (aluguel, produtos, agua, luz)\n\n## Categorias\n\nOrganize seus lancamentos por categoria:\n- Servicos\n- Produtos\n- Aluguel\n- Funcionarios\n- Material\n- Outros\n\n---\n\nDica: Mantenha o financeiro atualizado para ter relatorios precisos!",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 10,
+    "fields": {
+      "categoria": 5,
+      "titulo": "Como registrar receitas e despesas",
+      "slug": "registrar-receitas-despesas",
+      "conteudo": "# Como Registrar Receitas e Despesas\n\n## Registrar receita\n\n1. Acesse **Financeiro** no menu\n2. Clique em **+ Nova Receita**\n3. Preencha:\n   - Descricao: Ex: \"Venda de shampoo\"\n   - Valor: Ex: 45.00\n   - Categoria: Selecione a mais adequada\n   - Data: Quando recebeu\n   - Forma de Pagamento: Dinheiro, Pix, Cartao...\n4. Salve\n\n## Registrar despesa\n\n1. Acesse **Financeiro** no menu\n2. Clique em **+ Nova Despesa**\n3. Preencha:\n   - Descricao: Ex: \"Compra de produtos\"\n   - Valor: Ex: 350.00\n   - Categoria: Selecione a mais adequada\n   - Data: Quando pagou\n   - Forma de Pagamento\n4. Salve\n\n## Categorias personalizadas\n\nCrie suas proprias categorias:\n\n1. Va em **Configuracoes > Categorias**\n2. Clique em **+ Nova Categoria**\n3. Defina nome, tipo (receita/despesa) e cor\n4. Salve\n\n## Dicas\n\n- Registre despesas assim que elas ocorrem\n- Use categorias para ter relatorios mais uteis\n- Receitas de agendamentos sao registradas automaticamente\n\n---\n\nVeja tambem: **Como gerar relatorios financeiros**",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 11,
+    "fields": {
+      "categoria": 6,
+      "titulo": "Como conectar o WhatsApp",
+      "slug": "como-conectar-whatsapp",
+      "conteudo": "# Como Conectar o WhatsApp\n\nCom o WhatsApp conectado, seus clientes podem agendar diretamente pelo chat!\n\n## Passo a passo\n\n1. Acesse **Configuracoes** no menu\n2. Clique em **WhatsApp**\n3. Clique em **Conectar WhatsApp**\n4. Um QR Code aparecera na tela\n5. No seu celular:\n   - Abra o WhatsApp\n   - Va em **Configuracoes > Dispositivos Conectados**\n   - Toque em **Conectar Dispositivo**\n   - Escaneie o QR Code\n6. Aguarde a conexao ser estabelecida\n\n## Status da conexao\n\n- **Conectado** (verde): Tudo funcionando!\n- **Aguardando QR**: Precisa escanear o codigo\n- **Desconectado**: Precisa reconectar\n\n## Dicas importantes\n\n- Use um numero exclusivo para o negocio\n- Mantenha o celular conectado a internet\n- Se desconectar, basta reconectar escaneando novo QR\n\n## Funcionalidades do bot\n\nCom WhatsApp conectado, o bot pode:\n\n1. Responder automaticamente\n2. Mostrar servicos disponiveis\n3. Verificar horarios livres\n4. Confirmar agendamentos\n5. Enviar lembretes\n\n---\n\nProblemas? Veja o artigo **Solucao de problemas do WhatsApp**.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 12,
+    "fields": {
+      "categoria": 6,
+      "titulo": "Como o bot de agendamento funciona",
+      "slug": "como-bot-agendamento-funciona",
+      "conteudo": "# Como o Bot de Agendamento Funciona\n\nO bot automatiza o atendimento via WhatsApp, permitindo agendamentos 24 horas.\n\n## Fluxo basico\n\n1. Cliente envia mensagem\n2. Bot identifica a intencao (agendar, cancelar, duvida)\n3. Bot guia o cliente pelas opcoes\n4. Agendamento e confirmado automaticamente\n\n## Exemplo de conversa\n\n```\nCliente: Oi, quero agendar um corte\n\nBot: Ola! Vou te ajudar a agendar.\nQual servico voce deseja?\n1. Corte Masculino - R$ 35\n2. Barba - R$ 25\n3. Corte + Barba - R$ 55\n\nCliente: 1\n\nBot: Otimo! Com qual profissional?\n1. Joao\n2. Pedro\n3. Qualquer um disponivel\n\nCliente: 3\n\nBot: Perfeito! Qual dia prefere?\n(mostra dias disponiveis)\n\n...\n\nBot: Agendamento confirmado!\nCorte Masculino\nDia 15/01 as 14:00\nCom Joao\n\nTe esperamos!\n```\n\n## Personalizacao\n\nO bot usa as informacoes que voce configurou:\n- Servicos e precos\n- Profissionais disponiveis\n- Horarios de funcionamento\n- Datas especiais/feriados\n\n## Limitacoes\n\n- O bot nao processa pagamentos\n- Casos complexos sao encaminhados para atendimento humano\n- Funciona apenas se o WhatsApp estiver conectado\n\n---\n\nDica: Teste o bot enviando mensagem para seu proprio numero!",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 13,
+    "fields": {
+      "categoria": 7,
+      "titulo": "Como alterar dados da empresa",
+      "slug": "como-alterar-dados-empresa",
+      "conteudo": "# Como Alterar Dados da Empresa\n\nMantenha as informacoes da sua empresa sempre atualizadas.\n\n## Passo a passo\n\n1. Acesse **Configuracoes** no menu\n2. Clique em **Empresa**\n3. Edite os campos desejados:\n   - Nome da empresa\n   - Telefone\n   - E-mail\n   - Endereco completo\n   - Link do Google Maps\n4. Clique em **Salvar**\n\n## Campos importantes\n\n### Nome\nAparece no link de agendamento e comunicacoes com clientes.\n\n### Telefone\nUsado para contato e aparece na pagina de agendamento.\n\n### Endereco\nMostrado para clientes saberem onde fica sua empresa.\n\n### Link do Google Maps\nFacilita o cliente encontrar sua localizacao.\n\n## Como pegar o link do Google Maps\n\n1. Abra o Google Maps\n2. Busque seu endereco\n3. Clique em **Compartilhar**\n4. Copie o link\n5. Cole no campo do Gestto\n\n---\n\nDica: Informacoes completas passam mais confianca para novos clientes!",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 14,
+    "fields": {
+      "categoria": 7,
+      "titulo": "Como funciona a assinatura",
+      "slug": "como-funciona-assinatura",
+      "conteudo": "# Como Funciona a Assinatura\n\nO Gestto funciona por assinatura mensal. Entenda os planos e beneficios.\n\n## Planos disponiveis\n\n### Basico - R$ 19,99/mes\n- 1 profissional\n- 50 agendamentos/mes\n- Financeiro basico\n- Suporte por email\n\n### Essencial - R$ 79,99/mes\n- 5 profissionais\n- 300 agendamentos/mes\n- Financeiro completo\n- WhatsApp Bot\n- Suporte prioritario\n\n### Profissional - R$ 199,99/mes\n- Profissionais ilimitados\n- Agendamentos ilimitados\n- Todos os recursos\n- Suporte VIP\n- Relatorios avancados\n\n## Como ver seu plano atual\n\n1. Va em **Configuracoes > Assinatura**\n2. Veja seu plano, uso atual e limites\n\n## Como fazer upgrade\n\n1. Acesse **Configuracoes > Assinatura**\n2. Clique no plano desejado\n3. Confirme a alteracao\n4. O valor sera ajustado proporcionalmente\n\n## Formas de pagamento\n\n- Cartao de credito (cobranca recorrente)\n- Pix\n- Boleto\n\n## Cancelamento\n\nVoce pode cancelar a qualquer momento em **Configuracoes > Assinatura**. O acesso continua ate o fim do periodo pago.\n\n---\n\nDuvidas sobre cobranca? Entre em contato com nosso suporte.",
+      "publicado": true
+    }
+  },
+  {
+    "model": "ajuda.artigo",
+    "pk": 15,
+    "fields": {
+      "categoria": 7,
+      "titulo": "Como adicionar usuarios",
+      "slug": "como-adicionar-usuarios",
+      "conteudo": "# Como Adicionar Usuarios\n\nAdicione outros usuarios para ajudar a gerenciar seu negocio.\n\n## Passo a passo\n\n1. Acesse **Configuracoes > Usuarios**\n2. Clique em **+ Novo Usuario**\n3. Preencha:\n   - Nome completo\n   - E-mail (sera usado para login)\n   - Telefone\n   - Senha temporaria\n   - Se e administrador (acesso total)\n4. Clique em **Salvar**\n\n## Tipos de usuario\n\n### Administrador\n- Acesso completo ao sistema\n- Pode alterar configuracoes\n- Pode ver financeiro\n- Pode gerenciar outros usuarios\n\n### Usuario comum\n- Acesso a agenda\n- Pode criar agendamentos\n- Pode ver clientes\n- Nao ve financeiro nem configuracoes avancadas\n\n## Limite de usuarios\n\nO numero de usuarios depende do seu plano:\n\n- Basico: 1 usuario\n- Essencial: 3 usuarios\n- Profissional: Ilimitado\n\n## Remover usuario\n\n1. Va em **Configuracoes > Usuarios**\n2. Clique no usuario\n3. Clique em **Desativar**\n\nUsuarios desativados nao conseguem mais acessar o sistema.\n\n---\n\nDica: Cada usuario deve ter seu proprio login. Nao compartilhe senhas!",
+      "publicado": true
+    }
+  }
+]

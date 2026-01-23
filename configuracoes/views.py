@@ -18,6 +18,121 @@ from django.utils.safestring import mark_safe
 
 
 @login_required
+def primeiros_passos(request):
+    """
+    Guia de configuração inicial - Primeiros Passos
+    Mostra checklist visual com o que já foi configurado e o que falta
+    """
+    empresa = request.user.empresa
+
+    # Verificar status de cada item
+    servicos = Servico.objects.filter(empresa=empresa, ativo=True)
+    profissionais = Profissional.objects.filter(empresa=empresa, ativo=True)
+    horarios = HorarioFuncionamento.objects.filter(empresa=empresa, ativo=True)
+
+    # WhatsApp
+    from empresas.models import ConfiguracaoWhatsApp
+    try:
+        config_whatsapp = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
+        whatsapp_conectado = config_whatsapp.esta_conectado()
+    except ConfiguracaoWhatsApp.DoesNotExist:
+        whatsapp_conectado = False
+
+    # Dados da empresa completos?
+    dados_empresa_completos = all([
+        empresa.nome,
+        empresa.telefone,
+        empresa.email,
+        empresa.endereco,
+        empresa.cidade,
+    ])
+
+    # Montar checklist
+    checklist = [
+        {
+            'id': 'dados_empresa',
+            'titulo': 'Dados da Empresa',
+            'descricao': 'Configure o nome, endereço, telefone e email da sua empresa.',
+            'icone': 'bi-building',
+            'cor': '#6366f1',
+            'completo': dados_empresa_completos,
+            'url': reverse('empresa_dados'),
+            'url_texto': 'Configurar dados',
+            'dica': 'Essas informações aparecem no link de agendamento para seus clientes.',
+        },
+        {
+            'id': 'servicos',
+            'titulo': 'Serviços',
+            'descricao': 'Cadastre os serviços que você oferece com preços e duração.',
+            'icone': 'bi-scissors',
+            'cor': '#8b5cf6',
+            'completo': servicos.exists(),
+            'quantidade': servicos.count(),
+            'url': reverse('servicos_lista'),
+            'url_texto': 'Gerenciar serviços',
+            'dica': 'Adicione pelo menos um serviço para que clientes possam agendar.',
+        },
+        {
+            'id': 'profissionais',
+            'titulo': 'Profissionais',
+            'descricao': 'Adicione os profissionais que realizam os atendimentos.',
+            'icone': 'bi-person-badge',
+            'cor': '#ec4899',
+            'completo': profissionais.exists(),
+            'quantidade': profissionais.count(),
+            'url': reverse('profissionais_lista'),
+            'url_texto': 'Gerenciar profissionais',
+            'dica': 'Cada profissional pode ter seus próprios serviços e cor no calendário.',
+        },
+        {
+            'id': 'horarios',
+            'titulo': 'Horários de Funcionamento',
+            'descricao': 'Defina os dias e horários em que sua empresa atende.',
+            'icone': 'bi-clock',
+            'cor': '#f59e0b',
+            'completo': horarios.exists(),
+            'quantidade': horarios.count(),
+            'url': reverse('horarios_funcionamento'),
+            'url_texto': 'Configurar horários',
+            'dica': 'Configure intervalos de almoço e dias de folga.',
+        },
+        {
+            'id': 'whatsapp',
+            'titulo': 'WhatsApp Bot',
+            'descricao': 'Conecte o WhatsApp para agendamentos automáticos via chat.',
+            'icone': 'bi-whatsapp',
+            'cor': '#25d366',
+            'completo': whatsapp_conectado,
+            'url': reverse('whatsapp_dashboard'),
+            'url_texto': 'Conectar WhatsApp',
+            'dica': 'Seus clientes poderão agendar diretamente pelo WhatsApp!',
+            'opcional': True,
+        },
+    ]
+
+    # Calcular progresso (WhatsApp é opcional, não conta)
+    itens_obrigatorios = [c for c in checklist if not c.get('opcional')]
+    completos = sum(1 for c in itens_obrigatorios if c['completo'])
+    total = len(itens_obrigatorios)
+    progresso = int((completos / total) * 100) if total > 0 else 0
+
+    # Link de agendamento
+    link_agendamento = f"{settings.SITE_URL}/agendar/{empresa.slug}/"
+
+    context = {
+        'empresa': empresa,
+        'checklist': checklist,
+        'progresso': progresso,
+        'completos': completos,
+        'total': total,
+        'link_agendamento': link_agendamento,
+        'tudo_configurado': progresso == 100,
+    }
+
+    return render(request, 'configuracoes/primeiros_passos.html', context)
+
+
+@login_required
 def configuracoes_dashboard(request):
     """Dashboard de configuracoes"""
     from core.models import Usuario
@@ -953,8 +1068,29 @@ def assinatura_cancelar(request):
     # Obter motivo do cancelamento
     motivo = request.POST.get('motivo', '')
 
-    # Cancelar assinatura
-    assinatura.cancelar(motivo=motivo)
+    # Cancelar no gateway de pagamento (Stripe/Asaas)
+    gateway_cancelado = False
+
+    if assinatura.gateway == 'stripe' and assinatura.subscription_id_externo:
+        try:
+            from assinaturas.stripe_integration import cancelar_assinatura_stripe
+            gateway_cancelado = cancelar_assinatura_stripe(assinatura)
+            if gateway_cancelado:
+                logger.info(f"Assinatura cancelada no Stripe: {assinatura.subscription_id_externo}")
+        except Exception as e:
+            logger.error(f"Erro ao cancelar no Stripe: {str(e)}")
+    elif assinatura.gateway == 'asaas' and assinatura.subscription_id_externo:
+        try:
+            from assinaturas.asaas_integration import cancelar_assinatura_asaas
+            gateway_cancelado = cancelar_assinatura_asaas(assinatura)
+            if gateway_cancelado:
+                logger.info(f"Assinatura cancelada no Asaas: {assinatura.subscription_id_externo}")
+        except Exception as e:
+            logger.error(f"Erro ao cancelar no Asaas: {str(e)}")
+
+    # Se não cancelou via gateway (manual ou erro), cancela localmente
+    if not gateway_cancelado:
+        assinatura.cancelar(motivo=motivo)
 
     logger.info(f"Assinatura cancelada: {empresa.nome} - Motivo: {motivo}")
 

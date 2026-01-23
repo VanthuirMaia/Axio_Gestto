@@ -5,6 +5,9 @@ from core.views import alterar_senha
 urlpatterns = [
     path('', views.configuracoes_dashboard, name='configuracoes_dashboard'),
 
+    # Primeiros Passos (Guia de Configuração Inicial)
+    path('primeiros-passos/', views.primeiros_passos, name='primeiros_passos'),
+
     # Dados da Empresa
     path('empresa/', views.empresa_dados, name='empresa_dados'),
 

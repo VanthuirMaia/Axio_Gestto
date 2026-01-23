@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Primeiros Passos - {{ empresa.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-lg-4">
+
+  <!-- Header -->
+  <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div>
+      <h2><i class="bi bi-rocket-takeoff me-2"></i>Primeiros Passos</h2>
+      <p class="text-muted mb-0">Configure seu sistema para comecar a receber agendamentos</p>
+    </div>
+    <a href="{% url 'configuracoes_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Voltar
+    </a>
+  </div>
+
+  <!-- Progresso Geral -->
+  <div class="card card-clean mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <span class="fw-semibold">Progresso da Configuracao</span>
+          <span class="text-muted ms-2">({{ completos }}/{{ total }} itens obrigatorios)</span>
+        </div>
+        <span class="badge {% if progresso == 100 %}bg-success{% elif progresso >= 50 %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill">
+          {{ progresso }}%
+        </span>
+      </div>
+      <div class="progress" style="height: 10px;">
+        <div class="progress-bar {% if progresso == 100 %}bg-success{% elif progresso >= 50 %}bg-warning{% else %}bg-primary{% endif %}"
+             role="progressbar"
+             style="width: {{ progresso }}%;"
+             aria-valuenow="{{ progresso }}"
+             aria-valuemin="0"
+             aria-valuemax="100">
+        </div>
+      </div>
+      {% if tudo_configurado %}
+      <div class="alert alert-success mt-3 mb-0 d-flex align-items-center">
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+        <div>
+          <strong>Parabens!</strong> Sua empresa esta pronta para receber agendamentos.
+          <a href="{{ link_agendamento }}" target="_blank" class="alert-link ms-1">
+            Teste seu link de agendamento <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Checklist de Configuracao -->
+  <div class="row g-3">
+    {% for item in checklist %}
+    <div class="col-12">
+      <div class="card card-clean {% if item.completo %}border-success{% endif %}" style="{% if item.completo %}border-left: 4px solid #10b981;{% else %}border-left: 4px solid {{ item.cor }};{% endif %}">
+        <div class="card-body">
+          <div class="d-flex align-items-start gap-3">
+            <!-- Icone -->
+            <div class="flex-shrink-0">
+              <div class="rounded-circle d-flex align-items-center justify-content-center"
+                   style="width: 48px; height: 48px; background: {% if item.completo %}#d1fae5{% else %}{{ item.cor }}15{% endif %};">
+                {% if item.completo %}
+                  <i class="bi bi-check-lg text-success fs-4"></i>
+                {% else %}
+                  <i class="{{ item.icone }}" style="color: {{ item.cor }}; font-size: 1.25rem;"></i>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Conteudo -->
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1 d-flex align-items-center gap-2">
+                    {{ item.titulo }}
+                    {% if item.opcional %}
+                      <span class="badge bg-secondary" style="font-size: 0.625rem;">Opcional</span>
+                    {% endif %}
+                    {% if item.completo %}
+                      <span class="badge bg-success" style="font-size: 0.625rem;">Configurado</span>
+                    {% endif %}
+                  </h6>
+                  <p class="text-muted mb-2" style="font-size: 0.875rem;">{{ item.descricao }}</p>
+                  {% if item.quantidade is not None and item.quantidade > 0 %}
+                    <span class="badge bg-light text-dark">{{ item.quantidade }} cadastrado(s)</span>
+                  {% endif %}
+                </div>
+                <a href="{{ item.url }}" class="btn {% if item.completo %}btn-outline-success{% else %}btn-primary{% endif %} btn-sm">
+                  {% if item.completo %}
+                    <i class="bi bi-pencil me-1"></i> Editar
+                  {% else %}
+                    <i class="bi bi-plus-lg me-1"></i> {{ item.url_texto }}
+                  {% endif %}
+                </a>
+              </div>
+
+              <!-- Dica -->
+              {% if not item.completo and item.dica %}
+              <div class="mt-2 p-2 rounded" style="background: #fef3c7; font-size: 0.8125rem;">
+                <i class="bi bi-lightbulb text-warning me-1"></i>
+                <span class="text-dark">{{ item.dica }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Link de Agendamento -->
+  <div class="card card-clean mt-4">
+    <div class="card-body">
+      <h6 class="mb-3">
+        <i class="bi bi-link-45deg me-2"></i>Seu Link de Agendamento
+      </h6>
+      <p class="text-muted mb-3" style="font-size: 0.875rem;">
+        Compartilhe este link com seus clientes para que eles possam agendar horarios online.
+      </p>
+      <div class="input-group">
+        <input type="text" class="form-control" value="{{ link_agendamento }}" id="linkAgendamento" readonly>
+        <button class="btn btn-outline-primary" type="button" onclick="copiarLink()">
+          <i class="bi bi-clipboard me-1"></i> Copiar
+        </button>
+        <a href="{{ link_agendamento }}" target="_blank" class="btn btn-outline-secondary">
+          <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+      </div>
+      <small class="text-muted mt-2 d-block">
+        <i class="bi bi-info-circle me-1"></i>
+        Configure todos os itens obrigatorios acima para que o agendamento funcione corretamente.
+      </small>
+    </div>
+  </div>
+
+  <!-- Proximos Passos -->
+  <div class="card card-clean mt-4 border-info" style="border-left: 4px solid #3b82f6;">
+    <div class="card-body">
+      <h6 class="mb-3 text-primary">
+        <i class="bi bi-question-circle me-2"></i>Precisa de Ajuda?
+      </h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <a href="{% url 'central_ajuda' %}" class="d-flex align-items-center text-decoration-none p-3 rounded border hover-shadow">
+            <i class="bi bi-book fs-4 text-primary me-3"></i>
+            <div>
+              <strong class="d-block text-dark">Central de Ajuda</strong>
+              <small class="text-muted">Tutoriais e guias detalhados</small>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-6">
+          <a href="https://wa.me/5581999999999" target="_blank" class="d-flex align-items-center text-decoration-none p-3 rounded border hover-shadow">
+            <i class="bi bi-whatsapp fs-4 text-success me-3"></i>
+            <div>
+              <strong class="d-block text-dark">Suporte via WhatsApp</strong>
+              <small class="text-muted">Fale com nossa equipe</small>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function copiarLink() {
+  const input = document.getElementById('linkAgendamento');
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value);
+
+  // Feedback visual
+  const btn = event.target.closest('button');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-check me-1"></i> Copiado!';
+  btn.classList.remove('btn-outline-primary');
+  btn.classList.add('btn-success');
+
+  setTimeout(() => {
+    btn.innerHTML = originalHtml;
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-outline-primary');
+  }, 2000);
+}
+</script>
+
+<style>
+.hover-shadow:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s ease;
+}
+</style>
+{% endblock %}
