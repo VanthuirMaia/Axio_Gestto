@@ -343,24 +343,79 @@
   
   function copiarLinkAgendamento() {
     const linkElement = document.getElementById('link-agendamento');
+    
+    // Validar se elemento existe
+    if (!linkElement) {
+      console.error('Elemento link-agendamento não encontrado');
+      alert('Erro: Link não encontrado. Recarregue a página.');
+      return;
+    }
+    
     const link = linkElement.textContent.trim();
     
-    // Copiar para clipboard
-    navigator.clipboard.writeText(link).then(function() {
-      // Feedback visual com SweetAlert2 (se disponível) ou alert simples
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          icon: 'success',
-          title: 'Link copiado!',
-          text: 'Cole onde quiser compartilhar com seus clientes',
-          timer: 2500,
-          showConfirmButton: false,
-          toast: true,
-          position: 'top-end'
-        });
+    // Validar se link não está vazio
+    if (!link) {
+      console.error('Link está vazio');
+      alert('Erro: Link vazio. Recarregue a página.');
+      return;
+    }
+    
+    // Tentar usar clipboard API (funciona apenas em HTTPS)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(link).then(function() {
+        mostrarFeedbackCopia();
+      }).catch(function(err) {
+        console.error('Erro clipboard API:', err);
+        copiarFallback(link);
+      });
+    } else {
+      // Fallback para HTTP ou navegadores antigos
+      copiarFallback(link);
+    }
+  }
+  
+  function copiarFallback(link) {
+    try {
+      // Criar input temporário
+      const input = document.createElement('input');
+      input.value = link;
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      input.setSelectionRange(0, 99999); // Para mobile
+      
+      // Executar comando de cópia
+      const sucesso = document.execCommand('copy');
+      document.body.removeChild(input);
+      
+      if (sucesso) {
+        mostrarFeedbackCopia();
       } else {
-        // Fallback: mudar temporariamente o texto do botão
-        const btn = event.target.closest('button');
+        throw new Error('execCommand falhou');
+      }
+    } catch (err) {
+      console.error('Erro no fallback:', err);
+      alert('Não foi possível copiar automaticamente. Link: ' + link);
+    }
+  }
+  
+  function mostrarFeedbackCopia() {
+    // Feedback visual com SweetAlert2 (se disponível) ou alert simples
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'success',
+        title: 'Link copiado!',
+        text: 'Cole onde quiser compartilhar com seus clientes',
+        timer: 2500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    } else {
+      // Fallback: mudar temporariamente o texto do botão
+      const btn = event.target.closest('button');
+      if (btn) {
         const textoOriginal = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Copiado!';
         btn.classList.add('btn-success');
@@ -371,11 +426,10 @@
           btn.classList.remove('btn-success');
           btn.classList.add('btn-light');
         }, 2000);
+      } else {
+        alert('Link copiado com sucesso!');
       }
-    }).catch(function(err) {
-      console.error('Erro ao copiar:', err);
-      alert('Erro ao copiar link. Tente selecionar e copiar manualmente.');
-    });
+    }
   }
   
   function compartilharWhatsApp() {

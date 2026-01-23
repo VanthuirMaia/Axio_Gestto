@@ -1221,6 +1221,26 @@ def whatsapp_criar_instancia(request):
         return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
 
     empresa = request.user.empresa
+    
+    # VALIDAÇÃO CRÍTICA: Verificar se o plano permite WhatsApp
+    assinatura = empresa.assinatura_ativa
+    if not assinatura:
+        return JsonResponse({
+            'success': False,
+            'error': 'Sua empresa não possui assinatura ativa',
+            'action': 'upgrade_required'
+        }, status=403)
+    
+    # WhatsApp disponível apenas para Essencial, Profissional e Premium
+    planos_permitidos = ['essencial', 'profissional', 'premium']
+    if assinatura.plano.nome not in planos_permitidos:
+        return JsonResponse({
+            'success': False,
+            'error': 'WhatsApp disponível apenas para planos Essencial ou superior',
+            'plano_atual': assinatura.plano.get_nome_display(),
+            'action': 'upgrade_required'
+        }, status=403)
+    
     config = ConfiguracaoWhatsApp.objects.get(empresa=empresa)
 
     # Criar service e usar método robusto
