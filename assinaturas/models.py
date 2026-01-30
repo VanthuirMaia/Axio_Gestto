@@ -70,7 +70,7 @@ class Plano(models.Model):
 
     # Trial
     trial_dias = models.IntegerField(
-        default=7,
+        default=15,
         validators=[MinValueValidator(0)],
         help_text="Dias de trial gratuito"
     )
@@ -214,6 +214,9 @@ class Assinatura(models.Model):
     # Controle de cancelamento
     cancelada_em = models.DateTimeField(null=True, blank=True)
     motivo_cancelamento = models.TextField(blank=True)
+
+    # Metadados para controle de notificações e outros dados
+    metadados = models.JSONField(default=dict, blank=True)
 
     # Controle
     criado_em = models.DateTimeField(auto_now_add=True)

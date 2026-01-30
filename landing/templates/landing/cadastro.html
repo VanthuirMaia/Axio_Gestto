@@ -152,16 +152,16 @@
                 </select>
             </div>
 
-            <div class="payment-info">
-                <strong>💳 Pagamento Seguro via Stripe</strong>
-                <p style="margin: 0.5rem 0 0 0; color: #666;">Cartão de crédito, PIX ou Boleto</p>
-                <input type="hidden" name="gateway" value="stripe">
+            <div class="payment-info" style="background: #ecfdf5; border-color: #10b981;">
+                <strong style="color: #059669;">🎉 Teste 100% Grátis - Sem cartão de crédito!</strong>
+                <p style="margin: 0.5rem 0 0 0; color: #047857;">15 dias para testar todas as funcionalidades</p>
+                <input type="hidden" name="gateway" value="manual">
             </div>
 
             <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1.5rem 0;">
                 <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
-                    ⚖️ <strong>7 Dias Grátis:</strong> Teste o sistema sem compromisso. Cancele a qualquer momento dentro dos 7 dias de trial e não será cobrado nada.
-                    Se não cancelar, a cobrança será realizada após o término do período de teste.
+                    ✅ <strong>15 Dias Grátis:</strong> Teste o sistema completo sem compromisso. Sem cartão de crédito necessário!
+                    Após o período de teste, você decide se quer continuar.
                     <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #0284c7; text-decoration: underline;">Saiba mais</a>
                 </p>
             </div>
@@ -178,7 +178,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn-submit">Iniciar Trial Grátis de 7 Dias</button>
+            <button type="submit" class="btn-submit">Começar Meu Teste Grátis</button>
 
             <div class="already-have-account">
                 Já tem uma conta? <a href="/app/login/">Fazer Login</a>

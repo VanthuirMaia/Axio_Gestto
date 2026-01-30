@@ -73,12 +73,20 @@
               <div class="alert alert-info mb-0">
                 <i class="bi bi-info-circle me-2"></i>
                 <strong>Trial ativo!</strong>
-                {% if dias_restantes %}
+                {% if dias_restantes and dias_restantes > 0 %}
                   Restam {{ dias_restantes }} dias de teste grátis.
-                  A primeira cobrança será realizada em {{ assinatura.data_expiracao|date:"d/m/Y" }}.
+                  Para continuar usando após {{ assinatura.data_expiracao|date:"d/m/Y" }}, assine agora.
                 {% else %}
                   Seu período de trial está próximo do fim.
                 {% endif %}
+              </div>
+            </div>
+            {% elif assinatura.status == 'expirada' or assinatura.status == 'suspensa' %}
+            <div class="col-12">
+              <div class="alert alert-danger mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>{% if assinatura.status == 'expirada' %}Trial expirado!{% else %}Assinatura suspensa!{% endif %}</strong>
+                Para continuar usando o sistema, assine agora.
               </div>
             </div>
             {% elif assinatura.proximo_vencimento %}
@@ -173,6 +181,50 @@
       </div>
     </div>
   </div>
+
+  <!-- Card de Checkout para Trial Expirado ou Suspenso -->
+  {% if assinatura.status == 'expirada' or assinatura.status == 'suspensa' or assinatura.status == 'trial' and dias_restantes <= 0 %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0" style="border: 2px solid #dc2626 !important;">
+        <div class="card-body text-center py-5">
+          <div class="mb-4">
+            {% if assinatura.status == 'expirada' %}
+              <i class="bi bi-clock-history text-danger" style="font-size: 4rem;"></i>
+            {% else %}
+              <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+            {% endif %}
+          </div>
+          <h3 class="fw-bold mb-3">
+            {% if assinatura.status == 'expirada' %}
+              Seu período de teste acabou
+            {% else %}
+              Sua assinatura está suspensa
+            {% endif %}
+          </h3>
+          <p class="text-muted mb-4" style="max-width: 500px; margin: 0 auto;">
+            Para continuar usando o Gestto com todas as funcionalidades,
+            assine agora e mantenha seu negócio funcionando.
+          </p>
+          <div class="mb-4">
+            <h4 class="text-primary fw-bold mb-1">
+              Plano {{ plano.get_nome_display }} - R$ {{ plano.preco_mensal|floatformat:2 }}/mês
+            </h4>
+            <small class="text-muted">Cancele quando quiser, sem multa</small>
+          </div>
+          <button class="btn btn-danger btn-lg px-5" id="btn-assinar-agora">
+            <i class="bi bi-credit-card me-2"></i>
+            Assinar Agora
+          </button>
+          <p class="mt-3 mb-0 small text-muted">
+            <i class="bi bi-shield-check me-1"></i>
+            Pagamento seguro via Stripe. Seus dados estão protegidos.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Uso Atual -->
   <div class="row mb-4">
@@ -464,8 +516,8 @@
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <strong>Cancelamento de Assinatura</strong>
             <p class="mb-0 mt-2 small">
-              Durante o período de trial (7 dias), você pode cancelar sem nenhuma cobrança.
-              Após o trial, o cancelamento não gera reembolso, mas você mantém acesso ao sistema até o final do período pago.
+              Durante o período de trial (15 dias), não há cobrança pois você não cadastrou cartão de crédito.
+              Após assinar, o cancelamento não gera reembolso, mas você mantém acesso ao sistema até o final do período pago.
             </p>
           </div>
 
@@ -821,6 +873,41 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Erro ao processar solicitacao');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Reativar Assinatura';
+      });
+    });
+  }
+
+  // Assinar Agora (checkout para trial expirado)
+  const btnAssinarAgora = document.getElementById('btn-assinar-agora');
+  if (btnAssinarAgora) {
+    btnAssinarAgora.addEventListener('click', function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Redirecionando para pagamento...';
+
+      fetch('{% url "assinatura_gerar_checkout" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.checkout_url) {
+          // Redirecionar para o Stripe Checkout
+          window.location.href = data.checkout_url;
+        } else {
+          alert(data.error || 'Erro ao criar sessao de pagamento');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-credit-card me-2"></i>Assinar Agora';
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao processar solicitacao. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-credit-card me-2"></i>Assinar Agora';
       });
     });
   }

@@ -1107,6 +1107,107 @@ def assinatura_cancelar(request):
 
 
 @login_required
+def assinatura_gerar_checkout(request):
+    """
+    Gera sessão de checkout do Stripe para trials expirados ou assinaturas suspensas.
+    Permite que usuários assinem após o período de trial sem cartão.
+    """
+    from django.http import JsonResponse
+    from assinaturas.stripe_integration import criar_checkout_session
+    from assinaturas.models import Plano
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    empresa = request.user.empresa
+
+    if not hasattr(empresa, 'assinatura'):
+        return JsonResponse({'success': False, 'error': 'Empresa sem assinatura'}, status=400)
+
+    assinatura = empresa.assinatura
+
+    # Verificar se pode gerar checkout (trial expirado, expirada ou suspensa)
+    if assinatura.status not in ['trial', 'expirada', 'suspensa']:
+        if assinatura.status == 'ativa':
+            return JsonResponse({
+                'success': False,
+                'error': 'Sua assinatura já está ativa'
+            }, status=400)
+        return JsonResponse({
+            'success': False,
+            'error': f'Status {assinatura.status} não permite checkout'
+        }, status=400)
+
+    # Buscar plano
+    plano = assinatura.plano
+
+    if not plano:
+        # Se não tem plano, usar o essencial como default
+        plano = Plano.objects.filter(nome='essencial', ativo=True).first()
+        if not plano:
+            return JsonResponse({
+                'success': False,
+                'error': 'Nenhum plano disponível'
+            }, status=400)
+
+    # Criar sessão de checkout SEM trial (já usou o trial)
+    try:
+        import stripe
+
+        stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+
+        if not plano.stripe_price_id:
+            logger.error(f'Plano {plano.nome} sem stripe_price_id configurado!')
+            return JsonResponse({
+                'success': False,
+                'error': 'Plano sem configuração de pagamento. Contate o suporte.'
+            }, status=400)
+
+        # Criar checkout session sem trial
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': plano.stripe_price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=f'{settings.SITE_URL}/checkout/sucesso/?session_id={{CHECKOUT_SESSION_ID}}',
+            cancel_url=f'{settings.SITE_URL}/app/configuracoes/assinatura/',
+            client_reference_id=str(empresa.id),
+            customer_email=empresa.email,
+            metadata={
+                'empresa_id': empresa.id,
+                'empresa_nome': empresa.nome,
+                'plano_id': plano.id,
+                'plano_nome': plano.nome,
+                'trial_convertido': 'true',  # Marca que veio de trial
+            },
+            # NÃO incluir trial_period_days - usuário já usou o trial
+        )
+
+        logger.info(f'Checkout pós-trial criado: {session.id} para empresa {empresa.nome}')
+
+        return JsonResponse({
+            'success': True,
+            'checkout_url': session.url,
+            'session_id': session.id
+        })
+
+    except stripe.error.StripeError as e:
+        logger.error(f'Erro ao criar checkout Stripe: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro ao criar sessão de pagamento. Tente novamente.'
+        }, status=500)
+    except Exception as e:
+        logger.error(f'Erro inesperado ao criar checkout: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'error': 'Erro interno. Tente novamente.'
+        }, status=500)
+
+
+@login_required
 def assinatura_reativar(request):
     """
     Reativa uma assinatura cancelada (dentro do periodo de 90 dias)

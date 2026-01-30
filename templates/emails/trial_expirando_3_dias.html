@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seu trial termina em 3 dias - Gestto</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .email-header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .countdown-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-body p {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            color: #4b5563;
+        }
+        .email-body .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .highlight-box {
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .highlight-box h2 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            color: #1d4ed8;
+        }
+        .highlight-box p {
+            margin: 0;
+            color: #1e40af;
+        }
+        .action-button {
+            display: inline-block;
+            margin: 30px 0;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .features-list {
+            margin: 30px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .features-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+            color: #4b5563;
+        }
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+        .features-list li::before {
+            content: "X";
+            display: inline-block;
+            margin-right: 12px;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .guarantee-box {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f0fdf4;
+            border-radius: 8px;
+            border-left: 4px solid #22c55e;
+        }
+        .guarantee-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #166534;
+        }
+        .email-footer {
+            padding: 30px;
+            background-color: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .email-footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Gestto</h1>
+            <p>Seu periodo de teste esta acabando</p>
+            <div class="countdown-badge">3 dias restantes</div>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">Ola, {{ usuario.get_full_name|default:usuario.username }}!</p>
+
+            <div class="highlight-box">
+                <h2>Seu trial termina em 3 dias</h2>
+                <p>
+                    Estamos adorando ter voce conosco! Seu periodo de teste expira em
+                    <strong>{{ data_expiracao|date:"d/m/Y" }}</strong>.
+                </p>
+            </div>
+
+            <p>
+                Voce esta aproveitando todas as funcionalidades do Gestto?
+                Veja o que voce pode perder se nao assinar:
+            </p>
+
+            <ul class="features-list">
+                <li>Agendamentos automaticos via WhatsApp</li>
+                <li>Lembretes automaticos para clientes</li>
+                <li>Gestao completa de profissionais</li>
+                <li>Relatorios e analises do seu negocio</li>
+                <li>Link de agendamento personalizado</li>
+            </ul>
+
+            <div style="text-align: center;">
+                <a href="{{ checkout_url }}" class="action-button">
+                    Assinar Agora
+                </a>
+            </div>
+
+            <div class="guarantee-box">
+                <p>
+                    <strong>Seus dados estao seguros!</strong><br>
+                    Mesmo apos o trial, seus dados serao mantidos por mais 30 dias.
+                    Voce pode assinar a qualquer momento e continuar de onde parou.
+                </p>
+            </div>
+
+            <p style="margin-top: 30px;">
+                Tem alguma duvida ou precisa de ajuda para decidir?
+                Responda este email ou entre em contato conosco!
+            </p>
+        </div>
+
+        <div class="email-footer">
+            <p><strong>Gestto</strong> - Sistema de Gestao com WhatsApp</p>
+            <p>Este e um email automatico enviado para {{ usuario.email }}</p>
+        </div>
+    </div>
+</body>
+</html>

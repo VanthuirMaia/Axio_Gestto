@@ -19,6 +19,7 @@ urlpatterns = [
     path('assinatura/alterar-plano/', views.assinatura_alterar_plano, name='assinatura_alterar_plano'),
     path('assinatura/cancelar/', views.assinatura_cancelar, name='assinatura_cancelar'),
     path('assinatura/reativar/', views.assinatura_reativar, name='assinatura_reativar'),
+    path('assinatura/checkout/', views.assinatura_gerar_checkout, name='assinatura_gerar_checkout'),
 
     # Serviços
     path('servicos/', views.servicos_lista, name='servicos_lista'),

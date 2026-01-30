@@ -47,7 +47,7 @@ def cadastro(request):
         telefone = request.POST.get('telefone')
         cnpj = request.POST.get('cnpj')
         plano = request.POST.get('plano', 'essencial')
-        gateway = request.POST.get('gateway', 'stripe')
+        gateway = request.POST.get('gateway', 'manual')
 
         # Log de tentativa de cadastro
         logger.warning(f"Tentativa de cadastro - IP: {request.META.get('REMOTE_ADDR')}, Email: {email_admin}, Empresa: {nome_empresa}")

@@ -18,6 +18,10 @@ app.conf.beat_schedule = {
         'task': 'agendamentos.tasks.gerar_agendamentos_recorrentes',
         'schedule': crontab(hour=0, minute=0),  # Diariamente à meia-noite
     },
+    'notificar-trials-expirando': {
+        'task': 'assinaturas.tasks.notificar_trials_expirando',
+        'schedule': crontab(hour=9, minute=0),  # Diariamente às 9h
+    },
 }
 
 @app.task(bind=True)
