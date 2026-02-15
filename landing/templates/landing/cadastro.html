@@ -1,32 +1,49 @@
 {% extends 'landing/base.html' %}
 
-{% block title %}Cadastro - Gestto{% endblock %}
-
 {% block content %}
 <style>
-    .cadastro-section {
-        padding: 4rem 0;
-        background: #f9fafb;
+    .waitlist-container {
         min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem 0;
     }
 
-    .cadastro-container {
-        max-width: 600px;
-        margin: 0 auto;
+    .waitlist-card {
         background: white;
+        border-radius: 20px;
         padding: 3rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
-    .cadastro-container h1 {
+    .waitlist-icon {
+        font-size: 4rem;
         text-align: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        animation: bounce 2s infinite;
     }
 
-    .cadastro-container p {
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .waitlist-title {
+        font-size: 2rem;
+        font-weight: 800;
         text-align: center;
-        color: #666;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .waitlist-subtitle {
+        text-align: center;
+        color: #6b7280;
+        font-size: 1.1rem;
         margin-bottom: 2rem;
     }
 
@@ -34,156 +51,186 @@
         margin-bottom: 1.5rem;
     }
 
-    .form-group label {
+    .form-label {
         display: block;
-        margin-bottom: 0.5rem;
         font-weight: 600;
-        color: #333;
+        color: #374151;
+        margin-bottom: 0.5rem;
     }
 
-    .form-group input,
-    .form-group select {
+    .form-label .required {
+        color: #ef4444;
+    }
+
+    .form-control {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.875rem 1rem;
         border: 2px solid #e5e7eb;
-        border-radius: 8px;
+        border-radius: 10px;
         font-size: 1rem;
-        transition: border-color 0.3s;
+        transition: all 0.3s ease;
     }
 
-    .form-group input:focus,
-    .form-group select:focus {
+    .form-control:focus {
         outline: none;
         border-color: #667eea;
-    }
-
-    .form-group small {
-        display: block;
-        margin-top: 0.25rem;
-        color: #666;
-        font-size: 0.875rem;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
     .btn-submit {
         width: 100%;
-        background: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 1rem;
+        padding: 1rem 2rem;
         border: none;
-        border-radius: 8px;
-        font-size: 1.125rem;
-        font-weight: 600;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
     }
 
     .btn-submit:hover {
-        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
 
-    .already-have-account {
+    .back-link {
+        display: block;
         text-align: center;
         margin-top: 1.5rem;
-        color: #666;
-    }
-
-    .already-have-account a {
-        color: #667eea;
+        color: #6b7280;
         text-decoration: none;
-        font-weight: 600;
+        transition: color 0.3s ease;
     }
 
-    .payment-info {
-        background: #f3f4f6;
-        border: 2px solid #667eea;
-        border-radius: 8px;
+    .back-link:hover {
+        color: #667eea;
+    }
+
+    .alert {
         padding: 1rem;
-        text-align: center;
+        border-radius: 10px;
         margin-bottom: 1.5rem;
     }
 
-    .payment-info strong {
-        color: #667eea;
-        font-size: 1.125rem;
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 768px) {
+        .waitlist-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .waitlist-title {
+            font-size: 1.5rem;
+        }
     }
 </style>
 
-<section class="cadastro-section">
-    <div class="cadastro-container">
-        <h1>Criar Conta Grátis</h1>
-        <p>Teste grátis sem compromisso. Sem cartão de crédito.</p>
+<div class="waitlist-container">
+    <div class="container">
+        <div class="waitlist-card">
+            <div class="waitlist-icon">✂️</div>
+            <h1 class="waitlist-title">Entre na Lista de Espera</h1>
+            <p class="waitlist-subtitle">
+                Estamos aprimorando o Gestto para oferecer a melhor experiência possível. 
+                Cadastre-se e seja notificado quando novas vagas estiverem disponíveis!
+            </p>
 
-        <form method="post">
-            {% csrf_token %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-error">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-            <div class="form-group">
-                <label for="nome_empresa">Nome da Empresa *</label>
-                <input type="text" id="nome_empresa" name="nome_empresa" placeholder="Ex: Barbearia do João" required>
-            </div>
+            <form method="post" action="{% url 'landing:cadastro' %}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="nome">
+                        Nome Completo <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="nome" 
+                        name="nome" 
+                        placeholder="Seu nome completo"
+                        required
+                    >
+                </div>
 
-            <div class="form-group">
-                <label for="email_admin">Seu Email *</label>
-                <input type="email" id="email_admin" name="email_admin" placeholder="seu@email.com" required>
-                <small>Você receberá as credenciais de acesso neste email</small>
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="email">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        class="form-control" 
+                        id="email" 
+                        name="email" 
+                        placeholder="seu@email.com"
+                        required
+                    >
+                </div>
 
-            <div class="form-group">
-                <label for="telefone">Telefone (WhatsApp) *</label>
-                <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999" required>
-                <small style="color: #d97706; font-weight: 500; display: block; margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border-radius: 4px;">
-                    ⚠️ <strong>Importante:</strong> Use um número exclusivo para o negócio. Evite números pessoais ou compartilhados para garantir o melhor funcionamento do WhatsApp Bot.
-                </small>
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="whatsapp">
+                        WhatsApp <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="tel" 
+                        class="form-control" 
+                        id="whatsapp" 
+                        name="whatsapp" 
+                        placeholder="(00) 00000-0000"
+                        required
+                    >
+                </div>
 
-            <div class="form-group">
-                <label for="cnpj">CPF ou CNPJ *</label>
-                <input type="text" id="cnpj" name="cnpj" placeholder="000.000.000-00 ou 00.000.000/0000-00" required>
-                <small>Informe seu CPF (pessoa física) ou CNPJ (pessoa jurídica)</small>
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="nome_negocio">
+                        Nome do Negócio <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="nome_negocio" 
+                        name="nome_negocio" 
+                        placeholder="Nome da sua barbearia ou salão"
+                        required
+                    >
+                </div>
 
-            <div class="form-group">
-                <label for="plano">Plano *</label>
-                <select id="plano" name="plano" required>
-                    {% for plano_obj in planos %}
-                    <option value="{{ plano_obj.nome }}" {% if request.GET.plano == plano_obj.nome %}selected{% endif %}>
-                        {{ plano_obj.get_nome_display }} - R$ {{ plano_obj.preco_mensal|floatformat:2 }}/mês ({{ plano_obj.max_profissionais }} prof)
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="cidade">
+                        Cidade (opcional)
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="cidade" 
+                        name="cidade" 
+                        placeholder="Sua cidade"
+                    >
+                </div>
 
-            <div class="payment-info" style="background: #ecfdf5; border-color: #10b981;">
-                <strong style="color: #059669;">🎉 Teste 100% Grátis - Sem cartão de crédito!</strong>
-                <p style="margin: 0.5rem 0 0 0; color: #047857;">15 dias para testar todas as funcionalidades</p>
-                <input type="hidden" name="gateway" value="manual">
-            </div>
+                <button type="submit" class="btn-submit">
+                    ✨ Entrar na Lista de Espera
+                </button>
+            </form>
 
-            <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1.5rem 0;">
-                <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
-                    ✅ <strong>15 Dias Grátis:</strong> Teste o sistema completo sem compromisso. Sem cartão de crédito necessário!
-                    Após o período de teste, você decide se quer continuar.
-                    <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #0284c7; text-decoration: underline;">Saiba mais</a>
-                </p>
-            </div>
-
-            <div style="margin: 1rem 0;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" required style="width: auto;">
-                    <span style="font-size: 0.9rem; color: #555;">
-                        Li e concordo com os
-                        <a href="{% url 'landing:termos_uso' %}" target="_blank" style="color: #667eea;">Termos de Uso</a>
-                        e a
-                        <a href="{% url 'landing:politica_cancelamento' %}" target="_blank" style="color: #667eea;">Política de Cancelamento</a>
-                    </span>
-                </label>
-            </div>
-
-            <button type="submit" class="btn-submit">Começar Meu Teste Grátis</button>
-
-            <div class="already-have-account">
-                Já tem uma conta? <a href="/app/login/">Fazer Login</a>
-            </div>
-        </form>
+            <a href="{% url 'landing:home' %}" class="back-link">
+                ← Voltar para a página inicial
+            </a>
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}

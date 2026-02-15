@@ -65,3 +65,28 @@ class UserEvent(models.Model):
     
     def __str__(self):
         return f"{self.get_event_type_display()} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+
+
+class Waitlist(models.Model):
+    """Leads que entraram na lista de espera"""
+    nome = models.CharField(max_length=200, verbose_name="Nome Completo")
+    email = models.EmailField(unique=True, verbose_name="Email")
+    whatsapp = models.CharField(max_length=20, verbose_name="WhatsApp")
+    nome_negocio = models.CharField(max_length=200, verbose_name="Nome do Negócio")
+    cidade = models.CharField(max_length=100, blank=True, verbose_name="Cidade")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
+    notificado = models.BooleanField(default=False, verbose_name="Já foi notificado?")
+    notas = models.TextField(blank=True, verbose_name="Notas Internas")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Lead da Lista de Espera"
+        verbose_name_plural = "Lista de Espera"
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['email']),
+            models.Index(fields=['notificado']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nome} ({self.email}) - {self.created_at.strftime('%d/%m/%Y')}"

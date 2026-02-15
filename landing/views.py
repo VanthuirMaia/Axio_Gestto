@@ -39,77 +39,56 @@ def precos(request):
 @ratelimit(key='ip', rate='10/h', method='POST', block=True)  # Máximo 10 cadastros por hora por IP
 @ratelimit(key='ip', rate='30/m', method='GET', block=True)
 def cadastro(request):
-    """Formulário de cadastro de novo cliente"""
+    """Formulário de cadastro na lista de espera"""
     if request.method == 'POST':
+        from .models import Waitlist
+        from django.db import IntegrityError
+        
         # Extrair dados do formulário
-        nome_empresa = request.POST.get('nome_empresa')
-        email_admin = request.POST.get('email_admin')
-        telefone = request.POST.get('telefone')
-        cnpj = request.POST.get('cnpj')
-        plano = request.POST.get('plano', 'essencial')
-        gateway = request.POST.get('gateway', 'manual')
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        whatsapp = request.POST.get('whatsapp', '').strip()
+        nome_negocio = request.POST.get('nome_negocio', '').strip()
+        cidade = request.POST.get('cidade', '').strip()
 
-        # Log de tentativa de cadastro
-        logger.warning(f"Tentativa de cadastro - IP: {request.META.get('REMOTE_ADDR')}, Email: {email_admin}, Empresa: {nome_empresa}")
+        # Log de tentativa de cadastro na waitlist
+        logger.info(f"Tentativa de cadastro na waitlist - IP: {request.META.get('REMOTE_ADDR')}, Email: {email}, Nome: {nome}")
 
         # Validações básicas
-        if not nome_empresa or not email_admin or not telefone or not cnpj:
-            messages.error(request, 'Preencha todos os campos obrigatórios.')
-            logger.warning(f"Cadastro incompleto - IP: {request.META.get('REMOTE_ADDR')}")
+        if not nome or not email or not whatsapp or not nome_negocio:
+            messages.error(request, 'Por favor, preencha todos os campos obrigatórios.')
+            logger.warning(f"Cadastro waitlist incompleto - IP: {request.META.get('REMOTE_ADDR')}")
             return redirect('landing:cadastro')
 
-        # Chamar API interna de create-tenant
+        # Tentar salvar na waitlist
         try:
-            payload = {
-                'nome_empresa': nome_empresa,
-                'email_admin': email_admin,
-                'telefone': telefone,
-                'cnpj': cnpj,
-                'plano': plano,
-                'gateway': gateway
-            }
-
-            # Debug: log do payload
-            logger.info(f"Enviando para API: {payload}")
-
-            response = requests.post(
-                f"{request.scheme}://{request.get_host()}/api/create-tenant/",
-                json=payload,
-                timeout=10
+            waitlist_entry = Waitlist.objects.create(
+                nome=nome,
+                email=email,
+                whatsapp=whatsapp,
+                nome_negocio=nome_negocio,
+                cidade=cidade
             )
-
-            # Debug: log da resposta
-            logger.info(f"Status Code: {response.status_code}")
-            logger.info(f"Resposta: {response.text}")
-
-            data = response.json()
-
-            if data.get('sucesso'):
-                # Redirecionar para página de checkout
-                checkout_url = data.get('checkout_url')
-                logger.info(f"Cadastro bem-sucedido - Email: {email_admin}, Empresa: {nome_empresa}")
-                if checkout_url:
-                    return redirect(checkout_url)
-                else:
-                    messages.success(request, 'Cadastro realizado! Verifique seu email.')
-                    return redirect('landing:home')
-            else:
-                # Mostrar erro retornado pela API
-                erro = data.get('erro') or data.get('mensagem', 'Erro ao processar cadastro.')
-                logger.error(f"Erro na API de cadastro - Email: {email_admin}, Erro: {erro}")
-                messages.error(request, f'Erro: {erro}')
-                return redirect('landing:cadastro')
-
+            
+            logger.info(f"Cadastro na waitlist bem-sucedido - Email: {email}, Nome: {nome}")
+            
+            # Redirecionar para página de sucesso
+            return redirect('landing:waitlist_sucesso')
+            
+        except IntegrityError:
+            # Email já existe na waitlist
+            messages.error(request, 'Este email já está na lista de espera.')
+            logger.warning(f"Email duplicado na waitlist - Email: {email}")
+            return redirect('landing:cadastro')
+            
         except Exception as e:
-            logger.error(f"Exceção no cadastro - Email: {email_admin}, Erro: {str(e)}")
-            messages.error(request, f'Erro ao processar cadastro: {str(e)}')
+            logger.error(f"Erro ao cadastrar na waitlist - Email: {email}, Erro: {str(e)}")
+            messages.error(request, 'Erro ao processar seu cadastro. Por favor, tente novamente.')
             return redirect('landing:cadastro')
 
-    # GET - Mostrar formulário
-    planos = Plano.objects.filter(ativo=True).order_by('ordem_exibicao')
-
+    # GET - Mostrar formulário de waitlist
     context = {
-        'planos': planos,
+        'site_name': 'Gestto',
     }
     return render(request, 'landing/cadastro.html', context)
 
@@ -147,6 +126,14 @@ def termos_uso(request):
 def politica_cancelamento(request):
     """Página de Política de Cancelamento"""
     return render(request, 'landing/politica_cancelamento.html')
+
+
+def waitlist_sucesso(request):
+    """Página de sucesso após cadastro na waitlist"""
+    context = {
+        'site_name': 'Gestto',
+    }
+    return render(request, 'landing/waitlist_sucesso.html', context)
 
 
 @require_http_methods(["POST"])

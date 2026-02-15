@@ -1,26 +1,23 @@
 #!/usr/bin/env python
-"""Script para verificar planos no banco"""
+"""Script para verificar planos e assinaturas"""
 import os
 import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from assinaturas.models import Plano
+from assinaturas.models import Plano, Assinatura
+from empresas.models import Empresa
 
-planos = Plano.objects.all()
-print(f'\n=== PLANOS NO BANCO: {planos.count()} ===\n')
+print("\n=== PLANOS ===")
+for p in Plano.objects.all():
+    status = "OK" if p.stripe_price_id else "SEM PRICE ID"
+    print(f"  {p.nome}: stripe_price_id={p.stripe_price_id or '(VAZIO)'} [{status}]")
 
-if planos.count() == 0:
-    print('❌ NENHUM PLANO ENCONTRADO!')
-    print('Execute: python manage.py loaddata assinaturas/fixtures/planos_iniciais.json')
-else:
-    for p in planos:
-        print(f'✅ {p.get_nome_display()}')
-        print(f'   - ID: {p.id}')
-        print(f'   - Nome: {p.nome}')
-        print(f'   - Preço: R$ {p.preco_mensal}')
-        print(f'   - Profissionais: {p.max_profissionais}')
-        print(f'   - Agendamentos: {p.max_agendamentos_mes}')
-        print(f'   - Ativo: {p.ativo}')
-        print()
+print("\n=== ULTIMAS 5 EMPRESAS ===")
+for e in Empresa.objects.order_by('-id')[:5]:
+    print(f"  ID={e.id} | {e.nome} | {e.email} | origem={e.origem_cadastro}")
+
+print("\n=== ASSINATURAS SEM CUSTOMER_ID_EXTERNO ===")
+for a in Assinatura.objects.filter(customer_id_externo='').order_by('-id')[:10]:
+    print(f"  Empresa: {a.empresa.nome} (ID={a.empresa.id}) | gateway={a.gateway} | status={a.status}")

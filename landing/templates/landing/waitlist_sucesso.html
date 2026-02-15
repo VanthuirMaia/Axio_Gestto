@@ -1,0 +1,201 @@
+{% extends 'landing/base.html' %}
+
+{% block content %}
+<style>
+    .success-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem 0;
+    }
+
+    .success-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+
+    .success-icon {
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        animation: scaleIn 0.5s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .success-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .success-message {
+        font-size: 1.2rem;
+        color: #6b7280;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .success-highlight {
+        background: #f0fdf4;
+        border: 2px solid #10b981;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .success-highlight p {
+        margin: 0;
+        color: #047857;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .next-steps {
+        text-align: left;
+        margin: 2rem 0;
+        background: #f9fafb;
+        padding: 1.5rem;
+        border-radius: 12px;
+    }
+
+    .next-steps h3 {
+        color: #1f2937;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .next-steps ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .next-steps li {
+        padding: 0.75rem 0;
+        color: #4b5563;
+        font-size: 1rem;
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .next-steps li::before {
+        content: "✅";
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .btn-home {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        margin-top: 1.5rem;
+    }
+
+    .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .social-proof {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e5e7eb;
+    }
+
+    .social-proof p {
+        color: #6b7280;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .success-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .success-title {
+            font-size: 2rem;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+        }
+    }
+</style>
+
+<div class="success-container">
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">🎉</div>
+            
+            <h1 class="success-title">Você está na lista!</h1>
+            
+            <p class="success-message">
+                Obrigado por se cadastrar na lista de espera do Gestto. 
+                Estamos trabalhando duro para oferecer a melhor experiência possível.
+            </p>
+
+            <div class="success-highlight">
+                <p>
+                    ✨ Vamos te avisar assim que novas vagas estiverem disponíveis!
+                </p>
+            </div>
+
+            <div class="next-steps">
+                <h3>📋 O que acontece agora?</h3>
+                <ul>
+                    <li>
+                        <span>Você receberá um email de confirmação em breve</span>
+                    </li>
+                    <li>
+                        <span>Estamos aprimorando o sistema com base no feedback dos usuários atuais</span>
+                    </li>
+                    <li>
+                        <span>Quando novas vagas abrirem, você será um dos primeiros a saber</span>
+                    </li>
+                    <li>
+                        <span>Fique de olho no seu email e WhatsApp para não perder a notificação!</span>
+                    </li>
+                </ul>
+            </div>
+
+            <a href="{% url 'landing:home' %}" class="btn-home">
+                ← Voltar para a Página Inicial
+            </a>
+
+            <div class="social-proof">
+                <p>
+                    💡 <strong>Dica:</strong> Enquanto isso, que tal conhecer mais sobre o Gestto? 
+                    Volte à página inicial e veja todos os recursos que estão por vir!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
