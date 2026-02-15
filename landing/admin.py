@@ -47,24 +47,9 @@ class UserEventAdmin(admin.ModelAdmin):
 @admin.register(Waitlist)
 class WaitlistAdmin(admin.ModelAdmin):
     list_display = ['nome', 'email', 'whatsapp', 'nome_negocio', 'cidade', 'created_at', 'notificado']
-    list_filter = ['notificado', 'created_at', 'cidade']
-    search_fields = ['nome', 'email', 'whatsapp', 'nome_negocio', 'cidade']
+    list_filter = ['notificado', 'cidade']
+    search_fields = ['nome', 'email', 'whatsapp', 'nome_negocio']
     readonly_fields = ['created_at']
-    date_hierarchy = 'created_at'
-    
-    fieldsets = (
-        ('Informações do Lead', {
-            'fields': ('nome', 'email', 'whatsapp', 'nome_negocio', 'cidade')
-        }),
-        ('Status', {
-            'fields': ('notificado', 'created_at')
-        }),
-        ('Notas Internas', {
-            'fields': ('notas',),
-            'classes': ('collapse',)
-        }),
-    )
     
     def has_add_permission(self, request):
-        # Apenas leads vindos do site podem ser adicionados
         return False
