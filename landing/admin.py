@@ -51,7 +51,6 @@ class WaitlistAdmin(admin.ModelAdmin):
     search_fields = ['nome', 'email', 'whatsapp', 'nome_negocio', 'cidade']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
-    list_editable = ['notificado']
     
     fieldsets = (
         ('Informações do Lead', {
