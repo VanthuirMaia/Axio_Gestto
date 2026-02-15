@@ -46,10 +46,7 @@ class UserEventAdmin(admin.ModelAdmin):
 
 @admin.register(Waitlist)
 class WaitlistAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'email', 'whatsapp', 'nome_negocio', 'cidade', 'created_at', 'notificado']
-    list_filter = ['notificado', 'cidade']
-    search_fields = ['nome', 'email', 'whatsapp', 'nome_negocio']
-    readonly_fields = ['created_at']
+    list_display = ['id', 'nome', 'email']
     
     def has_add_permission(self, request):
         return False
